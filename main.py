@@ -5,6 +5,7 @@ from components.loans import show_loans
 from components.history import show_history
 from components.alerts import show_overdue_alerts
 from components.statistics import show_statistics
+from components.reservations import show_reservations_page, show_reservation_management
 from excel_handler import import_excel, export_to_excel
 from utils import set_page_config, get_overdue_loans
 from auth import init_auth, show_login_page, show_registration_page, logout
@@ -33,9 +34,9 @@ def main():
             if not overdue_loans.empty:
                 st.sidebar.warning(f"⚠️ {len(overdue_loans)} השאלות באיחור")
         if st.session_state.user.role == 'warehouse':
-            pages = ["מלאי", "השאלות", "התראות", "היסטוריה", "סטטיסטיקות", "ייבוא/ייצוא"]
+            pages = ["מלאי", "השאלות", "התראות", "היסטוריה", "סטטיסטיקות", "ייבוא/ייצוא", "ניהול הזמנות"]
         else:  # student role
-            pages = ["הציוד שלי", "פריטים זמינים"]
+            pages = ["הציוד שלי", "פריטים זמינים", "הזמנת ציוד"]
             
         page = st.sidebar.radio("בחר עמוד", pages)
         
@@ -50,6 +51,8 @@ def main():
                 show_history()
             elif page == "סטטיסטיקות":
                 show_statistics()
+            elif page == "ניהול הזמנות":
+                show_reservation_management()
             elif page == "ייבוא/ייצוא":
                 st.header("ייבוא/ייצוא נתונים")
                 
@@ -81,6 +84,8 @@ def main():
                 show_loans(user_id=st.session_state.user.id)
             elif page == "פריטים זמינים":
                 show_inventory(readonly=True)
+            elif page == "הזמנת ציוד":
+                show_reservations_page()
     else:
         tab1, tab2 = st.tabs(["התחברות", "הרשמה"])
         with tab1:
