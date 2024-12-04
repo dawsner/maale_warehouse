@@ -84,7 +84,27 @@ def import_excel(file):
                         final_category = f"{current_category} - אביזרים"
                 
                 try:
-                    # Add item to database
+                    # Extract prices if available
+                    price_per_unit = None
+                    total_price = None
+                    if 'מחיר ליחידה' in df.columns and pd.notna(row['מחיר ליחידה']):
+                        try:
+                            price_per_unit = float(row['מחיר ליחידה'])
+                        except (ValueError, TypeError):
+                            pass
+                    
+                    if 'מחיר כולל' in df.columns and pd.notna(row['מחיר כולל']):
+                        try:
+                            total_price = float(row['מחיר כולל'])
+                        except (ValueError, TypeError):
+                            pass
+                    
+                    # Extract production team info
+                    director = row.get('במאית: ', '')
+                    producer = row.get('מפיקה: ', '')
+                    photographer = row.get('צלמת: ', '')
+
+                    # Add item to database with extended information
                     add_item(
                         name=str(item_name).strip(),
                         category=final_category,
