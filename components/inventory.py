@@ -27,14 +27,11 @@ def format_item_name(name, item_id):
     return f"{name} [✏️]({item_id}/edit) [🗑️]({item_id}/delete)"
 
 def show_inventory(readonly=False):
-    # Add RTL CSS
+    # Add RTL CSS for data frame
     st.markdown('''
     <style>
-        .stDataFrame {
+        [data-testid="stDataFrame"] > div > div > div {
             direction: rtl;
-        }
-        .stDataFrame [data-testid="stDataFrameDataCell"] {
-            text-align: right;
         }
     </style>
     ''', unsafe_allow_html=True)
@@ -86,9 +83,13 @@ def show_inventory(readonly=False):
         if search:
             df = df[df['שם פריט'].str.contains(search, case=False, na=False)]
 
-        # Format item names with action buttons if not readonly
+        # Add actions column if not readonly
         if not readonly and st.session_state.user and st.session_state.user.role == 'warehouse':
-            df['שם פריט'] = df.apply(lambda x: format_item_name(x['שם פריט'], x['מזהה']), axis=1)
+            df['פעולות'] = df.apply(lambda x: f"[✏️ ערוך]({x['מזהה']}/edit) [🗑️ מחק]({x['מזהה']}/delete)", axis=1)
+            
+        # Reorder columns to ensure RTL layout
+        columns_order = ['פעולות', 'הערות', 'כמות זמינה', 'כמות כוללת', 'קטגוריה', 'שם פריט', 'מזהה']
+        df = df[df.columns.intersection(columns_order)]
         
         # Display the table with new configuration
         st.dataframe(
@@ -99,7 +100,7 @@ def show_inventory(readonly=False):
                 "שם פריט": st.column_config.Column(
                     "שם פריט",
                     width="large",
-                    help="לחץ על שם הפריט לעריכה"
+                    help="פעולות זמינות: עריכה ומחיקה"
                 ),
                 "קטגוריה": st.column_config.TextColumn(
                     "קטגוריה",
@@ -116,38 +117,28 @@ def show_inventory(readonly=False):
                 "הערות": st.column_config.TextColumn(
                     "הערות",
                     width="large"
+                ),
+                "פעולות": st.column_config.Column(
+                    "פעולות",
+                    width="medium"
                 )
             },
             hide_index=True
         )
 
-        # Add action buttons in expanders
+        # Handle edit form if edit action is clicked
         if not readonly and st.session_state.user and st.session_state.user.role == 'warehouse':
-            for _, row in df.iterrows():
-                with st.expander(f"{row['שם פריט']} - {row['קטגוריה']}"):
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        if st.button("⚡ שנה זמינות", key=f"toggle_{row['מזהה']}"):
-                            success, message = toggle_item_availability(
-                                row['מזהה'], 
-                                not (row['כמות זמינה'] > 0)
-                            )
-                            if success:
-                                st.success(message)
-                                st.rerun()
-                            else:
-                                st.error(message)
-                    
-                    with col2:
-                        if st.button("✏️ ערוך", key=f"edit_{row['מזהה']}"):
-                            show_edit_form(row)
-                    
-                    with col3:
-                        if st.button("🗑️ מחק", key=f"delete_{row['מזהה']}"):
-                            if delete_item(row['מזהה'])[0]:
-                                st.success("הפריט נמחק בהצלחה")
-                                st.rerun()
-                            else:
-                                st.error("לא ניתן למחוק פריט עם השאלות פעילות")
+            query_params = st.experimental_get_query_params()
+            if 'edit' in query_params:
+                item_id = int(query_params['edit'][0])
+                row = df[df['מזהה'] == item_id].iloc[0]
+                show_edit_form(row)
+            elif 'delete' in query_params:
+                item_id = int(query_params['delete'][0])
+                if delete_item(item_id)[0]:
+                    st.success("הפריט נמחק בהצלחה")
+                    st.rerun()
+                else:
+                    st.error("לא ניתן למחוק פריט עם השאלות פעילות")
     else:
         st.info("אין פריטים במלאי")
