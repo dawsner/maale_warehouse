@@ -21,7 +21,13 @@ def import_excel(file):
             'כמות': 'quantity',
             'מספר פריטים': 'quantity',
             'הערות': 'notes',
-            'הערה': 'notes'
+            'הערה': 'notes',
+            'הערות על הזמנה (מחסן באדום. סטודנט בכחול)': 'loan_notes',
+            'הערות על הוצאה (מחסן באדום. סטודנט בכחול)': 'checkout_notes',
+            'הערות על החזרה': 'return_notes',
+            'יצא': 'checkout_date',
+            'חזר': 'return_date',
+            'הזמנה': 'order_date'
         }
         
         # Check if any of the required columns exist in Hebrew

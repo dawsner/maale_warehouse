@@ -50,14 +50,26 @@ def get_overdue_loans():
     
     with get_db_connection() as conn:
         overdue_loans = pd.read_sql_query(
-            """SELECT l.id, i.name as item_name, l.student_name, 
-               l.student_id, l.quantity, l.loan_date, l.due_date,
-               EXTRACT(DAY FROM (CURRENT_TIMESTAMP - l.due_date)) as days_overdue
+            """SELECT 
+                l.id,
+                i.name as item_name,
+                l.student_name,
+                l.student_id,
+                l.quantity,
+                l.loan_date,
+                l.due_date,
+                l.loan_notes,
+                l.checkout_notes,
+                l.return_notes,
+                l.director,
+                l.producer,
+                l.photographer,
+                EXTRACT(DAY FROM (CURRENT_TIMESTAMP - l.due_date)) as days_overdue
                FROM loans l
                JOIN items i ON l.item_id = i.id
                WHERE l.status = 'active' 
                AND l.due_date < CURRENT_TIMESTAMP
-               ORDER BY l.due_date ASC""",
+               ORDER BY days_overdue DESC""",
             conn
         )
     return overdue_loans

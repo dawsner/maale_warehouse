@@ -3,7 +3,7 @@ import sys
 
 def analyze_excel_structure(file_path):
     # Try reading with different encodings
-    encodings = ['utf-8', 'cp1255', 'windows-1255', 'iso-8859-8']
+    encodings = ['utf-8', 'cp1255', 'windows-1255', 'iso-8859-8', 'utf-16']
     
     for encoding in encodings:
         try:
