@@ -44,8 +44,8 @@ def create_new_loan():
             student_id = st.text_input("תעודת זהות")
         
         with col2:
-            available_items = {f"{item['name']} ({item['available']} זמינים)": item 
-                             for item in items if item['available'] > 0}
+            available_items = {f"{item[1]} ({item[4]} זמינים)": item
+                            for item in items if item[4] > 0}
             
             selected_item_name = st.selectbox(
                 "בחר פריט",
@@ -57,7 +57,7 @@ def create_new_loan():
                 quantity = st.number_input(
                     "כמות",
                     min_value=1,
-                    max_value=item['available']
+                    max_value=item[4]  # available quantity
                 )
                 
                 # Add due date selection
@@ -68,11 +68,13 @@ def create_new_loan():
                     value=default_due_date.date()
                 )
         
-        if st.form_submit_button("השאל"):
+        submitted = st.form_submit_button("השאל")
+        if submitted:
             if student_name and student_id and selected_item_name:
                 item = available_items[selected_item_name]
-                if create_loan(item['id'], student_name, student_id, quantity, due_date):
+                if create_loan(item[0], student_name, student_id, quantity, due_date):  # item[0] is id
                     st.success("הציוד הושאל בהצלחה")
+                    st.rerun()
                 else:
                     st.error("שגיאה בביצוע ההשאלה")
             else:
@@ -91,7 +93,31 @@ def handle_returns():
                ORDER BY l.loan_date DESC""",
             conn
         )
-    
+        
+        if active_loans.empty:
+            st.info("אין השאלות פעילות")
+            return
+        
+        st.subheader("השאלות פעילות")
+        
+        # Format the DataFrame for display
+        display_df = active_loans.copy()
+        display_df['loan_date'] = pd.to_datetime(display_df['loan_date']).dt.strftime('%Y-%m-%d %H:%M')
+        display_df.columns = ['מזהה', 'פריט', 'שם סטודנט', 'ת.ז.', 'כמות', 'תאריך השאלה']
+        
+        # Display loans and handle returns
+        for _, row in display_df.iterrows():
+            with st.expander(f"{row['פריט']} - {row['שם סטודנט']}"):
+                st.write(f"תאריך השאלה: {row['תאריך השאלה']}")
+                st.write(f"כמות: {row['כמות']}")
+                
+                if st.button(f"החזר", key=f"return_{row['מזהה']}"):
+                    if return_loan(row['מזהה']):
+                        st.success("הציוד הוחזר בהצלחה")
+                        st.rerun()
+                    else:
+                        st.error("שגיאה בביצוע ההחזרה")
+
 def handle_student_loans(user_id):
     from database import get_db_connection
     
@@ -120,26 +146,3 @@ def handle_student_loans(user_id):
     display_df.columns = ['מזהה', 'פריט', 'כמות', 'תאריך השאלה', 'תאריך החזרה נדרש']
     
     st.dataframe(display_df.drop(columns=['מזהה']))
-    if active_loans.empty:
-        st.info("אין השאלות פעילות")
-        return
-    
-    st.subheader("השאלות פעילות")
-    
-    # Format the DataFrame for display
-    display_df = active_loans.copy()
-    display_df['loan_date'] = pd.to_datetime(display_df['loan_date']).dt.strftime('%Y-%m-%d %H:%M')
-    display_df.columns = ['מזהה', 'פריט', 'שם סטודנט', 'ת.ז.', 'כמות', 'תאריך השאלה']
-    
-    # Display loans and handle returns
-    for _, row in display_df.iterrows():
-        with st.expander(f"{row['פריט']} - {row['שם סטודנט']}"):
-            st.write(f"תאריך השאלה: {row['תאריך השאלה']}")
-            st.write(f"כמות: {row['כמות']}")
-            
-            if st.button(f"החזר", key=f"return_{row['מזהה']}"):
-                if return_loan(row['מזהה']):
-                    st.success("הציוד הוחזר בהצלחה")
-                    st.rerun()
-                else:
-                    st.error("שגיאה בביצוע ההחזרה")
