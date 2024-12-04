@@ -109,8 +109,7 @@ def show_inventory(readonly=False):
                             row['שם פריט'],
                             row['קטגוריה'],
                             row['כמות כוללת'],
-                            row['הערות'],
-                            row['כמות זמינה']
+                            row['הערות']
                         )
                         if success:
                             st.success(f"הפריט {row['שם פריט']} עודכן בהצלחה")
