@@ -3,6 +3,7 @@ from database import init_db
 from components.inventory import show_inventory
 from components.loans import show_loans
 from components.history import show_history
+from components.alerts import show_overdue_alerts
 from excel_handler import import_excel, export_to_excel
 from utils import set_page_config
 from auth import init_auth, show_login_page, show_registration_page, logout
@@ -25,8 +26,13 @@ def main():
             st.rerun()
             
         # Role-based navigation
+        # Show overdue notifications for warehouse staff
         if st.session_state.user.role == 'warehouse':
-            pages = ["מלאי", "השאלות", "היסטוריה", "ייבוא/ייצוא"]
+            overdue_loans = get_overdue_loans()
+            if not overdue_loans.empty:
+                st.sidebar.warning(f"⚠️ {len(overdue_loans)} השאלות באיחור")
+        if st.session_state.user.role == 'warehouse':
+            pages = ["מלאי", "השאלות", "התראות", "היסטוריה", "ייבוא/ייצוא"]
         else:  # student role
             pages = ["הציוד שלי", "פריטים זמינים"]
             
@@ -37,6 +43,8 @@ def main():
                 show_inventory()
             elif page == "השאלות":
                 show_loans()
+            elif page == "התראות":
+                show_overdue_alerts()
             elif page == "היסטוריה":
                 show_history()
             elif page == "ייבוא/ייצוא":
