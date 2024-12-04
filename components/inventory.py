@@ -67,9 +67,8 @@ def show_inventory(readonly=False):
             edited_df = st.data_editor(
                 df,
                 use_container_width=True,
-                disabled=["מזהה", "כמות זמינה"],
                 column_config={
-                    "מזהה": None,
+                    "מזהה": None,  # רק להסתיר את המזהה
                     "שם פריט": st.column_config.TextColumn(
                         "שם פריט",
                         width="large",
@@ -88,7 +87,8 @@ def show_inventory(readonly=False):
                     ),
                     "כמות זמינה": st.column_config.NumberColumn(
                         "כמות זמינה",
-                        width="small"
+                        width="small",
+                        min_value=0
                     ),
                     "הערות": st.column_config.TextColumn(
                         "הערות",
@@ -109,7 +109,8 @@ def show_inventory(readonly=False):
                             row['שם פריט'],
                             row['קטגוריה'],
                             row['כמות כוללת'],
-                            row['הערות']
+                            row['הערות'],
+                            row['כמות זמינה']
                         )
                         if success:
                             st.success(f"הפריט {row['שם פריט']} עודכן בהצלחה")
