@@ -63,7 +63,7 @@ def get_all_items():
             cur.execute("SELECT * FROM items ORDER BY category, name")
             return cur.fetchall()
 
-def create_loan(item_id, student_name, student_id, quantity, due_date):
+def create_loan(item_id, student_name, student_id, quantity, due_date, user_id=None):
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
@@ -73,9 +73,9 @@ def create_loan(item_id, student_name, student_id, quantity, due_date):
             )
             if cur.rowcount > 0:
                 cur.execute(
-                    """INSERT INTO loans (item_id, student_name, student_id, quantity, due_date) 
-                       VALUES (%s, %s, %s, %s, %s)""",
-                    (item_id, student_name, student_id, quantity, due_date)
+                    """INSERT INTO loans (item_id, student_name, student_id, quantity, due_date, user_id) 
+                       VALUES (%s, %s, %s, %s, %s, %s)""",
+                    (item_id, student_name, student_id, quantity, due_date, user_id)
                 )
                 conn.commit()
                 return True

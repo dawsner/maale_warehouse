@@ -4,16 +4,19 @@ import pandas as pd
 from datetime import datetime, timedelta
 from utils import get_overdue_loans
 
-def show_loans():
+def show_loans(user_id=None):
     st.header("ניהול השאלות")
     
-    tab1, tab2 = st.tabs(["השאלת ציוד", "החזרת ציוד"])
-    
-    with tab1:
-        create_new_loan()
-    
-    with tab2:
-        handle_returns()
+    if user_id:  # Student view
+        handle_student_loans(user_id)
+    else:  # Warehouse staff view
+        tab1, tab2 = st.tabs(["השאלת ציוד", "החזרת ציוד"])
+        
+        with tab1:
+            create_new_loan()
+        
+        with tab2:
+            handle_returns()
 
 def create_new_loan():
     # Show overdue warnings
@@ -89,6 +92,34 @@ def handle_returns():
             conn
         )
     
+def handle_student_loans(user_id):
+    from database import get_db_connection
+    
+    with get_db_connection() as conn:
+        active_loans = pd.read_sql_query(
+            """SELECT l.id, i.name as item_name, l.quantity, 
+               l.loan_date, l.due_date
+               FROM loans l
+               JOIN items i ON l.item_id = i.id
+               WHERE l.status = 'active' AND l.user_id = %s
+               ORDER BY l.loan_date DESC""",
+            conn,
+            params=(user_id,)
+        )
+    
+    if active_loans.empty:
+        st.info("אין לך השאלות פעילות")
+        return
+    
+    st.subheader("ההשאלות שלי")
+    
+    # Format the DataFrame for display
+    display_df = active_loans.copy()
+    display_df['loan_date'] = pd.to_datetime(display_df['loan_date']).dt.strftime('%Y-%m-%d %H:%M')
+    display_df['due_date'] = pd.to_datetime(display_df['due_date']).dt.strftime('%Y-%m-%d %H:%M')
+    display_df.columns = ['מזהה', 'פריט', 'כמות', 'תאריך השאלה', 'תאריך החזרה נדרש']
+    
+    st.dataframe(display_df.drop(columns=['מזהה']))
     if active_loans.empty:
         st.info("אין השאלות פעילות")
         return

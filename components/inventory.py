@@ -1,25 +1,27 @@
 import streamlit as st
 from database import get_all_items, add_item
+from auth import require_role
 
-def show_inventory():
+def show_inventory(readonly=False):
     st.header("ניהול מלאי")
     
-    # Add new item form
-    with st.expander("הוספת פריט חדש"):
-        col1, col2 = st.columns(2)
-        with col1:
-            name = st.text_input("שם הפריט")
-            category = st.text_input("קטגוריה")
-        with col2:
-            quantity = st.number_input("כמות", min_value=1)
-            notes = st.text_area("הערות")
-        
-        if st.button("הוסף פריט"):
-            if name and category and quantity:
-                add_item(name, category, quantity, notes)
-                st.success("הפריט נוסף בהצלחה")
-            else:
-                st.error("יש למלא את כל השדות החובה")
+    # Add new item form - only for warehouse staff
+    if not readonly:
+        with st.expander("הוספת פריט חדש"):
+            col1, col2 = st.columns(2)
+            with col1:
+                name = st.text_input("שם הפריט")
+                category = st.text_input("קטגוריה")
+            with col2:
+                quantity = st.number_input("כמות", min_value=1)
+                notes = st.text_area("הערות")
+            
+            if st.button("הוסף פריט"):
+                if name and category and quantity:
+                    add_item(name, category, quantity, notes)
+                    st.success("הפריט נוסף בהצלחה")
+                else:
+                    st.error("יש למלא את כל השדות החובה")
     
     # Display inventory
     st.subheader("מלאי נוכחי")
