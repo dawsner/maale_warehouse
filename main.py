@@ -12,33 +12,38 @@ from auth import init_auth, show_login_page, show_registration_page, logout
 import os
 
 def main():
-    set_page_config()
+    st.set_page_config(layout="wide")
     init_db()
     init_auth()
     
     st.title("מערכת ניהול מחסן השאלות")
     
-    # Authentication status in sidebar
-    st.sidebar.title("תפריט ראשי")
-    
     if st.session_state.user:
-        st.sidebar.write(f"שלום, {st.session_state.user.full_name}")
-        if st.sidebar.button("התנתק"):
-            logout()
-            st.rerun()
-            
-        # Role-based navigation
-        # Show overdue notifications for warehouse staff
+        # User info and logout in header
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            st.write(f"שלום, {st.session_state.user.full_name}")
+        with col2:
+            if st.button("התנתק"):
+                logout()
+                st.rerun()
+        
+        # Role-based navigation with tabs
         if st.session_state.user.role == 'warehouse':
+            # Show overdue notifications
             overdue_loans = get_overdue_loans()
             if not overdue_loans.empty:
-                st.sidebar.warning(f"⚠️ {len(overdue_loans)} השאלות באיחור")
-        if st.session_state.user.role == 'warehouse':
+                st.warning(f"⚠️ {len(overdue_loans)} השאלות באיחור")
+            
+            # Warehouse staff pages
+            tabs = st.tabs(["מלאי", "השאלות", "התראות", "היסטוריה", "סטטיסטיקות", "ייבוא/ייצוא", "ניהול הזמנות"])
+            page = tabs.index(st.get_current_tab())
             pages = ["מלאי", "השאלות", "התראות", "היסטוריה", "סטטיסטיקות", "ייבוא/ייצוא", "ניהול הזמנות"]
         else:  # student role
+            # Student pages
+            tabs = st.tabs(["הציוד שלי", "פריטים זמינים", "הזמנת ציוד"])
+            page = tabs.index(st.get_current_tab())
             pages = ["הציוד שלי", "פריטים זמינים", "הזמנת ציוד"]
-            
-        page = st.sidebar.radio("בחר עמוד", pages)
         
         if st.session_state.user.role == 'warehouse':
             if page == "מלאי":

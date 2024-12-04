@@ -23,7 +23,22 @@ def show_edit_form(row):
             else:
                 st.error(message)
 
+def format_item_name(name, item_id):
+    return f"{name} [✏️]({item_id}/edit) [🗑️]({item_id}/delete)"
+
 def show_inventory(readonly=False):
+    # Add RTL CSS
+    st.markdown('''
+    <style>
+        .stDataFrame {
+            direction: rtl;
+        }
+        .stDataFrame [data-testid="stDataFrameDataCell"] {
+            text-align: right;
+        }
+    </style>
+    ''', unsafe_allow_html=True)
+    
     st.header("ניהול מלאי")
     
     # Add new item form - only for warehouse staff
@@ -71,15 +86,20 @@ def show_inventory(readonly=False):
         if search:
             df = df[df['שם פריט'].str.contains(search, case=False, na=False)]
 
+        # Format item names with action buttons if not readonly
+        if not readonly and st.session_state.user and st.session_state.user.role == 'warehouse':
+            df['שם פריט'] = df.apply(lambda x: format_item_name(x['שם פריט'], x['מזהה']), axis=1)
+        
         # Display the table with new configuration
         st.dataframe(
             df,
             use_container_width=True,
             column_config={
-                "מזהה": None,  # Hide ID column
-                "שם פריט": st.column_config.TextColumn(
+                "מזהה": None,
+                "שם פריט": st.column_config.Column(
                     "שם פריט",
-                    width="medium"
+                    width="large",
+                    help="לחץ על שם הפריט לעריכה"
                 ),
                 "קטגוריה": st.column_config.TextColumn(
                     "קטגוריה",
