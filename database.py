@@ -174,11 +174,17 @@ def update_item(item_id, name, category, quantity, notes):
             # Update item
             cur.execute("""
                 UPDATE items 
-                SET name = %s, category = %s, quantity = %s, 
-                    available = quantity - %s, notes = %s
+                SET name = %s, 
+                    category = %s, 
+                    quantity = %s + COALESCE((
+                        SELECT SUM(quantity) 
+                        FROM loans 
+                        WHERE item_id = %s AND status = 'active'
+                    ), 0),
+                    notes = %s
                 WHERE id = %s
                 RETURNING *
-            """, (name, category, quantity, loaned_quantity, notes, item_id))
+            """, (name, category, quantity, item_id, notes, item_id))
             
             if cur.rowcount == 0:
                 return False, "הפריט לא נמצא"

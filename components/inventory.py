@@ -113,7 +113,6 @@ def show_inventory(readonly=False):
                         )
                         if success:
                             st.success(f"הפריט {row['שם פריט']} עודכן בהצלחה")
-                            st.rerun()
                         else:
                             st.error(message)
         else:
