@@ -10,7 +10,10 @@ def show_history():
     with get_db_connection() as conn:
         df = pd.read_sql_query(
             """SELECT i.name as item_name, l.student_name, 
-               l.quantity, l.loan_date, l.return_date, l.status
+               l.quantity, 
+               l.loan_date::timestamp as loan_date,
+               l.return_date::timestamp as return_date,
+               l.status
                FROM loans l
                JOIN items i ON l.item_id = i.id
                ORDER BY l.loan_date DESC""",
@@ -71,8 +74,10 @@ def show_history():
     # Show detailed table
     st.subheader("טבלת היסטוריה")
     display_df = filtered_df.copy()
-    display_df['loan_date'] = display_df['loan_date'].dt.strftime('%Y-%m-%d %H:%M')
-    display_df['return_date'] = display_df['return_date'].dt.strftime('%Y-%m-%d %H:%M')
+    display_df['loan_date'] = pd.to_datetime(display_df['loan_date']).dt.strftime('%Y-%m-%d %H:%M')
+    display_df['return_date'] = display_df['return_date'].apply(
+        lambda x: pd.to_datetime(x).strftime('%Y-%m-%d %H:%M') if pd.notna(x) else ''
+    )
     display_df['status'] = display_df['status'].map({'active': 'פעיל', 'returned': 'הוחזר'})
     
     display_df.columns = ['פריט', 'שם סטודנט', 'כמות', 'תאריך השאלה', 'תאריך החזרה', 'סטטוס']
