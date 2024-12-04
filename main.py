@@ -12,9 +12,32 @@ from auth import init_auth, show_login_page, show_registration_page, logout
 import os
 
 def main():
-    st.set_page_config(layout="wide")
+    st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
     init_db()
     init_auth()
+    
+    # Add RTL CSS
+    st.markdown('''
+    <style>
+        .stApp {
+            direction: rtl;
+        }
+        .stTabs [data-baseweb="tab-list"] {
+            direction: rtl;
+        }
+        .stTabs [data-baseweb="tab"] {
+            direction: rtl;
+            margin-right: 0px;
+            margin-left: 10px;
+        }
+        button[kind="secondary"] {
+            direction: rtl;
+        }
+        .stTextInput > div > div > input {
+            direction: rtl;
+        }
+    </style>
+    ''', unsafe_allow_html=True)
     
     st.title("מערכת ניהול מחסן השאלות")
     
@@ -37,28 +60,12 @@ def main():
             
             # Warehouse staff pages
             tabs = st.tabs(["מלאי", "השאלות", "התראות", "היסטוריה", "סטטיסטיקות", "ייבוא/ייצוא", "ניהול הזמנות"])
-            page = tabs.index(st.get_current_tab())
-            pages = ["מלאי", "השאלות", "התראות", "היסטוריה", "סטטיסטיקות", "ייבוא/ייצוא", "ניהול הזמנות"]
-        else:  # student role
-            # Student pages
-            tabs = st.tabs(["הציוד שלי", "פריטים זמינים", "הזמנת ציוד"])
-            page = tabs.index(st.get_current_tab())
-            pages = ["הציוד שלי", "פריטים זמינים", "הזמנת ציוד"]
-        
-        if st.session_state.user.role == 'warehouse':
-            if page == "מלאי":
-                show_inventory()
-            elif page == "השאלות":
-                show_loans()
-            elif page == "התראות":
-                show_overdue_alerts()
-            elif page == "היסטוריה":
-                show_history()
-            elif page == "סטטיסטיקות":
-                show_statistics()
-            elif page == "ניהול הזמנות":
-                show_reservation_management()
-            elif page == "ייבוא/ייצוא":
+            with tabs[0]: show_inventory()
+            with tabs[1]: show_loans()
+            with tabs[2]: show_overdue_alerts()
+            with tabs[3]: show_history()
+            with tabs[4]: show_statistics()
+            with tabs[5]:
                 st.header("ייבוא/ייצוא נתונים")
                 
                 # Import section
@@ -84,13 +91,15 @@ def main():
                         )
                     # Clean up the temporary file
                     os.remove(export_file)
+            with tabs[6]: show_reservation_management()
         else:  # student role
-            if page == "הציוד שלי":
-                show_loans(user_id=st.session_state.user.id)
-            elif page == "פריטים זמינים":
-                show_inventory(readonly=True)
-            elif page == "הזמנת ציוד":
-                show_reservations_page()
+            # Student pages
+            tabs = st.tabs(["הציוד שלי", "פריטים זמינים", "הזמנת ציוד"])
+            with tabs[0]: show_loans(user_id=st.session_state.user.id)
+            with tabs[1]: show_inventory(readonly=True)
+            with tabs[2]: show_reservations_page()
+        
+        
     else:
         tab1, tab2 = st.tabs(["התחברות", "הרשמה"])
         with tab1:
