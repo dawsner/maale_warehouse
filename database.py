@@ -156,3 +156,83 @@ def get_loan_details(loan_id):
                 WHERE l.id = %s
             """, (loan_id,))
             return cur.fetchone()
+
+def update_item(item_id, name, category, quantity, notes):
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            # Check if quantity is less than current loans
+            cur.execute("""
+                SELECT COALESCE(SUM(quantity), 0) as loaned_quantity
+                FROM loans
+                WHERE item_id = %s AND status = 'active'
+            """, (item_id,))
+            loaned_quantity = cur.fetchone()[0]
+            
+            if quantity < loaned_quantity:
+                return False, "לא ניתן להפחית את הכמות מתחת לכמות המושאלת"
+            
+            # Update item
+            cur.execute("""
+                UPDATE items 
+                SET name = %s, category = %s, quantity = %s, 
+                    available = quantity - %s, notes = %s
+                WHERE id = %s
+                RETURNING *
+            """, (name, category, quantity, loaned_quantity, notes, item_id))
+            
+            if cur.rowcount == 0:
+                return False, "הפריט לא נמצא"
+            
+            conn.commit()
+            return True, "הפריט עודכן בהצלחה"
+
+def delete_item(item_id):
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            # Check for active loans
+            cur.execute("""
+                SELECT COUNT(*) 
+                FROM loans 
+                WHERE item_id = %s AND status = 'active'
+            """, (item_id,))
+            
+            if cur.fetchone()[0] > 0:
+                return False, "לא ניתן למחוק פריט עם השאלות פעילות"
+            
+            # Delete the item
+            cur.execute("DELETE FROM items WHERE id = %s", (item_id,))
+            
+            if cur.rowcount == 0:
+                return False, "הפריט לא נמצא"
+            
+            conn.commit()
+            return True, "הפריט נמחק בהצלחה"
+
+def toggle_item_availability(item_id, is_available):
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            if is_available:
+                # Make item available - set available to quantity minus active loans
+                cur.execute("""
+                    UPDATE items 
+                    SET available = quantity - COALESCE(
+                        (SELECT SUM(quantity) 
+                         FROM loans 
+                         WHERE item_id = items.id AND status = 'active'), 0)
+                    WHERE id = %s
+                    RETURNING *
+                """, (item_id,))
+            else:
+                # Make item unavailable - set available to 0
+                cur.execute("""
+                    UPDATE items 
+                    SET available = 0
+                    WHERE id = %s
+                    RETURNING *
+                """, (item_id,))
+            
+            if cur.rowcount == 0:
+                return False, "הפריט לא נמצא"
+            
+            conn.commit()
+            return True, "זמינות הפריט עודכנה בהצלחה"
