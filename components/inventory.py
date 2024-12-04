@@ -23,9 +23,6 @@ def show_edit_form(row):
             else:
                 st.error(message)
 
-def format_item_name(name, item_id):
-    return f"{name} [✏️]({item_id}/edit) [🗑️]({item_id}/delete)"
-
 def show_inventory(readonly=False):
     # Add RTL CSS for data frame
     st.markdown('''
@@ -85,7 +82,15 @@ def show_inventory(readonly=False):
 
         # Add actions column if not readonly
         if not readonly and st.session_state.user and st.session_state.user.role == 'warehouse':
-            df['פעולות'] = df.apply(lambda x: f"[✏️ ערוך]({x['מזהה']}/edit) [🗑️ מחק]({x['מזהה']}/delete)", axis=1)
+            df['פעולות'] = df.apply(lambda x: st.button(
+                "✏️ ערוך",
+                key=f"edit_{x['מזהה']}", 
+                use_container_width=True
+            ) or st.button(
+                "🗑️ מחק",
+                key=f"delete_{x['מזהה']}", 
+                use_container_width=True
+            ), axis=1)
             
         # Reorder columns to ensure RTL layout
         columns_order = ['פעולות', 'הערות', 'כמות זמינה', 'כמות כוללת', 'קטגוריה', 'שם פריט', 'מזהה']
@@ -99,8 +104,7 @@ def show_inventory(readonly=False):
                 "מזהה": None,
                 "שם פריט": st.column_config.Column(
                     "שם פריט",
-                    width="large",
-                    help="פעולות זמינות: עריכה ומחיקה"
+                    width="large"
                 ),
                 "קטגוריה": st.column_config.TextColumn(
                     "קטגוריה",
@@ -126,16 +130,12 @@ def show_inventory(readonly=False):
             hide_index=True
         )
 
-        # Handle edit form if edit action is clicked
-        if not readonly and st.session_state.user and st.session_state.user.role == 'warehouse':
-            query_params = st.query_params
-            if 'edit' in query_params:
-                item_id = int(query_params['edit'][0])
-                row = df[df['מזהה'] == item_id].iloc[0]
+        # Handle edit and delete actions
+        for _, row in df.iterrows():
+            if st.session_state.get(f"edit_{row['מזהה']}", False):
                 show_edit_form(row)
-            elif 'delete' in query_params:
-                item_id = int(query_params['delete'][0])
-                if delete_item(item_id)[0]:
+            elif st.session_state.get(f"delete_{row['מזהה']}", False):
+                if delete_item(row['מזהה'])[0]:
                     st.success("הפריט נמחק בהצלחה")
                     st.rerun()
                 else:
