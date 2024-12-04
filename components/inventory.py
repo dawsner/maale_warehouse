@@ -5,6 +5,24 @@ from database import (
 )
 from auth import require_role
 
+def show_edit_form(row):
+    with st.form(f"edit_form_{row['מזהה']}"):
+        edit_name = st.text_input("שם הפריט", value=row['שם פריט'])
+        edit_category = st.text_input("קטגוריה", value=row['קטגוריה'])
+        edit_quantity = st.number_input("כמות", min_value=1, value=row['כמות כוללת'])
+        edit_notes = st.text_area("הערות", value=row['הערות'] if row['הערות'] else "")
+        
+        if st.form_submit_button("עדכן"):
+            success, message = update_item(
+                row['מזהה'], edit_name, edit_category,
+                edit_quantity, edit_notes
+            )
+            if success:
+                st.success(message)
+                st.rerun()
+            else:
+                st.error(message)
+
 def show_inventory(readonly=False):
     st.header("ניהול מלאי")
     
@@ -53,31 +71,12 @@ def show_inventory(readonly=False):
         if search:
             df = df[df['שם פריט'].str.contains(search, case=False, na=False)]
 
-        # Add table with actions column
-
-        # Add actions column
-        def get_action_buttons(row):
-            actions = []
-            if not readonly and st.session_state.user and st.session_state.user.role == 'warehouse':
-                is_available = row['כמות זמינה'] > 0
-                actions.append(f"⚡ {'הפוך ללא זמין' if is_available else 'הפוך לזמין'}")
-                actions.append("✏️ ערוך")
-                actions.append("🗑️ מחק")
-            return " | ".join(actions) if actions else ""
-        
-        df['פעולות'] = df.apply(get_action_buttons, axis=1)
-        
         # Display the table with new configuration
         st.dataframe(
             df,
             use_container_width=True,
             column_config={
                 "מזהה": None,  # Hide ID column
-                "פעולות": st.column_config.Column(
-                    "פעולות",
-                    width="small",
-                    help="פעולות אפשריות"
-                ),
                 "שם פריט": st.column_config.TextColumn(
                     "שם פריט",
                     width="medium"
@@ -99,49 +98,36 @@ def show_inventory(readonly=False):
                     width="large"
                 )
             },
-            hide_index=True,
-            on_click=handle_action_click
+            hide_index=True
         )
+
+        # Add action buttons in expanders
+        if not readonly and st.session_state.user and st.session_state.user.role == 'warehouse':
+            for _, row in df.iterrows():
+                with st.expander(f"{row['שם פריט']} - {row['קטגוריה']}"):
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        if st.button("⚡ שנה זמינות", key=f"toggle_{row['מזהה']}"):
+                            success, message = toggle_item_availability(
+                                row['מזהה'], 
+                                not (row['כמות זמינה'] > 0)
+                            )
+                            if success:
+                                st.success(message)
+                                st.rerun()
+                            else:
+                                st.error(message)
+                    
+                    with col2:
+                        if st.button("✏️ ערוך", key=f"edit_{row['מזהה']}"):
+                            show_edit_form(row)
+                    
+                    with col3:
+                        if st.button("🗑️ מחק", key=f"delete_{row['מזהה']}"):
+                            if delete_item(row['מזהה'])[0]:
+                                st.success("הפריט נמחק בהצלחה")
+                                st.rerun()
+                            else:
+                                st.error("לא ניתן למחוק פריט עם השאלות פעילות")
     else:
         st.info("אין פריטים במלאי")
-
-def handle_action_click(row, column):
-    if column == 'פעולות':
-        action = row['פעולות']
-        item_id = row['מזהה']
-        
-        if "הפוך ל" in action:
-            is_available = row['כמות זמינה'] > 0
-            success, message = toggle_item_availability(item_id, not is_available)
-            if success:
-                st.success(message)
-                st.rerun()
-            else:
-                st.error(message)
-        
-        elif "ערוך" in action:
-            with st.expander("עריכת פריט", expanded=True):
-                edit_name = st.text_input("שם הפריט", value=row['שם פריט'])
-                edit_category = st.text_input("קטגוריה", value=row['קטגוריה'])
-                edit_quantity = st.number_input("כמות", min_value=1, value=row['כמות כוללת'])
-                edit_notes = st.text_area("הערות", value=row['הערות'] if row['הערות'] else "")
-                
-                if st.button("עדכן"):
-                    success, message = update_item(
-                        item_id, edit_name, edit_category,
-                        edit_quantity, edit_notes
-                    )
-                    if success:
-                        st.success(message)
-                        st.rerun()
-                    else:
-                        st.error(message)
-        
-        elif "מחק" in action:
-            if st.button("אישור מחיקה", type="primary"):
-                success, message = delete_item(item_id)
-                if success:
-                    st.success(message)
-                    st.rerun()
-                else:
-                    st.error(message)
