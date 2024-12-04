@@ -52,71 +52,74 @@ def show_inventory(readonly=False):
             df = df[df['קטגוריה'].isin(category_filter)]
         if search:
             df = df[df['שם פריט'].str.contains(search, case=False, na=False)]
-        
-        # Display items with management options
-        for _, row in df.iterrows():
-            with st.expander(f"{row['שם פריט']} ({row['קטגוריה']})"):
-                col1, col2 = st.columns(2)
+
+        # Add buttons for each row
+        if not readonly and st.session_state.user and st.session_state.user.role == 'warehouse':
+            action_buttons = []
+            edit_expanders = {}
+            
+            for idx, row in df.iterrows():
+                col1, col2, col3 = st.columns(3)
                 with col1:
-                    st.write(f"כמות כוללת: {row['כמות כוללת']}")
-                    st.write(f"כמות זמינה: {row['כמות זמינה']}")
+                    if st.button("ערוך", key=f"edit_btn_{row['מזהה']}"):
+                        edit_expanders[row['מזהה']] = True
                 with col2:
-                    st.write(f"קטגוריה: {row['קטגוריה']}")
-                    if row['הערות']:
-                        st.write(f"הערות: {row['הערות']}")
+                    is_available = row['כמות זמינה'] > 0
+                    if st.button(
+                        "הפוך ללא זמין" if is_available else "הפוך לזמין",
+                        key=f"toggle_{row['מזהה']}"
+                    ):
+                        success, message = toggle_item_availability(
+                            row['מזהה'],
+                            not is_available
+                        )
+                        if success:
+                            st.success(message)
+                            st.rerun()
+                        else:
+                            st.error(message)
+                with col3:
+                    if st.button("מחק", key=f"delete_{row['מזהה']}", type="secondary"):
+                        if st.button("אישור מחיקה", key=f"confirm_delete_{row['מזהה']}", type="primary"):
+                            success, message = delete_item(row['מזהה'])
+                            if success:
+                                st.success(message)
+                                st.rerun()
+                            else:
+                                st.error(message)
                 
-                if not readonly and st.session_state.user and st.session_state.user.role == 'warehouse':
-                    # Edit form
-                    st.markdown("---")  # מפריד ויזואלי
-                    st.subheader("עריכת פריט")
-                    edit_name = st.text_input("שם הפריט", value=row['שם פריט'], key=f"edit_name_{row['מזהה']}")
-                    edit_category = st.text_input("קטגוריה", value=row['קטגוריה'], key=f"edit_category_{row['מזהה']}")
-                    edit_quantity = st.number_input("כמות", min_value=1, value=row['כמות כוללת'], key=f"edit_quantity_{row['מזהה']}")
-                    edit_notes = st.text_area("הערות", value=row['הערות'] if row['הערות'] else "", key=f"edit_notes_{row['מזהה']}")
-                    
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        if st.button("עדכן", key=f"update_{row['מזהה']}"):
-                            success, message = update_item(
-                                row['מזהה'], edit_name, edit_category,
-                                edit_quantity, edit_notes
-                            )
-                            if success:
-                                st.success(message)
-                                st.rerun()
-                            else:
-                                st.error(message)
-                    
-                    with col2:
-                        is_available = row['כמות זמינה'] > 0
-                        if st.button(
-                            "הפוך ללא זמין" if is_available else "הפוך לזמין",
-                            key=f"toggle_{row['מזהה']}"
-                        ):
-                            success, message = toggle_item_availability(
-                                row['מזהה'],
-                                not is_available
-                            )
-                            if success:
-                                st.success(message)
-                                st.rerun()
-                            else:
-                                st.error(message)
-                    
-                    # Delete button with confirmation
-                    if st.button("מחק פריט", key=f"delete_{row['מזהה']}", type="secondary"):
-                        st.warning("האם אתה בטוח שברצונך למחוק את הפריט?")
+                # Show edit form in expander if button was clicked
+                if row['מזהה'] in edit_expanders:
+                    with st.expander("עריכת פריט", expanded=True):
+                        edit_name = st.text_input("שם הפריט", value=row['שם פריט'], key=f"edit_name_{row['מזהה']}")
+                        edit_category = st.text_input("קטגוריה", value=row['קטגוריה'], key=f"edit_category_{row['מזהה']}")
+                        edit_quantity = st.number_input("כמות", min_value=1, value=row['כמות כוללת'], key=f"edit_quantity_{row['מזהה']}")
+                        edit_notes = st.text_area("הערות", value=row['הערות'] if row['הערות'] else "", key=f"edit_notes_{row['מזהה']}")
+                        
                         col1, col2 = st.columns(2)
                         with col1:
-                            if st.button("כן, מחק", key=f"confirm_delete_{row['מזהה']}", type="primary"):
-                                success, message = delete_item(row['מזהה'])
+                            if st.button("עדכן", key=f"update_{row['מזהה']}"):
+                                success, message = update_item(
+                                    row['מזהה'], edit_name, edit_category,
+                                    edit_quantity, edit_notes
+                                )
                                 if success:
                                     st.success(message)
                                     st.rerun()
                                 else:
                                     st.error(message)
                         with col2:
-                            if st.button("ביטול", key=f"cancel_delete_{row['מזהה']}"):
+                            if st.button("סגור", key=f"close_edit_{row['מזהה']}"):
+                                del edit_expanders[row['מזהה']]
                                 st.rerun()
+
+        # Display the table
+        st.dataframe(
+            df,
+            column_config={
+                "מזהה": None,  # Hide ID column
+            },
+            hide_index=True
+        )
     else:
         st.info("אין פריטים במלאי")
