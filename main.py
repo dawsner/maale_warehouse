@@ -4,6 +4,7 @@ from components.inventory import show_inventory
 from components.loans import show_loans
 from components.history import show_history
 from components.alerts import show_overdue_alerts
+from components.statistics import show_statistics
 from excel_handler import import_excel, export_to_excel
 from utils import set_page_config, get_overdue_loans
 from auth import init_auth, show_login_page, show_registration_page, logout
@@ -32,7 +33,7 @@ def main():
             if not overdue_loans.empty:
                 st.sidebar.warning(f"⚠️ {len(overdue_loans)} השאלות באיחור")
         if st.session_state.user.role == 'warehouse':
-            pages = ["מלאי", "השאלות", "התראות", "היסטוריה", "ייבוא/ייצוא"]
+            pages = ["מלאי", "השאלות", "התראות", "היסטוריה", "סטטיסטיקות", "ייבוא/ייצוא"]
         else:  # student role
             pages = ["הציוד שלי", "פריטים זמינים"]
             
@@ -47,6 +48,8 @@ def main():
                 show_overdue_alerts()
             elif page == "היסטוריה":
                 show_history()
+            elif page == "סטטיסטיקות":
+                show_statistics()
             elif page == "ייבוא/ייצוא":
                 st.header("ייבוא/ייצוא נתונים")
                 
