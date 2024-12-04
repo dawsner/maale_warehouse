@@ -4,78 +4,57 @@ from database import get_db_connection, add_item
 
 def import_excel(file):
     try:
-        # Try reading with different encodings
-        encodings = ['utf-8', 'cp1255', 'windows-1255']
-        df = None
+        df = pd.read_excel(file, engine='openpyxl')
         
-        for encoding in encodings:
-            try:
-                df = pd.read_excel(file, engine='openpyxl')
-                break
-            except UnicodeDecodeError:
-                continue
-                
-        if df is None:
-            return False, "לא הצלחתי לקרוא את הקובץ עם אף קידוד"
-
-        # Remove irrelevant columns
-        irrelevant_columns = ['במאית: ', 'מפיקה: ', 'צלמת: ', 'Unnamed: 11']
-        df = df.drop(columns=[col for col in irrelevant_columns if col in df.columns])
-        
-        # Check if any of the required columns exist in Hebrew
-        required_hebrew_columns = [
-            ['שם הפריט', 'שם פריט', 'פריט'],  # Name variations
-            ['קטגוריה', 'סוג ציוד'],  # Category variations
-            ['כמות', 'מספר פריטים']  # Quantity variations
-        ]
-        
-        # Verify that at least one variation of each required column exists
-        missing_columns = []
-        for column_variations in required_hebrew_columns:
-            if not any(col in df.columns for col in column_variations):
-                missing_columns.append(" או ".join(column_variations))
-        
+        # Verify required columns exist
+        required_columns = ['Unnamed: 0', 'פריט']
+        missing_columns = [col for col in required_columns if col not in df.columns]
         if missing_columns:
             return False, f"הקובץ חייב להכיל את העמודות הבאות: {', '.join(missing_columns)}"
+            
+        # Remove irrelevant columns, keeping only what we need
+        note_columns = [
+            'הערות על הזמנה (מחסן באדום. סטודנט בכחול)',
+            'הערות על הוצאה (מחסן באדום. סטודנט בכחול)',
+            'הערות על החזרה'
+        ]
         
-        # Initialize category tracking and counters
+        # Keep only the columns we need
+        columns_to_keep = ['Unnamed: 0', 'פריט'] + [col for col in note_columns if col in df.columns]
+        df = df[columns_to_keep]
+        
+        # Initialize tracking variables
         current_category = None
         success_count = 0
         error_count = 0
+        import re
         
         # Process rows to identify categories and items
         for idx, row in df.iterrows():
-            item_name = row.get('פריט')
+            category_marker = row['Unnamed: 0']
+            item_name = row['פריט']
             
-            # Skip empty rows
+            # If we find a value in Unnamed: 0, it's a new category
+            if pd.notna(category_marker) and isinstance(category_marker, str):
+                current_category = category_marker.strip()
+                continue
+            
+            # Skip if no item name or empty
             if pd.isna(item_name) or str(item_name).strip() == '':
-                continue
-                
-            # If the row starts with 'מצלמה', 'תאורה', etc., it's a category
-            if isinstance(item_name, str) and ':' not in item_name and not item_name.startswith('    '):
-                current_category = item_name
-                continue
-            
-            # Skip if it's not an actual item
-            if pd.isna(item_name) or isinstance(item_name, str) and item_name.strip() == '':
                 continue
             
             # Collect all relevant notes
             notes = []
-            if not pd.isna(row.get('הערות על הזמנה (מחסן באדום. סטודנט בכחול)')):
-                notes.append(str(row['הערות על הזמנה (מחסן באדום. סטודנט בכחול)']))
-            if not pd.isna(row.get('הערות על הוצאה (מחסן באדום. סטודנט בכחול)')):
-                notes.append(str(row['הערות על הוצאה (מחסן באדום. סטודנט בכחול)']))
-            if not pd.isna(row.get('הערות על החזרה')):
-                notes.append(str(row['הערות על החזרה']))
+            for note_col in [col for col in note_columns if col in df.columns]:
+                if pd.notna(row.get(note_col)):
+                    notes.append(str(row[note_col]))
             
             combined_notes = ' | '.join(notes)
             
-            # Process quantity
-            quantity = 1  # Default quantity
+            # Process quantity (default is 1)
+            quantity = 1
             
-            # Attempt to extract quantity from item name if it contains numbers
-            import re
+            # Try to extract quantity from item name
             quantity_match = re.search(r'\d+', str(item_name))
             if quantity_match:
                 try:
