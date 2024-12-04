@@ -22,34 +22,6 @@ def import_excel(file):
         irrelevant_columns = ['במאית: ', 'מפיקה: ', 'צלמת: ', 'Unnamed: 11']
         df = df.drop(columns=[col for col in irrelevant_columns if col in df.columns])
         
-        # Initialize category tracking
-        current_category = None
-        processed_items = []
-        
-        # Process rows to identify categories and items
-        for idx, row in df.iterrows():
-            item_name = row.get('פריט')
-            
-            # Skip empty rows
-            if pd.isna(item_name) or str(item_name).strip() == '':
-                continue
-                
-            # If the row starts with 'מצלמה', 'תאורה', etc., it's a category
-            if isinstance(item_name, str) and ':' not in item_name and not item_name.startswith('    '):
-                current_category = item_name
-                continue
-            
-            # Collect all relevant notes
-            notes = []
-            if not pd.isna(row.get('הערות על הזמנה (מחסן באדום. סטודנט בכחול)')):
-                notes.append(str(row['הערות על הזמנה (מחסן באדום. סטודנט בכחול)']))
-            if not pd.isna(row.get('הערות על הוצאה (מחסן באדום. סטודנט בכחול)')):
-                notes.append(str(row['הערות על הוצאה (מחסן באדום. סטודנט בכחול)']))
-            if not pd.isna(row.get('הערות על החזרה')):
-                notes.append(str(row['הערות על החזרה']))
-            
-            combined_notes = ' | '.join(notes)
-        
         # Check if any of the required columns exist in Hebrew
         required_hebrew_columns = [
             ['שם הפריט', 'שם פריט', 'פריט'],  # Name variations
@@ -66,10 +38,39 @@ def import_excel(file):
         if missing_columns:
             return False, f"הקובץ חייב להכיל את העמודות הבאות: {', '.join(missing_columns)}"
         
-        # Skip if it's not an actual item
-            if pd.isna(item_name) or isinstance(item_name, str) and item_name.strip() == '':
+        # Initialize category tracking and counters
+        current_category = None
+        success_count = 0
+        error_count = 0
+        
+        # Process rows to identify categories and items
+        for idx, row in df.iterrows():
+            item_name = row.get('פריט')
+            
+            # Skip empty rows
+            if pd.isna(item_name) or str(item_name).strip() == '':
                 continue
                 
+            # If the row starts with 'מצלמה', 'תאורה', etc., it's a category
+            if isinstance(item_name, str) and ':' not in item_name and not item_name.startswith('    '):
+                current_category = item_name
+                continue
+            
+            # Skip if it's not an actual item
+            if pd.isna(item_name) or isinstance(item_name, str) and item_name.strip() == '':
+                continue
+            
+            # Collect all relevant notes
+            notes = []
+            if not pd.isna(row.get('הערות על הזמנה (מחסן באדום. סטודנט בכחול)')):
+                notes.append(str(row['הערות על הזמנה (מחסן באדום. סטודנט בכחול)']))
+            if not pd.isna(row.get('הערות על הוצאה (מחסן באדום. סטודנט בכחול)')):
+                notes.append(str(row['הערות על הוצאה (מחסן באדום. סטודנט בכחול)']))
+            if not pd.isna(row.get('הערות על החזרה')):
+                notes.append(str(row['הערות על החזרה']))
+            
+            combined_notes = ' | '.join(notes)
+            
             # Process quantity
             quantity = 1  # Default quantity
             
@@ -81,27 +82,14 @@ def import_excel(file):
                     quantity = int(quantity_match.group())
                 except ValueError:
                     quantity = 1
-            
-            # Add to processed items list
-            processed_items.append({
-                'name': str(item_name).strip(),
-                'category': current_category or 'כללי',
-                'quantity': quantity,
-                'notes': combined_notes if combined_notes else ''
-            })
-        
-        # Process each item and add to database
-        success_count = 0
-        error_count = 0
-        
-        for item in processed_items:
+                    
             try:
                 # Add item to database
                 add_item(
-                    name=item['name'],
-                    category=item['category'],
-                    quantity=item['quantity'],
-                    notes=item['notes']
+                    name=str(item_name).strip(),
+                    category=current_category or 'כללי',
+                    quantity=quantity,
+                    notes=combined_notes if combined_notes else ''
                 )
                 success_count += 1
             except Exception as e:
