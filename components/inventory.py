@@ -5,24 +5,6 @@ from database import (
 )
 from auth import require_role
 
-def show_edit_form(row):
-    with st.form(f"edit_form_{row['מזהה']}"):
-        edit_name = st.text_input("שם הפריט", value=row['שם פריט'])
-        edit_category = st.text_input("קטגוריה", value=row['קטגוריה'])
-        edit_quantity = st.number_input("כמות", min_value=1, value=row['כמות כוללת'])
-        edit_notes = st.text_area("הערות", value=row['הערות'] if row['הערות'] else "")
-        
-        if st.form_submit_button("עדכן"):
-            success, message = update_item(
-                row['מזהה'], edit_name, edit_category,
-                edit_quantity, edit_notes
-            )
-            if success:
-                st.success(message)
-                st.rerun()
-            else:
-                st.error(message)
-
 def show_inventory(readonly=False):
     # Add RTL CSS for data frame
     st.markdown('''
@@ -79,22 +61,40 @@ def show_inventory(readonly=False):
             df = df[df['קטגוריה'].isin(category_filter)]
         if search:
             df = df[df['שם פריט'].str.contains(search, case=False, na=False)]
-
-        # Add actions column if not readonly
-        if not readonly and st.session_state.user and st.session_state.user.role == 'warehouse':
-            df['פעולות'] = df.apply(lambda x: st.button(
-                "✏️ ערוך",
-                key=f"edit_{x['מזהה']}", 
-                use_container_width=True
-            ) or st.button(
-                "🗑️ מחק",
-                key=f"delete_{x['מזהה']}", 
-                use_container_width=True
-            ), axis=1)
+        
+        # בדוק אם נלחץ קישור
+        if "clicked_item" in st.session_state:
+            item_id = st.session_state.clicked_item
+            row = df[df['מזהה'] == item_id].iloc[0]
             
-        # Reorder columns to ensure RTL layout
-        columns_order = ['פעולות', 'הערות', 'כמות זמינה', 'כמות כוללת', 'קטגוריה', 'שם פריט', 'מזהה']
-        df = df[df.columns.intersection(columns_order)]
+            # הצג פופאפ עריכה
+            with st.popover(f"עריכת {row['שם פריט']}"):
+                with st.form(f"edit_form_{row['מזהה']}"):
+                    edit_name = st.text_input("שם הפריט", value=row['שם פריט'])
+                    edit_category = st.text_input("קטגוריה", value=row['קטגוריה'])
+                    edit_quantity = st.number_input("כמות", min_value=1, value=row['כמות כוללת'])
+                    edit_notes = st.text_area("הערות", value=row['הערות'] if row['הערות'] else "")
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        if st.form_submit_button("עדכן"):
+                            success, message = update_item(
+                                row['מזהה'], edit_name, edit_category,
+                                edit_quantity, edit_notes
+                            )
+                            if success:
+                                st.success(message)
+                                st.rerun()
+                            else:
+                                st.error(message)
+                    
+                    with col2:
+                        if st.form_submit_button("מחק", type="secondary"):
+                            if delete_item(row['מזהה'])[0]:
+                                st.success("הפריט נמחק בהצלחה")
+                                st.rerun()
+                            else:
+                                st.error("לא ניתן למחוק פריט עם השאלות פעילות")
         
         # Display the table with new configuration
         st.dataframe(
@@ -102,9 +102,10 @@ def show_inventory(readonly=False):
             use_container_width=True,
             column_config={
                 "מזהה": None,
-                "שם פריט": st.column_config.Column(
+                "שם פריט": st.column_config.LinkColumn(
                     "שם פריט",
-                    width="large"
+                    width="large",
+                    help="לחץ לעריכת הפריט"
                 ),
                 "קטגוריה": st.column_config.TextColumn(
                     "קטגוריה",
@@ -121,24 +122,9 @@ def show_inventory(readonly=False):
                 "הערות": st.column_config.TextColumn(
                     "הערות",
                     width="large"
-                ),
-                "פעולות": st.column_config.Column(
-                    "פעולות",
-                    width="medium"
                 )
             },
             hide_index=True
         )
-
-        # Handle edit and delete actions
-        for _, row in df.iterrows():
-            if st.session_state.get(f"edit_{row['מזהה']}", False):
-                show_edit_form(row)
-            elif st.session_state.get(f"delete_{row['מזהה']}", False):
-                if delete_item(row['מזהה'])[0]:
-                    st.success("הפריט נמחק בהצלחה")
-                    st.rerun()
-                else:
-                    st.error("לא ניתן למחוק פריט עם השאלות פעילות")
     else:
         st.info("אין פריטים במלאי")
