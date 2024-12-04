@@ -5,7 +5,7 @@ from components.loans import show_loans
 from components.history import show_history
 from components.alerts import show_overdue_alerts
 from excel_handler import import_excel, export_to_excel
-from utils import set_page_config
+from utils import set_page_config, get_overdue_loans
 from auth import init_auth, show_login_page, show_registration_page, logout
 import os
 
