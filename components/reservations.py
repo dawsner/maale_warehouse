@@ -182,24 +182,24 @@ def show_reservations_page():
         
         # Submit button
         submitted = st.form_submit_button("שלח בקשה")
+        
+        if submitted:
+            success, message = create_reservation(
+                item_id=item_id,
+                student_name=st.session_state.user.full_name,
+                student_id=st.session_state.user.username,
+                quantity=quantity,
+                start_date=datetime.combine(start_date, datetime.min.time()),
+                end_date=datetime.combine(end_date, datetime.max.time()),
+                user_id=st.session_state.user.id,
+                notes=notes
+            )
             
-            if submitted:
-                success, message = create_reservation(
-                    item_id=item_id,
-                    student_name=st.session_state.user.full_name,
-                    student_id=st.session_state.user.username,
-                    quantity=quantity,
-                    start_date=datetime.combine(start_date, datetime.min.time()),
-                    end_date=datetime.combine(end_date, datetime.max.time()),
-                    user_id=st.session_state.user.id,
-                    notes=notes
-                )
-                
-                if success:
-                    st.success(message)
-                    st.rerun()
-                else:
-                    st.error(message)
+            if success:
+                st.success(message)
+                st.rerun()
+            else:
+                st.error(message)
     
     # Show user's reservations in a table
     st.markdown("### ההזמנות שלי")
