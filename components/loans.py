@@ -1,7 +1,8 @@
 import streamlit as st
 from database import get_all_items, create_loan, return_loan
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
+from utils import get_overdue_loans
 
 def show_loans():
     st.header("ניהול השאלות")
@@ -15,6 +16,18 @@ def show_loans():
         handle_returns()
 
 def create_new_loan():
+    # Show overdue warnings
+    overdue_loans = get_overdue_loans()
+    if not overdue_loans.empty:
+        with st.expander("⚠️ השאלות באיחור", expanded=True):
+            st.error(f"יש {len(overdue_loans)} השאלות באיחור:")
+            for _, loan in overdue_loans.iterrows():
+                st.warning(
+                    f"פריט: {loan['item_name']}\n"
+                    f"סטודנט: {loan['student_name']}\n"
+                    f"ימים באיחור: {int(loan['days_overdue'])}"
+                )
+
     items = get_all_items()
     if not items:
         st.warning("אין פריטים זמינים להשאלה")
@@ -43,11 +56,19 @@ def create_new_loan():
                     min_value=1,
                     max_value=item['available']
                 )
+                
+                # Add due date selection
+                default_due_date = datetime.now() + timedelta(days=14)
+                due_date = st.date_input(
+                    "תאריך החזרה נדרש",
+                    min_value=datetime.now().date(),
+                    value=default_due_date.date()
+                )
         
         if st.form_submit_button("השאל"):
             if student_name and student_id and selected_item_name:
                 item = available_items[selected_item_name]
-                if create_loan(item['id'], student_name, student_id, quantity):
+                if create_loan(item['id'], student_name, student_id, quantity, due_date):
                     st.success("הציוד הושאל בהצלחה")
                 else:
                     st.error("שגיאה בביצוע ההשאלה")
