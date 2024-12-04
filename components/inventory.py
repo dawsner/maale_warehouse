@@ -128,7 +128,7 @@ def show_inventory(readonly=False):
 
         # Handle edit form if edit action is clicked
         if not readonly and st.session_state.user and st.session_state.user.role == 'warehouse':
-            query_params = st.experimental_get_query_params()
+            query_params = st.query_params
             if 'edit' in query_params:
                 item_id = int(query_params['edit'][0])
                 row = df[df['מזהה'] == item_id].iloc[0]
