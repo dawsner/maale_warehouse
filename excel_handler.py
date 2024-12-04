@@ -5,30 +5,50 @@ from database import get_db_connection, add_item
 def import_excel(file):
     try:
         # Try reading with different encodings
-        try:
-            df = pd.read_excel(file, engine='openpyxl')
-        except UnicodeDecodeError:
-            # If UTF-8 fails, try with a different encoding
-            df = pd.read_excel(file, engine='openpyxl', encoding='cp1255')
+        encodings = ['utf-8', 'cp1255', 'windows-1255']
+        df = None
+        
+        for encoding in encodings:
+            try:
+                df = pd.read_excel(file, engine='openpyxl')
+                break
+            except UnicodeDecodeError:
+                continue
+                
+        if df is None:
+            return False, "לא הצלחתי לקרוא את הקובץ עם אף קידוד"
 
-        # Map Hebrew column names to system column names
-        column_mapping = {
-            'שם הפריט': 'name',
-            'שם פריט': 'name',
-            'פריט': 'name',
-            'קטגוריה': 'category',
-            'סוג ציוד': 'category',
-            'כמות': 'quantity',
-            'מספר פריטים': 'quantity',
-            'הערות': 'notes',
-            'הערה': 'notes',
-            'הערות על הזמנה (מחסן באדום. סטודנט בכחול)': 'loan_notes',
-            'הערות על הוצאה (מחסן באדום. סטודנט בכחול)': 'checkout_notes',
-            'הערות על החזרה': 'return_notes',
-            'יצא': 'checkout_date',
-            'חזר': 'return_date',
-            'הזמנה': 'order_date'
-        }
+        # Remove irrelevant columns
+        irrelevant_columns = ['במאית: ', 'מפיקה: ', 'צלמת: ', 'Unnamed: 11']
+        df = df.drop(columns=[col for col in irrelevant_columns if col in df.columns])
+        
+        # Initialize category tracking
+        current_category = None
+        processed_items = []
+        
+        # Process rows to identify categories and items
+        for idx, row in df.iterrows():
+            item_name = row.get('פריט')
+            
+            # Skip empty rows
+            if pd.isna(item_name) or str(item_name).strip() == '':
+                continue
+                
+            # If the row starts with 'מצלמה', 'תאורה', etc., it's a category
+            if isinstance(item_name, str) and ':' not in item_name and not item_name.startswith('    '):
+                current_category = item_name
+                continue
+            
+            # Collect all relevant notes
+            notes = []
+            if not pd.isna(row.get('הערות על הזמנה (מחסן באדום. סטודנט בכחול)')):
+                notes.append(str(row['הערות על הזמנה (מחסן באדום. סטודנט בכחול)']))
+            if not pd.isna(row.get('הערות על הוצאה (מחסן באדום. סטודנט בכחול)')):
+                notes.append(str(row['הערות על הוצאה (מחסן באדום. סטודנט בכחול)']))
+            if not pd.isna(row.get('הערות על החזרה')):
+                notes.append(str(row['הערות על החזרה']))
+            
+            combined_notes = ' | '.join(notes)
         
         # Check if any of the required columns exist in Hebrew
         required_hebrew_columns = [
@@ -46,55 +66,47 @@ def import_excel(file):
         if missing_columns:
             return False, f"הקובץ חייב להכיל את העמודות הבאות: {', '.join(missing_columns)}"
         
-        # Map the first found variation of each column
-        actual_mapping = {}
-        for hebrew_variations, english_name in [
-            (['שם הפריט', 'שם פריט', 'פריט'], 'name'),
-            (['קטגוריה', 'סוג ציוד'], 'category'),
-            (['כמות', 'מספר פריטים'], 'quantity'),
-            (['הערות', 'הערה'], 'notes')
-        ]:
-            found_column = next((col for col in hebrew_variations if col in df.columns), None)
-            if found_column:
-                actual_mapping[found_column] = english_name
+        # Skip if it's not an actual item
+            if pd.isna(item_name) or isinstance(item_name, str) and item_name.strip() == '':
+                continue
+                
+            # Process quantity
+            quantity = 1  # Default quantity
+            
+            # Attempt to extract quantity from item name if it contains numbers
+            import re
+            quantity_match = re.search(r'\d+', str(item_name))
+            if quantity_match:
+                try:
+                    quantity = int(quantity_match.group())
+                except ValueError:
+                    quantity = 1
+            
+            # Add to processed items list
+            processed_items.append({
+                'name': str(item_name).strip(),
+                'category': current_category or 'כללי',
+                'quantity': quantity,
+                'notes': combined_notes if combined_notes else ''
+            })
         
-        # Rename columns according to mapping
-        df = df.rename(columns=actual_mapping)
-        
-        # Process each row and add to database
+        # Process each item and add to database
         success_count = 0
         error_count = 0
         
-        for _, row in df.iterrows():
+        for item in processed_items:
             try:
-                # Convert quantity to integer, using 1 as default if missing or invalid
-                try:
-                    quantity = int(row.get('quantity', 1))
-                    if pd.isna(quantity) or quantity < 1:
-                        quantity = 1
-                except (ValueError, TypeError):
-                    quantity = 1
-                
-                # Get category and notes, using defaults if missing
-                category = row.get('category', 'כללי')
-                notes = row.get('notes', '')
-                
-                if pd.isna(category):
-                    category = 'כללי'
-                if pd.isna(notes):
-                    notes = ''
-                
                 # Add item to database
                 add_item(
-                    name=str(row['name']),
-                    category=str(category),
-                    quantity=quantity,
-                    notes=str(notes)
+                    name=item['name'],
+                    category=item['category'],
+                    quantity=item['quantity'],
+                    notes=item['notes']
                 )
                 success_count += 1
             except Exception as e:
                 error_count += 1
-                print(f"Error processing row: {e}")
+                print(f"Error processing item: {e}")
         
         result_message = f"נטענו {success_count} פריטים בהצלחה"
         if error_count > 0:
