@@ -64,7 +64,7 @@ def show_overdue_alerts():
         st.metric("איחור מקסימלי", f"{max_days} ימים")
     
     # Display alerts with severity levels
-    for _, loan in overdue_df.iterrows():
+    for idx, (_, loan) in enumerate(overdue_df.iterrows()):
         days_overdue = int(loan['days_overdue'])
         
         # Set severity level and icon
