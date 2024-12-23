@@ -96,7 +96,7 @@ def show_overdue_alerts():
             # Add action buttons
             col1, col2 = st.columns(2)
             with col1:
-                if st.button("סמן כהוחזר", key=f"return_{loan['id']}", type="primary"):
+                if st.button("סמן כהוחזר", key=f"return_alert_{loan['id']}_{idx}", type="primary"):
                     if return_loan(loan['id']):
                         st.success("הציוד הוחזר בהצלחה")
                         st.rerun()
@@ -104,5 +104,5 @@ def show_overdue_alerts():
                         st.error("שגיאה בביצוע ההחזרה")
             
             with col2:
-                if st.button("שלח תזכורת", key=f"remind_{loan['id']}", type="secondary"):
+                if st.button("שלח תזכורת", key=f"remind_alert_{loan['id']}_{idx}", type="secondary"):
                     st.info("פונקציונליות שליחת תזכורות תתווסף בקרוב")
