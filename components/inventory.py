@@ -4,6 +4,7 @@ from database import (
     delete_item, toggle_item_availability
 )
 from auth import require_role
+from components.equipment_tracking import show_equipment_tracking
 
 def show_inventory(readonly=False):
     # Add RTL CSS for data frame
@@ -14,9 +15,12 @@ def show_inventory(readonly=False):
         }
     </style>
     ''', unsafe_allow_html=True)
-    
+
     st.header("ניהול מלאי")
-    
+
+    # Show real-time equipment tracking
+    show_equipment_tracking()
+
     # Add new item form - only for warehouse staff
     if not readonly:
         with st.expander("הוספת פריט חדש"):
@@ -27,7 +31,7 @@ def show_inventory(readonly=False):
             with col2:
                 quantity = st.number_input("כמות", min_value=1, key="new_quantity")
                 notes = st.text_area("הערות", key="new_notes")
-            
+
             if st.button("הוסף פריט"):
                 if name and category and quantity:
                     add_item(name, category, quantity, notes)
@@ -35,17 +39,17 @@ def show_inventory(readonly=False):
                     st.rerun()
                 else:
                     st.error("יש למלא את כל השדות החובה")
-    
+
     # Display inventory
     st.subheader("מלאי נוכחי")
     items = get_all_items()
-    
+
     if items:
         # Convert to DataFrame for better display
         import pandas as pd
         df = pd.DataFrame(items)
         df.columns = ['מזהה', 'שם פריט', 'קטגוריה', 'כמות כוללת', 'כמות זמינה', 'הערות']
-        
+
         # Add filters
         col1, col2 = st.columns(2)
         with col1:
@@ -55,20 +59,20 @@ def show_inventory(readonly=False):
             )
         with col2:
             search = st.text_input("חיפוש פריט")
-        
+
         # Apply filters
         if category_filter:
             df = df[df['קטגוריה'].isin(category_filter)]
         if search:
             df = df[df['שם פריט'].str.contains(search, case=False, na=False)]
-        
+
         # Display inventory table with edit capabilities for warehouse staff
         if not readonly and st.session_state.user and st.session_state.user.role == 'warehouse':
             edited_df = st.data_editor(
                 df,
                 use_container_width=True,
                 column_config={
-                    "מזהה": None,  # רק להסתיר את המזהה
+                    "מזהה": None,
                     "שם פריט": st.column_config.TextColumn(
                         "שם פריט",
                         width="large",
@@ -98,7 +102,7 @@ def show_inventory(readonly=False):
                 hide_index=True,
                 num_rows="dynamic"
             )
-            
+
             # Check for changes in data
             if edited_df is not None and not edited_df.equals(df):
                 for idx, row in edited_df.iterrows():
