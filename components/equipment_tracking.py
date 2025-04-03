@@ -96,8 +96,17 @@ def show_equipment_tracking():
         title='פילוח מלאי לפי קטגוריה',
         xaxis_title='קטגוריה',
         yaxis_title='כמות',
-        direction='rtl'
+        autosize=True,
+        height=400,
+        font=dict(
+            family="Arial, sans-serif",
+            size=14
+        ),
+        margin=dict(l=50, r=50, t=80, b=50)
     )
+    # Setting RTL layout for Hebrew
+    fig.update_yaxes(autorange="reversed")
+    fig.update_xaxes(side="top")
     st.plotly_chart(fig, use_container_width=True)
     
     # Detailed equipment table
@@ -116,6 +125,9 @@ def show_equipment_tracking():
         'שם פריט', 'קטגוריה', 'כמות כוללת',
         'זמין', 'מושאל', 'מוזמן'
     ]
+    
+    # Add visual utilization column (progress bar)
+    display_df['ניצולת'] = detailed_df['ניצולת'].copy()
     
     st.dataframe(
         display_df,
@@ -149,6 +161,154 @@ def show_equipment_tracking():
                 'מוזמן',
                 format='%d',
                 width='small'
+            ),
+            'ניצולת': st.column_config.ProgressColumn(
+                'ניצולת',
+                format='%.0f%%',
+                min_value=0,
+                max_value=1,
+                width='medium'
             )
         }
     )
+    
+    # Add equipment status breakdown pie chart
+    st.subheader("פילוח מצב ציוד")
+    
+    # Create pie chart data
+    status_data = {
+        'סטטוס': ['זמין', 'מושאל', 'מוזמן'],
+        'כמות': [available_items, loaned_items, reserved_items]
+    }
+    status_df = pd.DataFrame(status_data)
+    
+    # Create pie chart
+    fig_pie = px.pie(
+        status_df, 
+        values='כמות', 
+        names='סטטוס',
+        color='סטטוס',
+        color_discrete_map={
+            'זמין': '#2E86C1',
+            'מושאל': '#E74C3C',
+            'מוזמן': '#F39C12'
+        },
+        title='התפלגות מצב ציוד'
+    )
+    
+    fig_pie.update_layout(
+        autosize=True,
+        height=400,
+        font=dict(
+            family="Arial, sans-serif",
+            size=14
+        )
+    )
+    
+    st.plotly_chart(fig_pie, use_container_width=True)
+    
+    # Top equipment utilization - horizontal bar chart
+    st.subheader("ניצולת ציוד גבוהה")
+    
+    # Get top utilized equipment
+    top_utilized = detailed_df.sort_values('ניצולת', ascending=False).head(10).copy()
+    
+    # Only show if we have items
+    if not top_utilized.empty:
+        # Create horizontal bar chart for utilization
+        fig_util = go.Figure()
+        fig_util.add_trace(go.Bar(
+            y=top_utilized['name'],
+            x=top_utilized['ניצולת'] * 100,  # Convert to percentage
+            orientation='h',
+            marker_color='#E67E22',
+            text=[f"{x:.0f}%" for x in top_utilized['ניצולת'] * 100],
+            textposition='auto'
+        ))
+        
+        fig_util.update_layout(
+            title='עשרת הפריטים בשימוש הגבוה ביותר',
+            xaxis_title='אחוז ניצולת',
+            yaxis_title='שם הפריט',
+            autosize=True,
+            height=500,
+            font=dict(
+                family="Arial, sans-serif",
+                size=14
+            ),
+            xaxis=dict(
+                ticksuffix='%',
+                range=[0, 100]
+            )
+        )
+        
+        st.plotly_chart(fig_util, use_container_width=True)
+    else:
+        st.info("אין מספיק נתונים להצגת ניצולת ציוד")
+        
+    # Availability ratio by category heatmap
+    st.subheader("יחס זמינות לפי קטגוריה")
+    
+    # Calculate availability ratio
+    category_df['availability_ratio'] = (category_df['available_quantity'] / 
+                                        category_df['total_quantity']).fillna(0)
+    
+    # Sort by availability ratio
+    category_df = category_df.sort_values('availability_ratio')
+    
+    if not category_df.empty:
+        # Create heatmap data
+        heatmap_data = []
+        for _, row in category_df.iterrows():
+            category = row['category']
+            available = row['available_quantity']
+            total = row['total_quantity']
+            ratio = row['availability_ratio']
+            
+            heatmap_data.append({
+                'קטגוריה': category,
+                'מדד זמינות': f"{ratio:.1%} ({available}/{total})"
+            })
+            
+        heatmap_df = pd.DataFrame(heatmap_data)
+        
+        # Create custom color scale for heatmap
+        custom_color_scale = [
+            [0, '#E74C3C'],      # Red for 0% availability
+            [0.5, '#F39C12'],    # Orange for 50% availability
+            [1, '#2ECC71']       # Green for 100% availability
+        ]
+        
+        # Create heatmap
+        fig_heatmap = go.Figure(data=go.Heatmap(
+            z=[list(category_df['availability_ratio'] * 100)],
+            x=category_df['category'],
+            colorscale=custom_color_scale,
+            text=[f"{x:.1%}" for x in category_df['availability_ratio']],
+            texttemplate="%{text}",
+            textfont={"size":14},
+            showscale=True,
+            zmin=0,
+            zmax=100
+        ))
+        
+        fig_heatmap.update_layout(
+            title="יחס זמינות לפי קטגוריה",
+            height=200,
+            margin=dict(l=20, r=20, t=60, b=20),
+            coloraxis_colorbar=dict(
+                title="אחוז זמינות",
+                ticksuffix="%"
+            )
+        )
+        
+        st.plotly_chart(fig_heatmap, use_container_width=True)
+        
+        # Show the data table as well
+        st.dataframe(
+            heatmap_df,
+            hide_index=True,
+            use_container_width=True
+        )
+    else:
+        st.info("אין מספיק נתונים להצגת יחס זמינות לפי קטגוריה")
