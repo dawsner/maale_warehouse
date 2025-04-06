@@ -73,6 +73,7 @@ def main():
             z-index: 1000;
             background-color: white;
             box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            color: #333;
         }
         
         .header-logo {
@@ -172,28 +173,20 @@ def main():
     if 'current_page' not in st.session_state:
         st.session_state.current_page = 'מלאי' if st.session_state.get('user') and st.session_state.user.role == 'warehouse' else 'התחברות'
     
-    # Add custom header
+    # Add custom header with only the logo
     st.markdown('''
     <div class="header-wrapper">
         <div class="header-right">
             <img src="data:image/png;base64,'''+get_image_as_base64('assets/logo.png')+'''" class="header-logo">
         </div>
         <div class="header-left">
-            <span style="margin-right: 15px;"><i class="fas fa-cog"></i> הגדרות</span>
-            <span style="margin-right: 15px;"><i class="fas fa-bell"></i> התראות</span>
-            <span style="margin-right: 15px;"><i class="fas fa-question-circle"></i> עזרה</span>
         </div>
     </div>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     ''', unsafe_allow_html=True)
             
     if st.session_state.user:
-        # Update header with user info
-        st.markdown(f'''
-        <script>
-        document.querySelector('.header-left').prepend('<span style="margin-right: 15px;"><i class="fas fa-user"></i> {st.session_state.user.full_name} ({st.session_state.user.role})</span>');
-        </script>
-        ''', unsafe_allow_html=True)
+        # No header info update in this simplified version
+        pass
         
         # Sidebar with navigation
         with st.sidebar:
@@ -287,12 +280,8 @@ def main():
             elif st.session_state.current_page == 'הזמנת ציוד':
                 show_reservations_page()
     else:
-        # Add default header text for login page
-        st.markdown(f'''
-        <script>
-        document.querySelector('.header-left').innerHTML = '<div style="margin-right: 20px;">מערכת ניהול מחסן השאלות</div>';
-        </script>
-        ''', unsafe_allow_html=True)
+        # No additional header text for login page in this simplified version
+        pass
         
         # Login/Register view with sidebar
         with st.sidebar:
