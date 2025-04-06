@@ -249,65 +249,79 @@ def main():
                     <span style="margin-left: 10px;">🎬</span> מערכת השאלות
                 </div>
                 <div class="sidebar-nav">
-                    <a href="#" class="nav-item active" onclick="tabFunction('מלאי')" id="inventory-tab">
+                    <div class="nav-item active" id="inventory-tab">
                         <span class="nav-item-icon">🏠</span> דשבורד
-                    </a>
-                    <a href="#" class="nav-item" onclick="tabFunction('השאלות')" id="loans-tab">
+                    </div>
+                    <div class="nav-item" id="loans-tab">
                         <span class="nav-item-icon">📦</span> ציוד
-                    </a>
-                    <a href="#" class="nav-item" onclick="tabFunction('התראות')" id="alerts-tab">
+                    </div>
+                    <div class="nav-item" id="alerts-tab">
                         <span class="nav-item-icon">🔄</span> השאלות
-                    </a>
-                    <a href="#" class="nav-item" onclick="tabFunction('היסטוריה')" id="history-tab">
+                    </div>
+                    <div class="nav-item" id="history-tab">
                         <span class="nav-item-icon">👥</span> חברי צוות
-                    </a>
-                    <a href="#" class="nav-item" onclick="tabFunction('סטטיסטיקות')" id="stats-tab">
+                    </div>
+                    <div class="nav-item" id="stats-tab">
                         <span class="nav-item-icon">👨‍💼</span> צוות
-                    </a>
-                    <a href="#" class="nav-item" onclick="tabFunction('ייבוא_ייצוא')" id="import-export-tab">
+                    </div>
+                    <div class="nav-item" id="import-export-tab">
                         <span class="nav-item-icon">📊</span> דוחות
-                    </a>
-                    <a href="#" class="nav-item" onclick="tabFunction('ניהול_הזמנות')" id="reservations-tab">
+                    </div>
+                    <div class="nav-item" id="reservations-tab">
                         <span class="nav-item-icon">⚙️</span> הגדרות
-                    </a>
+                    </div>
                 </div>
                 <div style="margin-top: auto;">
-                    <a href="#" class="nav-item" onclick="logoutFunction()">
+                    <div class="nav-item" id="help-tab">
                         <span class="nav-item-icon">❓</span> עזרה
-                    </a>
-                    <a href="#" class="nav-item" onclick="logoutFunction()">
+                    </div>
+                    <div class="nav-item" id="logout-tab">
                         <span class="nav-item-icon">↩️</span> התנתק
-                    </a>
+                    </div>
                 </div>
             </div>
             <script>
-                function tabFunction(tabName) {{
-                    // Map tab names to index
-                    const tabMap = {{
-                        'מלאי': 0,
-                        'השאלות': 1,
-                        'התראות': 2,
-                        'היסטוריה': 3,
-                        'סטטיסטיקות': 4,
-                        'ייבוא_ייצוא': 5,
-                        'ניהול_הזמנות': 6
-                    }};
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Add click handler to all navigation items
+                    const tabMap = {
+                        'inventory-tab': 0,
+                        'loans-tab': 1,
+                        'alerts-tab': 2,
+                        'history-tab': 3,
+                        'stats-tab': 4,
+                        'import-export-tab': 5,
+                        'reservations-tab': 6
+                    };
                     
-                    // Get all nav items and remove active class
-                    document.querySelectorAll('.sidebar-nav .nav-item').forEach(item => {{
-                        item.classList.remove('active');
-                    }});
+                    document.querySelectorAll('.sidebar-nav .nav-item').forEach(item => {
+                        item.addEventListener('click', function() {
+                            // Remove active class from all items
+                            document.querySelectorAll('.sidebar-nav .nav-item').forEach(i => {
+                                i.classList.remove('active');
+                            });
+                            
+                            // Add active class to clicked item
+                            this.classList.add('active');
+                            
+                            // Get the tab index and simulate click
+                            const tabId = this.id;
+                            const tabIndex = tabMap[tabId];
+                            const tabElements = document.querySelectorAll('[data-baseweb="tab-list"] [role="tab"]');
+                            if (tabElements && tabElements[tabIndex]) {
+                                tabElements[tabIndex].click();
+                            }
+                        });
+                    });
                     
-                    // Add active class to clicked item
-                    document.getElementById(tabName.replace('/', '_') + '-tab').classList.add('active');
-                    
-                    // Simulate clicking the corresponding Streamlit tab
-                    const tabIndex = tabMap[tabName.replace('/', '_')];
-                    const tabElements = document.querySelectorAll('[data-baseweb="tab-list"] [role="tab"]');
-                    if (tabElements && tabElements[tabIndex]) {{
-                        tabElements[tabIndex].click();
-                    }}
-                }}
+                    // Handle logout
+                    document.getElementById('logout-tab').addEventListener('click', function() {
+                        // Find and click the logout button
+                        const logoutBtn = document.querySelector('[data-testid="baseButton-secondary"]:contains("התנתק")');
+                        if (logoutBtn) {
+                            logoutBtn.click();
+                        }
+                    });
+                });
             </script>
             """, unsafe_allow_html=True)
             
@@ -364,49 +378,63 @@ def main():
                     <span style="margin-left: 10px;">🎬</span> מערכת השאלות
                 </div>
                 <div class="sidebar-nav">
-                    <a href="#" class="nav-item active" onclick="studentTabFunction('הציוד_שלי')" id="my-equipment-tab">
+                    <div class="nav-item active" id="my-equipment-tab">
                         <span class="nav-item-icon">🎥</span> הציוד שלי
-                    </a>
-                    <a href="#" class="nav-item" onclick="studentTabFunction('פריטים_זמינים')" id="available-items-tab">
+                    </div>
+                    <div class="nav-item" id="available-items-tab">
                         <span class="nav-item-icon">📋</span> פריטים זמינים
-                    </a>
-                    <a href="#" class="nav-item" onclick="studentTabFunction('הזמנת_ציוד')" id="reserve-equipment-tab">
+                    </div>
+                    <div class="nav-item" id="reserve-equipment-tab">
                         <span class="nav-item-icon">➕</span> הזמנת ציוד
-                    </a>
+                    </div>
                 </div>
                 <div style="margin-top: auto;">
-                    <a href="#" class="nav-item" onclick="logoutFunction()">
+                    <div class="nav-item" id="help-tab-student">
                         <span class="nav-item-icon">❓</span> עזרה
-                    </a>
-                    <a href="#" class="nav-item" onclick="logoutFunction()">
+                    </div>
+                    <div class="nav-item" id="logout-tab-student">
                         <span class="nav-item-icon">↩️</span> התנתק
-                    </a>
+                    </div>
                 </div>
             </div>
             <script>
-                function studentTabFunction(tabName) {{
-                    // Map tab names to index
-                    const tabMap = {{
-                        'הציוד_שלי': 0,
-                        'פריטים_זמינים': 1,
-                        'הזמנת_ציוד': 2
-                    }};
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Add click handler to all navigation items
+                    const tabMap = {
+                        'my-equipment-tab': 0,
+                        'available-items-tab': 1,
+                        'reserve-equipment-tab': 2
+                    };
                     
-                    // Get all nav items and remove active class
-                    document.querySelectorAll('.sidebar-nav .nav-item').forEach(item => {{
-                        item.classList.remove('active');
-                    }});
+                    document.querySelectorAll('.sidebar-nav .nav-item').forEach(item => {
+                        item.addEventListener('click', function() {
+                            // Remove active class from all items
+                            document.querySelectorAll('.sidebar-nav .nav-item').forEach(i => {
+                                i.classList.remove('active');
+                            });
+                            
+                            // Add active class to clicked item
+                            this.classList.add('active');
+                            
+                            // Get the tab index and simulate click
+                            const tabId = this.id;
+                            const tabIndex = tabMap[tabId];
+                            const tabElements = document.querySelectorAll('[data-baseweb="tab-list"] [role="tab"]');
+                            if (tabElements && tabElements[tabIndex]) {
+                                tabElements[tabIndex].click();
+                            }
+                        });
+                    });
                     
-                    // Add active class to clicked item
-                    document.getElementById(tabName.replace('_', '-') + '-tab').classList.add('active');
-                    
-                    // Simulate clicking the corresponding Streamlit tab
-                    const tabIndex = tabMap[tabName];
-                    const tabElements = document.querySelectorAll('[data-baseweb="tab-list"] [role="tab"]');
-                    if (tabElements && tabElements[tabIndex]) {{
-                        tabElements[tabIndex].click();
-                    }}
-                }}
+                    // Handle logout
+                    document.getElementById('logout-tab-student').addEventListener('click', function() {
+                        // Find and click the logout button
+                        const logoutBtn = document.querySelector('[data-testid="baseButton-secondary"]:contains("התנתק")');
+                        if (logoutBtn) {
+                            logoutBtn.click();
+                        }
+                    });
+                });
             </script>
             """, unsafe_allow_html=True)
             
