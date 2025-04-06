@@ -52,15 +52,15 @@ def main():
             direction: rtl;
             text-align: right;
             padding: 1rem;
-            background-color: #E7E7E7 !important;
+            background-color: #FFFFFF !important;
         }
         
         [data-testid="stSidebar"] {
-            background-color: #E7E7E7 !important;
+            background-color: #FFFFFF !important;
         }
         
         [data-testid="stSidebarNav"] {
-            background-color: #E7E7E7 !important;
+            background-color: #FFFFFF !important;
         }
         .stTabs [data-baseweb="tab-list"] {
             direction: rtl;
