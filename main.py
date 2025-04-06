@@ -134,20 +134,20 @@ def main():
             
             if st.session_state.user.role == 'warehouse':
                 pages = {
-                    "מלאי": "📦",
-                    "השאלות": "📝",
-                    "התראות": "⚠️",
-                    "מעקב ציוד": "🔍",
-                    "היסטוריה": "📜",
-                    "סטטיסטיקות": "📊",
-                    "ייבוא/ייצוא": "📤",
-                    "ניהול הזמנות": "🗓️"
+                    "מלאי": "",
+                    "השאלות": "",
+                    "התראות": "",
+                    "מעקב ציוד": "",
+                    "היסטוריה": "",
+                    "סטטיסטיקות": "",
+                    "ייבוא/ייצוא": "",
+                    "ניהול הזמנות": ""
                 }
             else:  # student role
                 pages = {
-                    "הציוד שלי": "📝",
-                    "פריטים זמינים": "📦",
-                    "הזמנת ציוד": "🗓️"
+                    "הציוד שלי": "",
+                    "פריטים זמינים": "",
+                    "הזמנת ציוד": ""
                 }
             
             # Navigation buttons
@@ -158,7 +158,7 @@ def main():
             
             # Logout button at the bottom
             st.divider()
-            if st.button("🚪 התנתק", use_container_width=True):
+            if st.button("התנתק", use_container_width=True):
                 logout()
                 st.rerun()
             
@@ -166,7 +166,7 @@ def main():
             if st.session_state.user.role == 'warehouse':
                 overdue_loans = get_overdue_loans()
                 if not overdue_loans.empty:
-                    st.warning(f"⚠️ {len(overdue_loans)} השאלות באיחור")
+                    st.warning(f"{len(overdue_loans)} השאלות באיחור")
         
         # Main content area based on selected page
         st.title(st.session_state.current_page)
