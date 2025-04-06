@@ -10,20 +10,20 @@ import calendar
 def apply_hebrew_plotly_theme(fig):
     """Apply a consistent Hebrew-friendly theme to Plotly charts"""
     fig.update_layout(
-        font_family="Heebo",
-        title_font_family="Heebo",
+        font_family="Open Sans",
+        title_font_family="Open Sans",
         title_font_size=20,
         title_font_color="#262730",
-        legend_title_font_family="Heebo",
+        legend_title_font_family="Open Sans",
         legend_title_font_color="#262730",
-        legend_font_family="Heebo",
+        legend_font_family="Open Sans",
         legend_font_color="#262730",
-        xaxis_title_font_family="Heebo",
+        xaxis_title_font_family="Open Sans",
         xaxis_title_font_color="#262730",
-        yaxis_title_font_family="Heebo",
+        yaxis_title_font_family="Open Sans",
         yaxis_title_font_color="#262730",
-        xaxis_tickfont_family="Heebo",
-        yaxis_tickfont_family="Heebo",
+        xaxis_tickfont_family="Open Sans",
+        yaxis_tickfont_family="Open Sans",
         autosize=True,
         margin=dict(l=50, r=50, t=80, b=50),
         paper_bgcolor="white",
@@ -31,7 +31,7 @@ def apply_hebrew_plotly_theme(fig):
         title_x=0.5,  # Centered title
         title_xanchor="center",
         hoverlabel=dict(
-            font_family="Heebo",
+            font_family="Open Sans",
             font_size=14
         )
     )

@@ -28,18 +28,18 @@ def main():
     init_db()
     init_auth()
     
-    # Add RTL CSS and Heebo font
+    # Add RTL CSS and Open Sans Hebrew font
     st.markdown('''
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap');
         
         * {
-            font-family: 'Heebo', sans-serif !important;
+            font-family: 'Open Sans', sans-serif !important;
         }
         
         .stApp {
             direction: rtl;
-            font-family: 'Heebo', sans-serif !important;
+            font-family: 'Open Sans', sans-serif !important;
         }
         
         .main .block-container {
@@ -79,17 +79,17 @@ def main():
         .stButton > button {
             border-radius: 5px;
             font-weight: 600;
-            font-family: 'Heebo', sans-serif !important;
+            font-family: 'Open Sans', sans-serif !important;
         }
         
-        /* Apply Heebo font to inputs */
+        /* Apply Open Sans font to inputs */
         input, textarea, div[data-baseweb="input"], div[data-baseweb="select"] {
-            font-family: 'Heebo', sans-serif !important;
+            font-family: 'Open Sans', sans-serif !important;
         }
         
-        /* Apply Heebo font to table elements */
+        /* Apply Open Sans font to table elements */
         table, th, td, div[data-testid="stTable"], div[data-testid="stDataFrame"] {
-            font-family: 'Heebo', sans-serif !important;
+            font-family: 'Open Sans', sans-serif !important;
         }
         div[data-testid="stMetricLabel"] {
             direction: rtl;
@@ -102,7 +102,7 @@ def main():
         
         /* Custom styles for Hebrew headers */
         h1, h2, h3, h4, h5, h6, .stTitle {
-            font-family: 'Heebo', sans-serif !important;
+            font-family: 'Open Sans', sans-serif !important;
             font-weight: 700;
             letter-spacing: -0.5px;
         }
