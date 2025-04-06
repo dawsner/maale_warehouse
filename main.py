@@ -5,14 +5,26 @@ from components.loans import show_loans
 from components.history import show_history
 from components.alerts import show_overdue_alerts
 from components.statistics import show_statistics
+from components.equipment_tracking import show_equipment_tracking
 from components.reservations import show_reservations_page, show_reservation_management
 from excel_handler import import_excel, export_to_excel
 from utils import set_page_config, get_overdue_loans
 from auth import init_auth, show_login_page, show_registration_page, logout
 import os
+import base64
+
+def get_image_as_base64(path):
+    with open(path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode()
 
 def main():
-    st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
+    # Set page config with new layout
+    st.set_page_config(
+        page_title="מערכת ניהול מחסן השאלות",
+        page_icon="📦",
+        layout="wide",
+        initial_sidebar_state="expanded"
+    )
     init_db()
     init_auth()
     
@@ -21,6 +33,17 @@ def main():
     <style>
         .stApp {
             direction: rtl;
+        }
+        .main .block-container {
+            padding-top: 1rem;
+            padding-right: 15rem; /* שומר מקום לסייד-בר */
+            padding-left: 1rem;
+            padding-bottom: 1rem;
+        }
+        .sidebar .sidebar-content {
+            direction: rtl;
+            text-align: right;
+            padding: 1rem;
         }
         .stTabs [data-baseweb="tab-list"] {
             direction: rtl;
@@ -36,38 +59,93 @@ def main():
         .stTextInput > div > div > input {
             direction: rtl;
         }
+        .stButton > button {
+            border-radius: 5px;
+            font-weight: 600;
+        }
+        div[data-testid="stMetricLabel"] {
+            direction: rtl;
+            text-align: right;
+        }
+        .logo-container {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
     </style>
     ''', unsafe_allow_html=True)
     
-    st.title("מערכת ניהול מחסן השאלות")
+    # Initialize the session state for page navigation if not exists
+    if 'current_page' not in st.session_state:
+        st.session_state.current_page = 'מלאי' if st.session_state.get('user') and st.session_state.user.role == 'warehouse' else 'התחברות'
     
     if st.session_state.user:
-        # User info and logout in header
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            st.write(f"שלום, {st.session_state.user.full_name}")
-        with col2:
-            if st.button("התנתק"):
+        # Sidebar with logo and navigation
+        with st.sidebar:
+            # Logo container
+            st.markdown('<div class="logo-container">', unsafe_allow_html=True)
+            st.markdown('### 📦 מחסן השאלות')
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            # User info
+            st.write(f"👤 שלום, {st.session_state.user.full_name}")
+            
+            # Role-based navigation
+            st.divider()
+            
+            if st.session_state.user.role == 'warehouse':
+                pages = {
+                    "מלאי": "📦",
+                    "השאלות": "📝",
+                    "התראות": "⚠️",
+                    "מעקב ציוד": "🔍",
+                    "היסטוריה": "📜",
+                    "סטטיסטיקות": "📊",
+                    "ייבוא/ייצוא": "📤",
+                    "ניהול הזמנות": "🗓️"
+                }
+            else:  # student role
+                pages = {
+                    "הציוד שלי": "📝",
+                    "פריטים זמינים": "📦",
+                    "הזמנת ציוד": "🗓️"
+                }
+            
+            # Navigation buttons
+            for page, icon in pages.items():
+                if st.button(f"{icon} {page}", key=f"nav_{page}", use_container_width=True):
+                    st.session_state.current_page = page
+                    st.rerun()
+            
+            # Logout button at the bottom
+            st.divider()
+            if st.button("🚪 התנתק", use_container_width=True):
                 logout()
                 st.rerun()
-        
-        # Role-based navigation with tabs
-        if st.session_state.user.role == 'warehouse':
-            # Show overdue notifications
-            overdue_loans = get_overdue_loans()
-            if not overdue_loans.empty:
-                st.warning(f"⚠️ {len(overdue_loans)} השאלות באיחור")
             
-            # Warehouse staff pages
-            tabs = st.tabs(["מלאי", "השאלות", "התראות", "היסטוריה", "סטטיסטיקות", "ייבוא/ייצוא", "ניהול הזמנות"])
-            with tabs[0]: show_inventory()
-            with tabs[1]: show_loans()
-            with tabs[2]: show_overdue_alerts()
-            with tabs[3]: show_history()
-            with tabs[4]: show_statistics()
-            with tabs[5]:
-                st.header("ייבוא/ייצוא נתונים")
-                
+            # Show overdue notifications badge for warehouse staff
+            if st.session_state.user.role == 'warehouse':
+                overdue_loans = get_overdue_loans()
+                if not overdue_loans.empty:
+                    st.warning(f"⚠️ {len(overdue_loans)} השאלות באיחור")
+        
+        # Main content area based on selected page
+        st.title(st.session_state.current_page)
+        
+        # Display page content based on current_page
+        if st.session_state.user.role == 'warehouse':
+            if st.session_state.current_page == 'מלאי':
+                show_inventory()
+            elif st.session_state.current_page == 'השאלות':
+                show_loans()
+            elif st.session_state.current_page == 'התראות':
+                show_overdue_alerts()
+            elif st.session_state.current_page == 'מעקב ציוד':
+                show_equipment_tracking()
+            elif st.session_state.current_page == 'היסטוריה':
+                show_history()
+            elif st.session_state.current_page == 'סטטיסטיקות':
+                show_statistics()
+            elif st.session_state.current_page == 'ייבוא/ייצוא':
                 # Import section
                 st.subheader("ייבוא מאקסל")
                 uploaded_file = st.file_uploader("בחר קובץ אקסל", type=['xlsx', 'xls'])
@@ -91,20 +169,37 @@ def main():
                         )
                     # Clean up the temporary file
                     os.remove(export_file)
-            with tabs[6]: show_reservation_management()
+            elif st.session_state.current_page == 'ניהול הזמנות':
+                show_reservation_management()
         else:  # student role
-            # Student pages
-            tabs = st.tabs(["הציוד שלי", "פריטים זמינים", "הזמנת ציוד"])
-            with tabs[0]: show_loans(user_id=st.session_state.user.id)
-            with tabs[1]: show_inventory(readonly=True)
-            with tabs[2]: show_reservations_page()
-        
-        
+            if st.session_state.current_page == 'הציוד שלי':
+                show_loans(user_id=st.session_state.user.id)
+            elif st.session_state.current_page == 'פריטים זמינים':
+                show_inventory(readonly=True)
+            elif st.session_state.current_page == 'הזמנת ציוד':
+                show_reservations_page()
     else:
-        tab1, tab2 = st.tabs(["התחברות", "הרשמה"])
-        with tab1:
+        # Login/Register view with sidebar
+        with st.sidebar:
+            st.markdown('<div class="logo-container">', unsafe_allow_html=True)
+            st.markdown('### 📦 מחסן השאלות')
+            st.markdown('</div>', unsafe_allow_html=True)
+            st.divider()
+            
+            # Switch between login and registration
+            if st.button("התחברות", key="nav_login", use_container_width=True):
+                st.session_state.current_page = 'התחברות'
+                st.rerun()
+            if st.button("הרשמה", key="nav_register", use_container_width=True):
+                st.session_state.current_page = 'הרשמה'
+                st.rerun()
+        
+        # Show login or registration based on current page
+        if st.session_state.current_page == 'התחברות':
+            st.title("התחברות")
             show_login_page()
-        with tab2:
+        else:
+            st.title("הרשמה")
             show_registration_page()
 
 if __name__ == "__main__":
