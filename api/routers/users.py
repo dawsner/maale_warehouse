@@ -41,7 +41,7 @@ async def create_user_api(user: UserCreate, current_user = Depends(get_current_a
         )
     
     return {
-        "id": new_user.id,
+        "id": str(new_user.id),
         "username": new_user.username,
         "email": new_user.email,
         "full_name": new_user.full_name,
@@ -54,7 +54,7 @@ async def read_users_me(current_user = Depends(get_current_active_user)):
     Get information about the current user
     """
     return {
-        "id": current_user.id,
+        "id": str(current_user.id),
         "username": current_user.username,
         "email": current_user.email,
         "full_name": current_user.full_name,
