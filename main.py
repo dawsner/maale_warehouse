@@ -128,12 +128,13 @@ def main():
         st.session_state.current_page = 'מלאי' if st.session_state.get('user') and st.session_state.user.role == 'warehouse' else 'התחברות'
     
     if st.session_state.user:
+        # Create header area before the sidebar
+        st.markdown('<div class="header-area"><div class="logo-container"><img src="./assets/logo.png" alt="Logo"></div></div>', unsafe_allow_html=True)
+        
         # Sidebar with logo and navigation
         with st.sidebar:
-            # Logo container
-            st.markdown('<div class="logo-container">', unsafe_allow_html=True)
-            st.image('assets/logo.png', use_container_width=True)
-            st.markdown('</div>', unsafe_allow_html=True)
+            # User info (no logo in sidebar - it's in the header now)
+            pass
             
             # User info
             st.write(f"👤 שלום, {st.session_state.user.full_name}")
