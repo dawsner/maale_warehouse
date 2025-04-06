@@ -1,116 +1,48 @@
-/* Main page styling to resemble UI in reference image */
-html {
+/* RTL and basic direction fixes */
+html, body {
     direction: rtl;
 }
 
-/* Navbar styling */
-.css-1avcm0n {
-    height: 100vh;
-    background-color: #F5F7FA;
+/* Make the sidebar appear on the right */
+.css-1d391kg, div[data-testid="stSidebar"] {
+    right: 0 !important;
+    left: auto !important;
     border-left: 1px solid #e6e9ef;
     border-right: none !important;
-    padding: 2rem 1rem;
     direction: rtl;
 }
 
-/* Sidebar navigation items */
-.css-1avcm0n .element-container {
-    margin-bottom: 1rem;
-}
-
-/* Custom sidebar for our modern design */
-.sidebar {
-    background-color: #F5F7FA;
-    border-radius: 0;
-    padding: 20px;
-    width: 220px;
-    position: fixed;
-    right: 0;
-    top: 0;
-    height: 100vh;
-    box-shadow: -1px 0 5px rgba(0,0,0,0.05);
-    z-index: 1000;
-    display: flex;
-    flex-direction: column;
-    direction: rtl;
-}
-
-.sidebar-logo {
-    font-size: 1.4rem;
-    font-weight: 600;
-    margin-bottom: 2rem;
-    color: #333;
-    display: flex;
-    align-items: center;
-}
-
-.sidebar-nav {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-}
-
-/* White background for content area */
+/* Content adjustments for RTL */
 .main .block-container {
-    background-color: #FFFFFF;
-    border-radius: 8px;
-    padding: 2rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    max-width: 100%;
+    margin-right: 15rem !important;
+    margin-left: 2rem !important;
+    padding: 1rem;
 }
 
-/* Header styling */
-h1, h2, h3 {
-    font-weight: 600;
-    margin-bottom: 1.5rem;
-    font-family: sans-serif;
+/* Fix RTL text alignment in all controls */
+button, input, select, textarea, table, .stDataFrame {
+    text-align: right;
 }
 
 /* Table styling */
-div[data-testid="stTable"] table {
+div[data-testid="stTable"] table,
+div.stDataFrame table {
     border-collapse: separate;
     border-spacing: 0;
     width: 100%;
-    border: none;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    direction: rtl;
 }
 
-div[data-testid="stTable"] thead tr th {
-    background-color: #F5F7FA;
+div[data-testid="stTable"] thead tr th,
+div.stDataFrame thead tr th {
     text-align: right;
-    padding: 1rem;
-    font-weight: 600;
-    color: #333;
-    border-bottom: 1px solid #e6e9ef;
+    padding: 0.5rem;
 }
 
-div[data-testid="stTable"] tbody tr td {
-    padding: 1rem;
+div[data-testid="stTable"] tbody tr td,
+div.stDataFrame tbody tr td {
     text-align: right;
-    border-bottom: 1px solid #e6e9ef;
-}
-
-div[data-testid="stTable"] tbody tr:hover {
-    background-color: #f9f9f9;
-}
-
-/* Button styling */
-.stButton > button {
-    background-color: #0095FF;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 0.5rem 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    width: 100%;
-}
-
-.stButton > button:hover {
-    background-color: #0077cc;
+    padding: 0.5rem;
 }
 
 /* Status pill styling */
@@ -120,11 +52,8 @@ div[data-testid="stTable"] tbody tr:hover {
     border-radius: 50px;
     font-size: 0.875rem;
     font-weight: 500;
-    background-color: #E6F4FF;
-    color: #0095FF;
 }
 
-/* Status pill colors */
 .status-active, .status-open {
     background-color: #E6F4FF;
     color: #0095FF;
@@ -145,73 +74,7 @@ div[data-testid="stTable"] tbody tr:hover {
     color: #EB5757;
 }
 
-/* Filter buttons styling */
-div.stSelectbox > div[data-baseweb="select"] {
-    border-radius: 4px;
-}
-
-/* Form inputs */
-div[data-testid="stTextInput"] > div > div > input,
-div[data-testid="stDateInput"] > div > div > input {
-    border-radius: 4px;
-    border: 1px solid #e6e9ef;
-    padding: 0.75rem 1rem;
-}
-
-/* Make sidebar icons bigger */
-.css-1avcm0n .element-container img {
-    width: 24px;
-    height: 24px;
-    margin-left: 0.5rem;
-}
-
-/* Icons next to sidebar items */
-.nav-item {
-    display: flex;
-    align-items: center;
-    padding: 0.75rem 1rem;
-    font-weight: 500;
-    color: #333;
-    border-radius: 6px;
-    margin-bottom: 0.5rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.nav-item:hover {
-    background-color: rgba(0, 149, 255, 0.05);
-    color: #0095FF;
-}
-
-.nav-item .icon {
-    margin-left: 0.75rem;
-}
-
-.nav-item.active {
-    background-color: rgba(0, 149, 255, 0.1);
-    color: #0095FF;
-    font-weight: 600;
-}
-
-/* Fix RTL issues in data editor */
-div[data-testid="stDataEditor"] {
-    direction: rtl;
-}
-
-div[data-testid="stDataEditor"] .cell-content {
-    text-align: right;
-}
-
-/* Fix RTL issues in forms */
-.stForm > div {
-    direction: rtl;
-}
-
-.stForm label {
-    text-align: right;
-}
-
-/* Improve overall RTL support */
+/* Fix RTL issues with other controls */
 div.row-widget.stRadio > div {
     flex-direction: row-reverse;
 }
@@ -221,12 +84,7 @@ div.row-widget.stRadio > div {
     margin-left: 6px;
 }
 
-.stMultiSelect [data-baseweb=tag] span {
-    margin-right: 0;
-    margin-left: 6px;
-}
-
-/* Make sure dropdowns are RTL */
+/* Fix dropdowns for RTL */
 div[data-baseweb="select"] > div {
     text-align: right;
     direction: rtl;
@@ -234,77 +92,4 @@ div[data-baseweb="select"] > div {
 
 div[data-baseweb="base-input"] > div {
     text-align: right;
-}
-
-/* Better styling for headers and containers */
-.main > section[data-testid="stSidebar"] + div {
-    overflow-x: hidden;
-}
-
-/* Make form inputs look nicer */
-div[data-baseweb="input"] {
-    background-color: white;
-    border-radius: 4px;
-    border: 1px solid #e6e9ef;
-    transition: border-color 0.3s;
-}
-
-div[data-baseweb="input"]:focus-within {
-    border-color: #0095FF;
-}
-
-/* Style all stats cards in a grid */
-.stats-card {
-    background-color: white;
-    border-radius: 8px;
-    padding: 1.5rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    height: 100%;
-}
-
-/* Adjust padding on full page */
-.css-18e3th9 {
-    padding-top: 2rem;
-    padding-bottom: 2rem;
-    padding-right: 5rem;
-    padding-left: 2rem;
-}
-
-/* Style the filter selectors to match reference */
-div.stSelectbox {
-    margin-bottom: 1rem;
-}
-
-div.stSelectbox > div[data-baseweb="select"] {
-    background-color: #F5F7FA;
-    border-color: #e6e9ef;
-}
-
-/* Make action buttons look like the reference */
-.action-button {
-    color: #0095FF;
-    text-decoration: none;
-    font-weight: 500;
-}
-
-/* Override Streamlit's default padding */
-.css-1kyxreq {
-    padding-top: 0 !important;
-}
-
-/* Make the main content adjust for RTL sidebar */
-.main .block-container {
-    padding-right: 260px !important;
-    padding-left: 40px !important;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-/* Fix for onClick events on sidebar items */
-.nav-item-icon {
-    margin-left: 12px;
 }
