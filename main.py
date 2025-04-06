@@ -21,11 +21,7 @@ def main():
     init_db()
     init_auth()
     
-    # Load custom CSS file
-    with open('.streamlit/style.css') as f:
-        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-    
-    # Add base RTL CSS and custom navigation that looks like the reference image
+    # Add base RTL CSS
     st.markdown('''
     <style>
         .stApp {
@@ -47,152 +43,48 @@ def main():
             direction: rtl;
         }
         
-        /* Modern sidebar like in reference image */
-        .sidebar {
-            background-color: #F5F7FA;
-            border-radius: 0;
-            padding: 20px;
-            width: 220px;
-            position: fixed;
-            left: 0;
-            top: 0;
-            height: 100vh;
-            box-shadow: 1px 0 5px rgba(0,0,0,0.05);
-            z-index: 1000;
+        /* Add additional styles from our custom CSS */
+        /* Navigation menu */
+        .nav-menu {
             display: flex;
             flex-direction: column;
+            background-color: #1E3A8A;
+            color: white;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        
-        .sidebar-logo {
-            margin-bottom: 40px;
-            font-size: 20px;
-            font-weight: bold;
-            color: #333;
-            display: flex;
-            align-items: center;
-        }
-        
-        .sidebar-nav {
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-        }
-        
-        .nav-item {
-            display: flex;
-            align-items: center;
-            padding: 12px 15px;
+
+        .nav-menu a {
             text-decoration: none;
-            color: #333;
-            border-radius: 4px;
-            margin-bottom: 5px;
-            transition: background-color 0.2s;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 5px;
+            margin: 3px;
+            transition: background-color 0.3s;
         }
-        
-        .nav-item:hover {
-            background-color: rgba(0,0,0,0.03);
+
+        .nav-menu a:hover {
+            background-color: rgba(255,255,255,0.1);
         }
-        
-        .nav-item.active {
-            background-color: #E6F4FF;
-            color: #0095FF;
-            font-weight: 500;
-        }
-        
-        .nav-item-icon {
-            margin-left: 12px;
-            width: 20px;
-            text-align: center;
-        }
-        
-        .content-wrapper {
-            margin-left: 220px;
-            padding: 30px;
-            flex-grow: 1;
+
+        .nav-menu a.active {
+            background-color: #2196F3;
+            font-weight: bold;
         }
         
         /* Title and headers */
         h1, h2, h3, h4, h5, h6 {
-            color: #222;
-            margin-bottom: 1.5rem;
+            color: #1E3A8A;
+            margin-bottom: 1rem;
             font-weight: 600;
         }
 
         h1.title {
-            font-size: 1.8rem;
-            font-weight: 600;
-            color: #222;
+            font-size: 2.5rem;
+            border-bottom: 2px solid #2196F3;
+            padding-bottom: 0.5rem;
             margin-bottom: 2rem;
-        }
-        
-        /* Filters and action row */
-        .filters-row {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        
-        .filter-dropdown {
-            min-width: 150px;
-        }
-        
-        /* Modern buttons like reference */
-        .action-button {
-            display: inline-flex;
-            align-items: center;
-            background-color: #0095FF;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 10px 20px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        
-        .action-button:hover {
-            background-color: #0077cc;
-        }
-        
-        .secondary-button {
-            background-color: white;
-            color: #333;
-            border: 1px solid #e0e0e0;
-        }
-        
-        .secondary-button:hover {
-            background-color: #f5f5f5;
-        }
-        
-        /* Hide streamlit branding */
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        
-        /* Status pill like in reference */
-        .status-pill {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 50px;
-            font-size: 13px;
-            font-weight: 500;
-            background-color: #E6F4FF;
-            color: #0095FF;
-        }
-        
-        /* Hide the default tab UI but keep it functional */
-        [data-testid="stHorizontalBlock"] {
-            visibility: hidden;
-            height: 0;
-            position: absolute;
-        }
-        
-        /* Make the layout more like the reference */
-        .main > .block-container {
-            padding-left: 260px;
-            max-width: 1200px;
-            margin: 0 auto;
         }
     </style>
     ''', unsafe_allow_html=True)
@@ -242,86 +134,59 @@ def main():
             if not overdue_loans.empty:
                 st.warning(f"⚠️ {len(overdue_loans)} השאלות באיחור")
             
-            # Create a sidebar navigation like in the reference image
+            # Create a sidebar-like navigation on the left with icons like in the image
             st.markdown("""
-            <div class="sidebar">
-                <div class="sidebar-logo">
-                    <span style="margin-left: 10px;">🎬</span> מערכת השאלות
-                </div>
-                <div class="sidebar-nav">
-                    <div class="nav-item active" id="inventory-tab">
-                        <span class="nav-item-icon">🏠</span> דשבורד
-                    </div>
-                    <div class="nav-item" id="loans-tab">
-                        <span class="nav-item-icon">📦</span> ציוד
-                    </div>
-                    <div class="nav-item" id="alerts-tab">
-                        <span class="nav-item-icon">🔄</span> השאלות
-                    </div>
-                    <div class="nav-item" id="history-tab">
-                        <span class="nav-item-icon">👥</span> חברי צוות
-                    </div>
-                    <div class="nav-item" id="stats-tab">
-                        <span class="nav-item-icon">👨‍💼</span> צוות
-                    </div>
-                    <div class="nav-item" id="import-export-tab">
-                        <span class="nav-item-icon">📊</span> דוחות
-                    </div>
-                    <div class="nav-item" id="reservations-tab">
-                        <span class="nav-item-icon">⚙️</span> הגדרות
-                    </div>
-                </div>
-                <div style="margin-top: auto;">
-                    <div class="nav-item" id="help-tab">
-                        <span class="nav-item-icon">❓</span> עזרה
-                    </div>
-                    <div class="nav-item" id="logout-tab">
-                        <span class="nav-item-icon">↩️</span> התנתק
-                    </div>
-                </div>
+            <div class="nav-menu">
+                <a href="#" class="active" onclick="tabFunction('מלאי')" id="inventory-tab">
+                    <span style="margin-left: 10px;">📦</span> מלאי
+                </a>
+                <a href="#" onclick="tabFunction('השאלות')" id="loans-tab">
+                    <span style="margin-left: 10px;">🔄</span> השאלות
+                </a>
+                <a href="#" onclick="tabFunction('התראות')" id="alerts-tab">
+                    <span style="margin-left: 10px;">⚠️</span> התראות
+                </a>
+                <a href="#" onclick="tabFunction('היסטוריה')" id="history-tab">
+                    <span style="margin-left: 10px;">📜</span> היסטוריה
+                </a>
+                <a href="#" onclick="tabFunction('סטטיסטיקות')" id="stats-tab">
+                    <span style="margin-left: 10px;">📊</span> סטטיסטיקות
+                </a>
+                <a href="#" onclick="tabFunction('ייבוא_ייצוא')" id="import-export-tab">
+                    <span style="margin-left: 10px;">📤</span> ייבוא/ייצוא
+                </a>
+                <a href="#" onclick="tabFunction('ניהול_הזמנות')" id="reservations-tab">
+                    <span style="margin-left: 10px;">📋</span> ניהול הזמנות
+                </a>
             </div>
             <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    // Add click handler to all navigation items
-                    const tabMap = {
-                        'inventory-tab': 0,
-                        'loans-tab': 1,
-                        'alerts-tab': 2,
-                        'history-tab': 3,
-                        'stats-tab': 4,
-                        'import-export-tab': 5,
-                        'reservations-tab': 6
-                    };
+                function tabFunction(tabName) {{
+                    // Map tab names to index
+                    const tabMap = {{
+                        'מלאי': 0,
+                        'השאלות': 1,
+                        'התראות': 2,
+                        'היסטוריה': 3,
+                        'סטטיסטיקות': 4,
+                        'ייבוא_ייצוא': 5,
+                        'ניהול_הזמנות': 6
+                    }};
                     
-                    document.querySelectorAll('.sidebar-nav .nav-item').forEach(item => {
-                        item.addEventListener('click', function() {
-                            // Remove active class from all items
-                            document.querySelectorAll('.sidebar-nav .nav-item').forEach(i => {
-                                i.classList.remove('active');
-                            });
-                            
-                            // Add active class to clicked item
-                            this.classList.add('active');
-                            
-                            // Get the tab index and simulate click
-                            const tabId = this.id;
-                            const tabIndex = tabMap[tabId];
-                            const tabElements = document.querySelectorAll('[data-baseweb="tab-list"] [role="tab"]');
-                            if (tabElements && tabElements[tabIndex]) {
-                                tabElements[tabIndex].click();
-                            }
-                        });
-                    });
+                    // Get all nav items and remove active class
+                    document.querySelectorAll('.nav-menu a').forEach(item => {{
+                        item.classList.remove('active');
+                    }});
                     
-                    // Handle logout
-                    document.getElementById('logout-tab').addEventListener('click', function() {
-                        // Find and click the logout button
-                        const logoutBtn = document.querySelector('[data-testid="baseButton-secondary"]:contains("התנתק")');
-                        if (logoutBtn) {
-                            logoutBtn.click();
-                        }
-                    });
-                });
+                    // Add active class to clicked item
+                    document.getElementById(tabName.replace('/', '_') + '-tab').classList.add('active');
+                    
+                    // Simulate clicking the corresponding Streamlit tab
+                    const tabIndex = tabMap[tabName.replace('/', '_')];
+                    const tabElements = document.querySelectorAll('[data-baseweb="tab-list"] [role="tab"]');
+                    if (tabElements && tabElements[tabIndex]) {{
+                        tabElements[tabIndex].click();
+                    }}
+                }}
             </script>
             """, unsafe_allow_html=True)
             
@@ -371,82 +236,44 @@ def main():
                     os.remove(export_file)
             with tabs[6]: show_reservation_management()
         else:  # student role
-            # Create a sidebar navigation like in the reference image for students
+            # Create a sidebar-like navigation for students
             st.markdown("""
-            <div class="sidebar">
-                <div class="sidebar-logo">
-                    <span style="margin-left: 10px;">🎬</span> מערכת השאלות
-                </div>
-                <div class="sidebar-nav">
-                    <div class="nav-item active" id="my-equipment-tab">
-                        <span class="nav-item-icon">🎥</span> הציוד שלי
-                    </div>
-                    <div class="nav-item" id="available-items-tab">
-                        <span class="nav-item-icon">📋</span> פריטים זמינים
-                    </div>
-                    <div class="nav-item" id="reserve-equipment-tab">
-                        <span class="nav-item-icon">➕</span> הזמנת ציוד
-                    </div>
-                </div>
-                <div style="margin-top: auto;">
-                    <div class="nav-item" id="help-tab-student">
-                        <span class="nav-item-icon">❓</span> עזרה
-                    </div>
-                    <div class="nav-item" id="logout-tab-student">
-                        <span class="nav-item-icon">↩️</span> התנתק
-                    </div>
-                </div>
+            <div class="nav-menu">
+                <a href="#" class="active" onclick="studentTabFunction('הציוד_שלי')" id="my-equipment-tab">
+                    <span style="margin-left: 10px;">🎥</span> הציוד שלי
+                </a>
+                <a href="#" onclick="studentTabFunction('פריטים_זמינים')" id="available-items-tab">
+                    <span style="margin-left: 10px;">📋</span> פריטים זמינים
+                </a>
+                <a href="#" onclick="studentTabFunction('הזמנת_ציוד')" id="reserve-equipment-tab">
+                    <span style="margin-left: 10px;">➕</span> הזמנת ציוד
+                </a>
             </div>
             <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    // Add click handler to all navigation items
-                    const tabMap = {
-                        'my-equipment-tab': 0,
-                        'available-items-tab': 1,
-                        'reserve-equipment-tab': 2
-                    };
+                function studentTabFunction(tabName) {{
+                    // Map tab names to index
+                    const tabMap = {{
+                        'הציוד_שלי': 0,
+                        'פריטים_זמינים': 1,
+                        'הזמנת_ציוד': 2
+                    }};
                     
-                    document.querySelectorAll('.sidebar-nav .nav-item').forEach(item => {
-                        item.addEventListener('click', function() {
-                            // Remove active class from all items
-                            document.querySelectorAll('.sidebar-nav .nav-item').forEach(i => {
-                                i.classList.remove('active');
-                            });
-                            
-                            // Add active class to clicked item
-                            this.classList.add('active');
-                            
-                            // Get the tab index and simulate click
-                            const tabId = this.id;
-                            const tabIndex = tabMap[tabId];
-                            const tabElements = document.querySelectorAll('[data-baseweb="tab-list"] [role="tab"]');
-                            if (tabElements && tabElements[tabIndex]) {
-                                tabElements[tabIndex].click();
-                            }
-                        });
-                    });
+                    // Get all nav items and remove active class
+                    document.querySelectorAll('.nav-menu a').forEach(item => {{
+                        item.classList.remove('active');
+                    }});
                     
-                    // Handle logout
-                    document.getElementById('logout-tab-student').addEventListener('click', function() {
-                        // Find and click the logout button
-                        const logoutBtn = document.querySelector('[data-testid="baseButton-secondary"]:contains("התנתק")');
-                        if (logoutBtn) {
-                            logoutBtn.click();
-                        }
-                    });
-                });
+                    // Add active class to clicked item
+                    document.getElementById(tabName.replace('_', '-') + '-tab').classList.add('active');
+                    
+                    // Simulate clicking the corresponding Streamlit tab
+                    const tabIndex = tabMap[tabName];
+                    const tabElements = document.querySelectorAll('[data-baseweb="tab-list"] [role="tab"]');
+                    if (tabElements && tabElements[tabIndex]) {{
+                        tabElements[tabIndex].click();
+                    }}
+                }}
             </script>
-            """, unsafe_allow_html=True)
-            
-            # Hide the tab UI with CSS but keep it functional
-            st.markdown("""
-            <style>
-                [data-testid="stHorizontalBlock"] {
-                    visibility: hidden;
-                    height: 0;
-                    position: absolute;
-                }
-            </style>
             """, unsafe_allow_html=True)
             
             # Student pages - keep the original tabs for functionality

@@ -8,139 +8,35 @@ from database import return_loan, get_db_connection
 def show_overdue_alerts():
     st.markdown('<h1 class="title">השאלות באיחור</h1>', unsafe_allow_html=True)
     
-    # Modern filter buttons like in the reference
+    # Add filters in a nice card
     st.markdown("""
-    <div class="filters-row">
-        <div class="filter-button active" id="filter-all" onclick="setFilter('all')">
-            הכל
+    <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+        <div style="background-color: white; padding: 10px 15px; border-radius: 6px; 
+                   display: flex; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+            <span style="margin-left: 10px; font-weight: 500;">חומרה</span>
+            <span style="color: #2196F3;">▼</span>
         </div>
-        <div class="filter-button" id="filter-week1" onclick="setFilter('week1')">
-            שבוע 1
+        <div style="background-color: white; padding: 10px 15px; border-radius: 6px; 
+                   display: flex; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+            <span style="margin-left: 10px; font-weight: 500;">שבוע 1</span>
+            <span style="color: #2196F3;">▼</span>
         </div>
-        <div class="filter-button" id="filter-week2" onclick="setFilter('week2')">
-            שבועיים
+        <div style="background-color: white; padding: 10px 15px; border-radius: 6px; 
+                   display: flex; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+            <span style="margin-left: 10px; font-weight: 500;">שבועיים</span>
+            <span style="color: #2196F3;">▼</span>
         </div>
-        <div class="filter-button" id="filter-week3plus" onclick="setFilter('week3plus')">
-            +3 שבועות
+        <div style="background-color: white; padding: 10px 15px; border-radius: 6px; 
+                   display: flex; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+            <span style="margin-left: 10px; font-weight: 500;">+3 שבועות</span>
+            <span style="color: #2196F3;">▼</span>
+        </div>
+        <div style="background-color: white; padding: 10px 15px; border-radius: 6px; 
+                   display: flex; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+            <span style="margin-left: 10px; font-weight: 500;">הכל</span>
+            <span style="color: #2196F3;">▼</span>
         </div>
     </div>
-    
-    <style>
-        .filters-row {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        
-        .filter-button {
-            background-color: #F5F7FA;
-            color: #333;
-            padding: 8px 16px;
-            border-radius: 4px;
-            font-size: 14px;
-            cursor: pointer;
-            border: 1px solid #E6E9EF;
-        }
-        
-        .filter-button:hover {
-            background-color: #E6F4FF;
-        }
-        
-        .filter-button.active {
-            background-color: #0095FF;
-            color: white;
-            border-color: #0095FF;
-        }
-        
-        /* Table styling to match reference */
-        .modern-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        
-        .modern-table thead th {
-            background-color: #F5F7FA;
-            color: #333;
-            font-weight: 600;
-            text-align: right;
-            padding: 16px;
-            border-bottom: 1px solid #E6E9EF;
-        }
-        
-        .modern-table tbody td {
-            padding: 16px;
-            border-bottom: 1px solid #E6E9EF;
-            color: #333;
-        }
-        
-        .modern-table tbody tr:hover {
-            background-color: #F9FAFC;
-        }
-        
-        .status-pill {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 50px;
-            font-size: 13px;
-            font-weight: 500;
-        }
-        
-        .status-week1 {
-            background-color: #E6F4FF;
-            color: #0095FF;
-        }
-        
-        .status-week2 {
-            background-color: #FFF8E1;
-            color: #F9A825;
-        }
-        
-        .status-week3plus {
-            background-color: #FFEBEE;
-            color: #E53935;
-        }
-        
-        .action-button {
-            display: inline-block;
-            color: #0095FF;
-            font-weight: 500;
-            text-decoration: none;
-            cursor: pointer;
-        }
-    </style>
-    
-    <script>
-        function setFilter(filter) {
-            // Remove active class from all filters
-            document.querySelectorAll('.filter-button').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            // Add active class to selected filter
-            document.getElementById('filter-' + filter).classList.add('active');
-            
-            // Show/hide rows based on filter
-            const rows = document.querySelectorAll('table.modern-table tbody tr');
-            
-            if (filter === 'all') {
-                rows.forEach(row => row.style.display = '');
-            } else {
-                rows.forEach(row => {
-                    const statusPill = row.querySelector('.status-pill');
-                    if (statusPill && statusPill.classList.contains('status-' + filter)) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-            }
-        }
-    </script>
     """, unsafe_allow_html=True)
     
     # Hidden filters but still functional
@@ -196,24 +92,18 @@ def show_overdue_alerts():
         due_date_str = loan['due_date'].strftime('%d %b, %Y')
         return_date_str = (loan['due_date'] + pd.Timedelta(days=days_overdue)).strftime('%d %b, %Y')
         
-        status_weeks = "3weeks"
-        status_text = "3 שבועות"
+        status_weeks = "3 שבועות"
         if days_overdue <= 7:
-            status_weeks = "week1"
-            status_text = "שבוע 1"
+            status_weeks = "שבוע 1"
         elif days_overdue <= 14:
-            status_weeks = "week2"
-            status_text = "שבועיים"
-        else:
-            status_weeks = "week3plus"
+            status_weeks = "שבועיים"
         
         table_data.append({
             "borrower": loan['student_name'],
             "item": loan['item_name'],
             "due": due_date_str,
             "return": return_date_str,
-            "status_text": status_text,
-            "status_class": status_weeks,
+            "status": status_weeks,
             "id": loan['id'],
             "student_id": loan['student_id'],
             "quantity": loan['quantity'],
@@ -222,48 +112,53 @@ def show_overdue_alerts():
             "loan_notes": loan.get('loan_notes', '')
         })
     
-    # Create a modern HTML table like in the reference image
-    table_html = """
-    <table class="modern-table">
-        <thead>
-            <tr>
-                <th>שואל</th>
-                <th>פריט</th>
-                <th>תאריך החזרה</th>
-                <th>תאריך השאלה</th>
-                <th>סטטוס</th>
-                <th>פעולה</th>
-            </tr>
-        </thead>
-        <tbody>
-    """
+    # Create a custom HTML table
+    st.markdown("""
+    <div style="background-color: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background-color: #f8f9fa; text-align: right;">
+                    <th style="padding: 12px 16px; border-bottom: 1px solid #eee; font-weight: 600; color: #555;">שואל</th>
+                    <th style="padding: 12px 16px; border-bottom: 1px solid #eee; font-weight: 600; color: #555;">פריט</th>
+                    <th style="padding: 12px 16px; border-bottom: 1px solid #eee; font-weight: 600; color: #555;">יוחזר</th>
+                    <th style="padding: 12px 16px; border-bottom: 1px solid #eee; font-weight: 600; color: #555;">הוחזר</th>
+                    <th style="padding: 12px 16px; border-bottom: 1px solid #eee; font-weight: 600; color: #555;">סטטוס</th>
+                    <th style="padding: 12px 16px; border-bottom: 1px solid #eee; font-weight: 600; color: #555;">פעולה</th>
+                </tr>
+            </thead>
+            <tbody>
+    """, unsafe_allow_html=True)
     
     for idx, loan in enumerate(table_data):
-        table_html += f"""
-        <tr>
-            <td>{loan['borrower']}</td>
-            <td>{loan['item']}</td>
-            <td>{loan['due']}</td>
-            <td>{loan['return']}</td>
-            <td>
-                <span class="status-pill status-{loan['status_class']}">
-                    {loan['status_text']}
+        # Status background color
+        bg_color = "#e3f2fd"  # Default light blue
+        if loan["status"] == "שבוע 1":
+            bg_color = "#fff8e1"  # Light yellow
+        elif loan["status"] == "שבועיים":
+            bg_color = "#ffebee"  # Light red
+        elif loan["status"] == "3 שבועות":
+            bg_color = "#ffcdd2"  # Darker red
+        
+        st.markdown(f"""
+        <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 12px 16px;">{loan['borrower']}</td>
+            <td style="padding: 12px 16px;">{loan['item']}</td>
+            <td style="padding: 12px 16px;">{loan['due']}</td>
+            <td style="padding: 12px 16px;">{loan['return']}</td>
+            <td style="padding: 12px 16px;">
+                <span style="background-color: {bg_color}; padding: 5px 10px; border-radius: 4px; font-size: 0.9em;">
+                    {loan['status']}
                 </span>
             </td>
-            <td>
-                <div id="loan_action_{idx}" class="action-button">
+            <td style="padding: 12px 16px;">
+                <div id="loan_action_{idx}" style="display: inline-block;">
                     סמן כהוחזר
                 </div>
             </td>
         </tr>
-        """
+        """, unsafe_allow_html=True)
     
-    table_html += """
-        </tbody>
-    </table>
-    """
-    
-    st.markdown(table_html, unsafe_allow_html=True)
+    st.markdown("</tbody></table></div>", unsafe_allow_html=True)
     
     # Hidden buttons for actions
     for idx, loan in enumerate(table_data):
@@ -286,15 +181,6 @@ def show_overdue_alerts():
                     if (target) {
                         target.innerHTML = '';
                         target.appendChild(button);
-                        
-                        // Style the button to match the reference
-                        button.style.backgroundColor = "transparent";
-                        button.style.color = "#0095FF";
-                        button.style.border = "none";
-                        button.style.padding = "0";
-                        button.style.fontWeight = "500";
-                        button.style.boxShadow = "none";
-                        button.innerText = "סמן כהוחזר";
                     }
                 });
             }, 1000);

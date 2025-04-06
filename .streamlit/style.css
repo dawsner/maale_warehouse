@@ -1,95 +1,185 @@
-/* RTL and basic direction fixes */
-html, body {
+/* Main App Styling */
+.stApp {
     direction: rtl;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Make the sidebar appear on the right */
-.css-1d391kg, div[data-testid="stSidebar"] {
-    right: 0 !important;
-    left: auto !important;
-    border-left: 1px solid #e6e9ef;
-    border-right: none !important;
-    direction: rtl;
+/* Title and headers */
+h1, h2, h3, h4, h5, h6 {
+    color: #1E3A8A;
+    margin-bottom: 1rem;
+    font-weight: 600;
 }
 
-/* Content adjustments for RTL */
-.main .block-container {
-    margin-right: 15rem !important;
-    margin-left: 2rem !important;
+h1.title {
+    font-size: 2.5rem;
+    border-bottom: 2px solid #2196F3;
+    padding-bottom: 0.5rem;
+    margin-bottom: 2rem;
+}
+
+/* Sidebar styling */
+.sidebar .sidebar-content {
+    background-color: #263238;
+    color: white;
+    border-radius: 0 10px 10px 0;
+}
+
+/* Tab styling */
+div[data-testid="stHorizontalBlock"] button[role="tab"] {
+    border-radius: 5px 5px 0 0 !important;
+    border: none !important;
+    padding: 10px 20px !important;
+    font-weight: 600 !important;
+    margin-right: 5px !important;
+    transition: background-color 0.3s !important;
+}
+
+div[data-testid="stHorizontalBlock"] button[role="tab"][aria-selected="true"] {
+    background-color: #2196F3 !important;
+    color: white !important;
+}
+
+div[data-testid="stHorizontalBlock"] button[role="tab"][aria-selected="false"]:hover {
+    background-color: #E3F2FD !important;
+}
+
+/* Data tables */
+div[data-testid="stDataFrame"] {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+div[data-testid="stDataFrame"] th {
+    background-color: #E3F2FD !important;
+    color: #1E3A8A !important;
+    font-weight: 600 !important;
+    text-align: right !important;
+}
+
+div[data-testid="stDataFrame"] tr:nth-child(even) {
+    background-color: #F5F7FA;
+}
+
+/* Buttons */
+button[kind="primary"] {
+    border-radius: 6px !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1) !important;
+    transition: all 0.3s !important;
+    font-weight: 600 !important;
+}
+
+button[kind="primary"]:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+}
+
+button[kind="secondary"] {
+    border-radius: 6px !important;
+    border: 1px solid #2196F3 !important;
+    color: #2196F3 !important;
+    transition: all 0.3s !important;
+}
+
+button[kind="secondary"]:hover {
+    background-color: #E3F2FD !important;
+}
+
+/* Metric cards */
+div[data-testid="stMetric"] {
+    background-color: white;
+    border-radius: 10px;
     padding: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
 }
 
-/* Fix RTL text alignment in all controls */
-button, input, select, textarea, table, .stDataFrame {
-    text-align: right;
+div[data-testid="stMetric"] > div:first-child {
+    color: #1E3A8A;
+    font-weight: 600;
 }
 
-/* Table styling */
-div[data-testid="stTable"] table,
-div.stDataFrame table {
-    border-collapse: separate;
-    border-spacing: 0;
-    width: 100%;
-    direction: rtl;
+div[data-testid="stMetric"] > div:nth-child(2) {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #333;
 }
 
-div[data-testid="stTable"] thead tr th,
-div.stDataFrame thead tr th {
-    text-align: right;
+/* Charts */
+div[data-testid="stPlotlyChart"] > div {
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     padding: 0.5rem;
+    background-color: white;
 }
 
-div[data-testid="stTable"] tbody tr td,
-div.stDataFrame tbody tr td {
-    text-align: right;
-    padding: 0.5rem;
+/* Forms and inputs */
+div[data-testid="stForm"] {
+    background-color: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Status pill styling */
-.status-pill {
+input, textarea, select {
+    border-radius: 5px !important;
+    border: 1px solid #E0E0E0 !important;
+    padding: 8px 12px !important;
+}
+
+/* Status indicators */
+.status-circle {
     display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 50px;
-    font-size: 0.875rem;
-    font-weight: 500;
-}
-
-.status-active, .status-open {
-    background-color: #E6F4FF;
-    color: #0095FF;
-}
-
-.status-completed, .status-closed, .status-returned {
-    background-color: #E7F7EE;
-    color: #27AE60;
-}
-
-.status-pending, .status-waiting {
-    background-color: #FFF8E6;
-    color: #F2994A;
-}
-
-.status-overdue, .status-late, .status-error {
-    background-color: #FFE6E6;
-    color: #EB5757;
-}
-
-/* Fix RTL issues with other controls */
-div.row-widget.stRadio > div {
-    flex-direction: row-reverse;
-}
-
-.stMultiSelect [data-baseweb=tag] {
-    margin-right: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
     margin-left: 6px;
 }
 
-/* Fix dropdowns for RTL */
-div[data-baseweb="select"] > div {
-    text-align: right;
-    direction: rtl;
+.status-available {
+    background-color: #4CAF50;
 }
 
-div[data-baseweb="base-input"] > div {
-    text-align: right;
+.status-loaned {
+    background-color: #F44336;
+}
+
+.status-reserved {
+    background-color: #FF9800;
+}
+
+/* Alert cards */
+div[data-testid="stAlert"] {
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* Navigation menu */
+.nav-menu {
+    display: flex;
+    flex-direction: column;
+    background-color: #1E3A8A;
+    color: white;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.nav-menu a {
+    text-decoration: none;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 5px;
+    margin: 3px;
+    transition: background-color 0.3s;
+}
+
+.nav-menu a:hover {
+    background-color: rgba(255,255,255,0.1);
+}
+
+.nav-menu a.active {
+    background-color: #2196F3;
+    font-weight: bold;
 }
