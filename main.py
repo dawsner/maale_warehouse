@@ -43,8 +43,55 @@ def main():
             background-color: #E7E7E7 !important;
         }
         
+        /* Top header bar */
+        header[data-testid="stHeader"] {
+            background-color: #FFFFFF !important;
+            height: 70px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        /* Hide default Streamlit header elements */
+        header[data-testid="stHeader"] > div:first-child {
+            display: none !important;
+        }
+        
+        /* Add custom header */
+        .header-wrapper {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            height: 70px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background-color: white;
+        }
+        
+        .header-logo {
+            max-height: 50px;
+            margin-right: 20px;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+        
+        /* Adjust main content to make room for header */
         .main .block-container {
-            padding-top: 1rem;
+            padding-top: 5rem;
             padding-right: 15rem; /* שומר מקום לסייד-בר */
             padding-left: 1rem;
             padding-bottom: 1rem;
@@ -120,17 +167,29 @@ def main():
     if 'current_page' not in st.session_state:
         st.session_state.current_page = 'מלאי' if st.session_state.get('user') and st.session_state.user.role == 'warehouse' else 'התחברות'
     
+    # Add custom header
+    st.markdown('''
+    <div class="header-wrapper">
+        <div class="header-right">
+            <img src="data:image/png;base64,'''+get_image_as_base64('assets/logo.png')+'''" class="header-logo">
+        </div>
+        <div class="header-left">
+            <div style="margin-left: 20px; font-weight: 600;">
+            </div>
+        </div>
+    </div>
+    ''', unsafe_allow_html=True)
+            
     if st.session_state.user:
-        # Sidebar with logo and navigation
+        # Update header with user info
+        st.markdown(f'''
+        <script>
+        document.querySelector('.header-left').innerHTML = '<div style="margin-right: 20px;">👤 {st.session_state.user.full_name} | {st.session_state.user.role}</div>';
+        </script>
+        ''', unsafe_allow_html=True)
+        
+        # Sidebar with navigation
         with st.sidebar:
-            # Logo container
-            st.markdown('<div class="logo-container">', unsafe_allow_html=True)
-            st.image('assets/logo.png', width=200)
-            st.markdown('</div>', unsafe_allow_html=True)
-            
-            # User info
-            st.write(f"👤 שלום, {st.session_state.user.full_name}")
-            
             # Role-based navigation
             st.divider()
             
@@ -221,11 +280,15 @@ def main():
             elif st.session_state.current_page == 'הזמנת ציוד':
                 show_reservations_page()
     else:
+        # Add default header text for login page
+        st.markdown(f'''
+        <script>
+        document.querySelector('.header-left').innerHTML = '<div style="margin-right: 20px;">מערכת ניהול מחסן השאלות</div>';
+        </script>
+        ''', unsafe_allow_html=True)
+        
         # Login/Register view with sidebar
         with st.sidebar:
-            st.markdown('<div class="logo-container">', unsafe_allow_html=True)
-            st.image('assets/logo.png', width=200)
-            st.markdown('</div>', unsafe_allow_html=True)
             st.divider()
             
             # Switch between login and registration
