@@ -40,82 +40,27 @@ def main():
         .stApp {
             direction: rtl;
             font-family: 'Open Sans', sans-serif !important;
-            background-color: #E7E7E7 !important;
         }
         
-        /* Top header bar */
-        header[data-testid="stHeader"] {
-            background-color: #FFFFFF !important;
-            height: 70px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        
-        /* Hide default Streamlit header elements */
-        header[data-testid="stHeader"] > div:first-child {
-            display: none !important;
-        }
-        
-        /* Add custom header */
-        .header-wrapper {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 20px;
-            height: 70px;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            background-color: white;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-            color: #333;
-        }
-        
-        .header-logo {
-            height: 45px;
-            margin-right: 20px;
-        }
-        
-        .header-right {
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-        }
-        
-        .header-left {
-            display: flex;
-            align-items: center;
-            font-weight: 600;
-            font-size: 14px;
-            margin-left: 20px;
-        }
-        
-        /* Adjust main content to make room for header */
         .main .block-container {
-            padding-top: 5rem;
+            padding-top: 1rem;
             padding-right: 15rem; /* שומר מקום לסייד-בר */
             padding-left: 1rem;
             padding-bottom: 1rem;
-            background-color: #E7E7E7 !important;
         }
         .sidebar .sidebar-content {
             direction: rtl;
             text-align: right;
             padding: 1rem;
-            background-color: #FFFFFF !important;
+            background-color: #E7E7E7 !important;
         }
         
         [data-testid="stSidebar"] {
-            background-color: #FFFFFF !important;
+            background-color: #E7E7E7 !important;
         }
         
         [data-testid="stSidebarNav"] {
-            background-color: #FFFFFF !important;
+            background-color: #E7E7E7 !important;
         }
         .stTabs [data-baseweb="tab-list"] {
             direction: rtl;
@@ -173,23 +118,17 @@ def main():
     if 'current_page' not in st.session_state:
         st.session_state.current_page = 'מלאי' if st.session_state.get('user') and st.session_state.user.role == 'warehouse' else 'התחברות'
     
-    # Add custom header with only the logo
-    st.markdown('''
-    <div class="header-wrapper">
-        <div class="header-right">
-            <img src="data:image/png;base64,'''+get_image_as_base64('assets/logo.png')+'''" class="header-logo">
-        </div>
-        <div class="header-left">
-        </div>
-    </div>
-    ''', unsafe_allow_html=True)
-            
     if st.session_state.user:
-        # No header info update in this simplified version
-        pass
-        
-        # Sidebar with navigation
+        # Sidebar with logo and navigation
         with st.sidebar:
+            # Logo container
+            st.markdown('<div class="logo-container">', unsafe_allow_html=True)
+            st.image('assets/logo.png', width=200)
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            # User info
+            st.write(f"👤 שלום, {st.session_state.user.full_name}")
+            
             # Role-based navigation
             st.divider()
             
@@ -280,11 +219,11 @@ def main():
             elif st.session_state.current_page == 'הזמנת ציוד':
                 show_reservations_page()
     else:
-        # No additional header text for login page in this simplified version
-        pass
-        
         # Login/Register view with sidebar
         with st.sidebar:
+            st.markdown('<div class="logo-container">', unsafe_allow_html=True)
+            st.image('assets/logo.png', width=200)
+            st.markdown('</div>', unsafe_allow_html=True)
             st.divider()
             
             # Switch between login and registration
