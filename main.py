@@ -72,21 +72,26 @@ def main():
             right: 0;
             z-index: 1000;
             background-color: white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
         
         .header-logo {
-            max-height: 50px;
+            height: 45px;
             margin-right: 20px;
         }
         
         .header-right {
             display: flex;
             align-items: center;
+            justify-content: flex-end;
         }
         
         .header-left {
             display: flex;
             align-items: center;
+            font-weight: 600;
+            font-size: 14px;
+            margin-left: 20px;
         }
         
         /* Adjust main content to make room for header */
@@ -174,17 +179,19 @@ def main():
             <img src="data:image/png;base64,'''+get_image_as_base64('assets/logo.png')+'''" class="header-logo">
         </div>
         <div class="header-left">
-            <div style="margin-left: 20px; font-weight: 600;">
-            </div>
+            <span style="margin-right: 15px;"><i class="fas fa-cog"></i> הגדרות</span>
+            <span style="margin-right: 15px;"><i class="fas fa-bell"></i> התראות</span>
+            <span style="margin-right: 15px;"><i class="fas fa-question-circle"></i> עזרה</span>
         </div>
     </div>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     ''', unsafe_allow_html=True)
             
     if st.session_state.user:
         # Update header with user info
         st.markdown(f'''
         <script>
-        document.querySelector('.header-left').innerHTML = '<div style="margin-right: 20px;">👤 {st.session_state.user.full_name} | {st.session_state.user.role}</div>';
+        document.querySelector('.header-left').prepend('<span style="margin-right: 15px;"><i class="fas fa-user"></i> {st.session_state.user.full_name} ({st.session_state.user.role})</span>');
         </script>
         ''', unsafe_allow_html=True)
         
