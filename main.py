@@ -83,7 +83,7 @@ def main():
         with st.sidebar:
             # Logo container
             st.markdown('<div class="logo-container">', unsafe_allow_html=True)
-            st.markdown('### 📦 מחסן השאלות')
+            st.image('assets/logo.png', width=200)
             st.markdown('</div>', unsafe_allow_html=True)
             
             # User info
@@ -182,7 +182,7 @@ def main():
         # Login/Register view with sidebar
         with st.sidebar:
             st.markdown('<div class="logo-container">', unsafe_allow_html=True)
-            st.markdown('### 📦 מחסן השאלות')
+            st.image('assets/logo.png', width=200)
             st.markdown('</div>', unsafe_allow_html=True)
             st.divider()
             
