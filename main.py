@@ -44,9 +44,13 @@ def main():
         
         .main .block-container {
             padding-top: 1rem;
-            padding-right: 15rem; /* שומר מקום לסייד-בר */
+            padding-right: 7.5rem; /* שומר מקום לסייד-בר - צומצם לחצי */
             padding-left: 1rem;
             padding-bottom: 1rem;
+        }
+        
+        [data-testid="stSidebar"] {
+            width: 7.5rem !important;
         }
         .sidebar .sidebar-content {
             direction: rtl;
@@ -96,8 +100,13 @@ def main():
             text-align: right;
         }
         .logo-container {
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
             text-align: center;
+        }
+        
+        .logo-container img {
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
         }
         
         /* Custom styles for Hebrew headers */
@@ -123,7 +132,7 @@ def main():
         with st.sidebar:
             # Logo container
             st.markdown('<div class="logo-container">', unsafe_allow_html=True)
-            st.image('assets/logo.png', width=200)
+            st.image('assets/logo.png', width=100, use_column_width=False)
             st.markdown('</div>', unsafe_allow_html=True)
             
             # User info
@@ -222,7 +231,7 @@ def main():
         # Login/Register view with sidebar
         with st.sidebar:
             st.markdown('<div class="logo-container">', unsafe_allow_html=True)
-            st.image('assets/logo.png', width=200)
+            st.image('assets/logo.png', width=100, use_column_width=False)
             st.markdown('</div>', unsafe_allow_html=True)
             st.divider()
             
