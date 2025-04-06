@@ -132,7 +132,7 @@ def main():
         with st.sidebar:
             # Logo container
             st.markdown('<div class="logo-container">', unsafe_allow_html=True)
-            st.image('assets/logo.png', width=100, use_container_width=False)
+            st.image('assets/logo.png', use_container_width=True)
             st.markdown('</div>', unsafe_allow_html=True)
             
             # User info
@@ -231,7 +231,7 @@ def main():
         # Login/Register view with sidebar
         with st.sidebar:
             st.markdown('<div class="logo-container">', unsafe_allow_html=True)
-            st.image('assets/logo.png', width=100, use_container_width=False)
+            st.image('assets/logo.png', use_container_width=True)
             st.markdown('</div>', unsafe_allow_html=True)
             st.divider()
             
