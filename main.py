@@ -28,73 +28,79 @@ def main():
     init_db()
     init_auth()
     
-    # Add ALL CSS styling here directly
+    # Add custom CSS based on provided design
     st.markdown('''
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Outfit:wght@400;500;600&display=swap');
         
         /* בסיס */
         * {
-            font-family: 'Open Sans', sans-serif !important;
+            font-family: 'Poppins', 'Open Sans', sans-serif !important;
         }
         
         .stApp {
             direction: rtl;
-            font-family: 'Open Sans', sans-serif !important;
-            background-color: #F8F9FB;
+            background-color: #FAFBFF !important;
         }
         
-        /* פס ניווט עליון */
+        /* פס ניווט עליון חדש */
         .top-header {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            height: 70px;
+            height: 100px;
             background-color: white;
-            border-bottom: 1px solid #E6E6E6;
+            border-bottom: 1px #CECECE solid;
             z-index: 999;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 2rem;
         }
         
-        /* אזור תוכן ראשי */
+        /* אזור תוכן ראשי חדש */
         .main .block-container {
-            padding-top: 90px; /* מרווח מפס העליון */
+            padding-top: 120px;
             padding-right: 1rem;
-            padding-left: 18rem; /* מרווח לסייד-בר */
+            padding-left: 350px;
             padding-bottom: 1rem;
             margin: 0 auto;
         }
         
-        /* עיצוב תיבת תוכן */
+        /* עיצוב תיבת תוכן חדש */
         .content-box {
+            width: 100%;
             background-color: white;
             border-radius: 10px;
-            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.15);
             padding: 20px;
             margin-bottom: 20px;
+            border: 2px #EBEBEE solid;
         }
         
-        /* סייד-בר */
+        /* סייד-בר חדש */
         [data-testid="stSidebar"] {
-            background-color: #F8F9FB !important;
-            padding-top: 90px !important; /* מרווח מפס העליון */
-            width: 17rem !important;
+            background-color: white !important;
+            padding-top: 100px !important;
+            width: 306px !important;
+            border-left: none !important;
+            box-shadow: 0px 10px 60px rgba(225, 236, 248, 0.50) !important;
+            position: fixed;
+            right: 0 !important;
+            left: auto !important;
         }
         
         /* לוגו */
         .logo-container {
             display: flex;
-            justify-content: flex-end;
+            justify-content: center;
             align-items: center;
             height: 100%;
+            padding-top: 16px;
         }
         
         .logo-container img {
-            height: 40px;
+            height: 54px;
             width: auto;
         }
         
@@ -102,95 +108,92 @@ def main():
         .user-profile {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 18px;
+            margin-left: 28px;
         }
         
         .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: #F2F2F2;
+            width: 36.85px;
+            height: 36.85px;
+            border-radius: 7.68px;
+            background-color: #FFA78D;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #666;
-            font-weight: 600;
+            color: white;
+            font-weight: 500;
+            overflow: hidden;
         }
         
         .user-info {
             text-align: left;
+            display: flex;
+            flex-direction: column;
         }
         
         .welcome-text {
-            font-size: 14px;
-            color: #666;
+            font-size: 11.52px;
+            color: #373B5C;
             margin: 0;
+            font-family: Poppins !important;
+            font-weight: 500;
         }
         
         .user-name {
-            font-size: 16px;
-            font-weight: 600;
-            color: #333;
+            font-size: 19.58px;
+            color: #373B5C;
             margin: 0;
+            font-family: Poppins !important;
+            font-weight: 500;
         }
         
         /* כפתורי תפריט */
-        .menu-button {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: transparent;
-            border: none;
-            width: 100%;
-            text-align: right;
-            padding: 12px 15px;
-            margin-bottom: 5px;
-            border-radius: 5px;
-            font-weight: 600;
-            color: #333;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .menu-button:hover {
-            background-color: #f0f0f0;
-            color: #E03C31;
-        }
-        
-        /* כפתורי תפריט סטרימליט מקוריים */
         .stButton > button {
-            border-radius: 5px;
-            font-weight: 600;
-            font-family: 'Open Sans', sans-serif !important;
+            font-family: 'Outfit', sans-serif !important;
+            font-weight: 500 !important;
+            font-size: 16px !important;
+            color: #9197B3 !important;
             border: none !important;
             background: none !important;
-            color: #333 !important;
             text-align: right;
             padding: 0.75rem 1rem;
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start;
             align-items: center;
             width: 100%;
         }
         
         .stButton > button:hover {
-            background-color: #f5f5f5 !important;
-            color: #E03C31 !important;
+            background-color: rgba(0, 0, 0, 0.05) !important;
         }
         
         .stButton > button::after {
             content: "❯";
-            margin-left: 10px;
+            margin-left: auto;
+            margin-right: 0;
             font-size: 0.8rem;
+            transform: rotate(180deg);
+            color: #9197B3;
         }
         
-        /* תיבות טקסט וכפתורים */
-        .stTextInput > div > div > input {
-            direction: rtl;
+        /* מעטפת לפרופיל משתמש עם עיצוב */
+        .profile-wrapper {
+            flex: 1;
+            height: 61.03px;
+            padding: 11.52px;
+            background: rgba(255, 255, 255, 0.50);
+            border-radius: 9.21px;
+            outline: 1.15px #E8EFF7 solid;
+            outline-offset: -1.15px;
+            display: flex;
+            align-items: center;
+            gap: 11.52px;
         }
         
-        button[kind="secondary"] {
+        /* עיצוב תוויות מדדים */
+        div[data-testid="stMetricLabel"] {
             direction: rtl;
+            text-align: right;
         }
         
         /* טאבים */
@@ -204,35 +207,30 @@ def main():
             margin-left: 10px;
         }
         
-        /* פונטים */
-        input, textarea, div[data-baseweb="input"], div[data-baseweb="select"] {
-            font-family: 'Open Sans', sans-serif !important;
-        }
-        
-        table, th, td, div[data-testid="stTable"], div[data-testid="stDataFrame"] {
-            font-family: 'Open Sans', sans-serif !important;
-        }
-        
-        div[data-testid="stMetricLabel"] {
+        /* תיבות טקסט */
+        .stTextInput > div > div > input {
             direction: rtl;
-            text-align: right;
         }
         
-        h1, h2, h3, h4, h5, h6, .stTitle {
-            font-family: 'Open Sans', sans-serif !important;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-        }
-        
-        /* ריווח */
-        div[data-testid="stVerticalBlock"] > div {
-            margin-bottom: 1rem;
+        button[kind="secondary"] {
+            direction: rtl;
         }
         
         /* התראות */
         div[data-baseweb="notification"] {
             border-radius: 5px;
             border-width: 1px;
+        }
+        
+        /* כפתור דשבורד מיוחד */
+        .dashboard-button {
+            color: white !important;
+            font-size: 14px !important;
+            font-family: Poppins !important;
+            font-weight: 500 !important;
+            background-color: none !important;
+            padding: 0 !important;
+            margin-bottom: 1rem !important;
         }
     </style>
     ''', unsafe_allow_html=True)
@@ -241,29 +239,47 @@ def main():
     if 'current_page' not in st.session_state:
         st.session_state.current_page = 'מלאי' if st.session_state.get('user') and st.session_state.user.role == 'warehouse' else 'התחברות'
     
-    # Create top header with logo for ALL pages
+    # Create full layout according to the provided design
     st.markdown(f'''
-    <div class="top-header">
-        <div class="logo-container">
-            <img src="./assets/logo.png" alt="Logo">
+    <div style="width: 1440px; height: 1024px; position: relative; background: #FAFBFF">
+      <div style="width: 1440px; height: 100px; left: 0px; top: 0px; position: absolute; background: white; overflow: hidden; border-bottom: 1px #CECECE solid">
+        <div style="width: 342px; height: 64.48px; left: 28px; top: 18px; position: absolute; justify-content: flex-start; align-items: center; gap: 18.42px; display: inline-flex">
+          <div style="width: 27.64px; height: 27.64px; position: relative; background: rgba(0, 0, 0, 0); overflow: hidden">
+            <div style="width: 21.30px; height: 24.76px; left: 3.45px; top: 1.15px; position: absolute; background: #1E2875"></div>
+          </div>
+          <div class="profile-wrapper">
+            <div class="user-avatar">{''.join([name[0] for name in st.session_state.user.full_name.split() if st.session_state.user]) if st.session_state.get('user') else 'G'}</div>
+            <div class="user-info">
+              <div class="welcome-text">{'Welcome back,' if st.session_state.get('user') else 'Guest'}</div>
+              <div class="user-name">{st.session_state.user.full_name if st.session_state.get('user') else 'אורח'}</div>
+            </div>
+            <div style="width: 27.64px; height: 27.64px; position: relative; background: rgba(0, 0, 0, 0); overflow: hidden">
+              <div style="width: 17.85px; height: 9.79px; left: 4.89px; top: 8.92px; position: absolute; background: #1E2875"></div>
+            </div>
+          </div>
         </div>
+      </div>
+      <div style="width: 1049px; height: 815px; left: 45px; top: 155px; position: absolute; background: white; box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.15); border-radius: 10px; border: 2px #EBEBEE solid" class="content-container"></div>
+      <div style="width: 306px; height: 1024px; left: 1140px; top: 0px; position: absolute" class="sidebar-container">
+        <div style="width: 306px; height: 1024px; left: 0px; top: 0px; position: absolute; background: white; box-shadow: 0px 10px 60px rgba(225.83, 236.19, 248.63, 0.50)"></div>
+        <img style="width: 176px; height: 54px; left: 104px; top: 16px; position: absolute" src="./assets/logo.png" alt="Logo" />
+      </div>
     </div>
     ''', unsafe_allow_html=True)
     
     if st.session_state.user:
-        # Add user profile to header area (logo is already there)
-        st.markdown(f'''
-        <div class="user-profile" style="position: fixed; top: 0; left: 20px; height: 70px; z-index: 1000; display: flex; align-items: center;">
-            <div class="user-avatar">{''.join([name[0] for name in st.session_state.user.full_name.split()])}</div>
-            <div class="user-info">
-                <p class="welcome-text">Welcome back</p>
-                <p class="user-name">{st.session_state.user.full_name} ▼</p>
-            </div>
-        </div>
-        ''', unsafe_allow_html=True)
+        # No need for additional profile markup as it's already in the main layout
         
         # Sidebar with logo and navigation
         with st.sidebar:
+            # Add dashboard button and navigation icons
+            st.markdown('''
+            <div style="width: 24px; height: 20.51px; position: relative; margin-bottom: 20px; overflow: hidden">
+              <div style="width: 20px; height: 17.10px; position: absolute; left: 2px; top: 1.71px; outline: 1.50px #1E2875 solid; outline-offset: -0.75px"></div>
+              <div style="width: 10.99px; height: 9.39px; position: absolute; left: 6.50px; top: 5.57px; outline: 1.50px #1E2875 solid; outline-offset: -0.75px"></div>
+            </div>
+            <div style="color: #1E2875; font-size: 14px; font-family: Poppins; font-weight: 500; margin-bottom: 20px; word-wrap: break-word">Dashboard</div>
+            ''', unsafe_allow_html=True)
             # No user info or logo in sidebar - it's in the header now
             
             # Role-based navigation
@@ -304,8 +320,8 @@ def main():
                 if not overdue_loans.empty:
                     st.warning(f"{len(overdue_loans)} השאלות באיחור")
         
-        # Main content area based on selected page
-        st.markdown('<div class="content-box">', unsafe_allow_html=True)
+        # Main content area based on selected page - place inside the content container defined in layout
+        st.markdown('<div style="position:absolute; top:155px; left:45px; width:1049px; padding:20px; z-index:10;">', unsafe_allow_html=True)
         st.title(st.session_state.current_page)
         
         # Display page content based on current_page
