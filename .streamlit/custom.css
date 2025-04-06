@@ -1,14 +1,18 @@
-/* Import Roboto font */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+/* Import Heebo font for Hebrew support */
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap');
 
-/* Apply Roboto font to everything */
+/* Apply Heebo font to everything */
 * {
-    font-family: 'Roboto', sans-serif !important;
+    font-family: 'Heebo', sans-serif;
+}
+
+body {
+    font-family: 'Heebo', sans-serif;
 }
 
 .stApp {
     direction: rtl;
-    font-family: 'Roboto', sans-serif !important;
+    font-family: 'Heebo', sans-serif;
 }
 
 .main .block-container {
@@ -28,7 +32,7 @@
 h1, h2, h3, h4, h5, h6 {
     color: #2c3e50;
     font-weight: 700;
-    font-family: 'Roboto', sans-serif !important;
+    font-family: 'Heebo', sans-serif !important;
 }
 
 .stTabs [data-baseweb="tab-list"] {
@@ -45,7 +49,7 @@ h1, h2, h3, h4, h5, h6 {
 .stButton > button {
     border-radius: 5px;
     font-weight: 600;
-    font-family: 'Roboto', sans-serif !important;
+    font-family: 'Heebo', sans-serif !important;
 }
 
 /* שינוי גודל אייקונים */
@@ -62,23 +66,23 @@ h1, h2, h3, h4, h5, h6 {
 
 .stTextInput > div > div > input {
     direction: rtl;
-    font-family: 'Roboto', sans-serif !important;
+    font-family: 'Heebo', sans-serif !important;
 }
 
 /* עיצוב תיבות מספרים וטקסט */
 div[data-baseweb="input"] {
     border-radius: 5px;
-    font-family: 'Roboto', sans-serif !important;
+    font-family: 'Heebo', sans-serif !important;
 }
 
-/* Apply Roboto font to table elements */
+/* Apply Heebo font to table elements */
 div[data-testid="stTable"] {
-    font-family: 'Roboto', sans-serif !important;
+    font-family: 'Heebo', sans-serif !important;
 }
 
-/* Apply Roboto font to data grid elements */
+/* Apply Heebo font to data grid elements */
 div[data-testid="stDataFrame"] {
-    font-family: 'Roboto', sans-serif !important;
+    font-family: 'Heebo', sans-serif !important;
 }
 
 /* Custom sidebar styling */
