@@ -239,31 +239,19 @@ def main():
     if 'current_page' not in st.session_state:
         st.session_state.current_page = 'מלאי' if st.session_state.get('user') and st.session_state.user.role == 'warehouse' else 'התחברות'
     
-    # Create full layout according to the provided design
+    # Create header area with user profile and logo
     st.markdown(f'''
-    <div style="width: 1440px; height: 1024px; position: relative; background: #FAFBFF">
-      <div style="width: 1440px; height: 100px; left: 0px; top: 0px; position: absolute; background: white; overflow: hidden; border-bottom: 1px #CECECE solid">
-        <div style="width: 342px; height: 64.48px; left: 28px; top: 18px; position: absolute; justify-content: flex-start; align-items: center; gap: 18.42px; display: inline-flex">
-          <div style="width: 27.64px; height: 27.64px; position: relative; background: rgba(0, 0, 0, 0); overflow: hidden">
-            <div style="width: 21.30px; height: 24.76px; left: 3.45px; top: 1.15px; position: absolute; background: #1E2875"></div>
-          </div>
-          <div class="profile-wrapper">
-            <div class="user-avatar">{''.join([name[0] for name in st.session_state.user.full_name.split() if st.session_state.user]) if st.session_state.get('user') else 'G'}</div>
+    <div class="top-header">
+        <div class="user-profile">
+            <div class="user-avatar">{''.join([name[0] for name in st.session_state.user.full_name.split()]) if st.session_state.get('user') else 'G'}</div>
             <div class="user-info">
-              <div class="welcome-text">{'Welcome back,' if st.session_state.get('user') else 'Guest'}</div>
-              <div class="user-name">{st.session_state.user.full_name if st.session_state.get('user') else 'אורח'}</div>
+                <p class="welcome-text">{'Welcome back,' if st.session_state.get('user') else 'Guest'}</p>
+                <p class="user-name">{st.session_state.user.full_name if st.session_state.get('user') else 'אורח'}</p>
             </div>
-            <div style="width: 27.64px; height: 27.64px; position: relative; background: rgba(0, 0, 0, 0); overflow: hidden">
-              <div style="width: 17.85px; height: 9.79px; left: 4.89px; top: 8.92px; position: absolute; background: #1E2875"></div>
-            </div>
-          </div>
         </div>
-      </div>
-      <div style="width: 1049px; height: 815px; left: 45px; top: 155px; position: absolute; background: white; box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.15); border-radius: 10px; border: 2px #EBEBEE solid" class="content-container"></div>
-      <div style="width: 306px; height: 1024px; left: 1140px; top: 0px; position: absolute" class="sidebar-container">
-        <div style="width: 306px; height: 1024px; left: 0px; top: 0px; position: absolute; background: white; box-shadow: 0px 10px 60px rgba(225.83, 236.19, 248.63, 0.50)"></div>
-        <img style="width: 176px; height: 54px; left: 104px; top: 16px; position: absolute" src="./assets/logo.png" alt="Logo" />
-      </div>
+        <div class="logo-container">
+            <img src="./assets/logo.png" alt="Logo">
+        </div>
     </div>
     ''', unsafe_allow_html=True)
     
@@ -320,8 +308,8 @@ def main():
                 if not overdue_loans.empty:
                     st.warning(f"{len(overdue_loans)} השאלות באיחור")
         
-        # Main content area based on selected page - place inside the content container defined in layout
-        st.markdown('<div style="position:absolute; top:155px; left:45px; width:1049px; padding:20px; z-index:10;">', unsafe_allow_html=True)
+        # Main content area based on selected page
+        st.markdown('<div class="content-box">', unsafe_allow_html=True)
         st.title(st.session_state.current_page)
         
         # Display page content based on current_page
