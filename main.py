@@ -40,6 +40,7 @@ def main():
         .stApp {
             direction: rtl;
             font-family: 'Open Sans', sans-serif !important;
+            background-color: #E7E7E7 !important;
         }
         
         .main .block-container {
@@ -47,6 +48,7 @@ def main():
             padding-right: 15rem; /* שומר מקום לסייד-בר */
             padding-left: 1rem;
             padding-bottom: 1rem;
+            background-color: #E7E7E7 !important;
         }
         .sidebar .sidebar-content {
             direction: rtl;
