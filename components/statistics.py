@@ -6,6 +6,37 @@ from database import get_db_connection
 from datetime import datetime, timedelta
 import calendar
 
+# Custom Plotly theme configuration for Hebrew font
+def apply_hebrew_plotly_theme(fig):
+    """Apply a consistent Hebrew-friendly theme to Plotly charts"""
+    fig.update_layout(
+        font_family="Heebo",
+        title_font_family="Heebo",
+        title_font_size=20,
+        title_font_color="#262730",
+        legend_title_font_family="Heebo",
+        legend_title_font_color="#262730",
+        legend_font_family="Heebo",
+        legend_font_color="#262730",
+        xaxis_title_font_family="Heebo",
+        xaxis_title_font_color="#262730",
+        yaxis_title_font_family="Heebo",
+        yaxis_title_font_color="#262730",
+        xaxis_tickfont_family="Heebo",
+        yaxis_tickfont_family="Heebo",
+        autosize=True,
+        margin=dict(l=50, r=50, t=80, b=50),
+        paper_bgcolor="white",
+        plot_bgcolor="#F8F9FA",
+        title_x=0.5,  # Centered title
+        title_xanchor="center",
+        hoverlabel=dict(
+            font_family="Heebo",
+            font_size=14
+        )
+    )
+    return fig
+
 def calculate_equipment_usage():
     with get_db_connection() as conn:
         # Get equipment usage statistics
@@ -123,6 +154,7 @@ def show_statistics():
             labels={'item_name': 'שם הפריט', 'total_loans': 'מספר השאלות'}
         )
         fig.update_layout(xaxis_tickangle=-45)
+        apply_hebrew_plotly_theme(fig)
         st.plotly_chart(fig)
 
         # Display average loan duration
@@ -148,6 +180,7 @@ def show_statistics():
                       align='right')
         )])
         fig.update_layout(title='סטודנטים מובילים בהשאלות')
+        apply_hebrew_plotly_theme(fig)
         st.plotly_chart(fig)
 
     # Monthly Trends
@@ -168,6 +201,7 @@ def show_statistics():
                 'variable': 'מדד'
             }
         )
+        apply_hebrew_plotly_theme(fig)
         st.plotly_chart(fig)
 
     # Category Analysis
@@ -182,6 +216,7 @@ def show_statistics():
             names='category',
             title='התפלגות השאלות לפי קטגוריה'
         )
+        apply_hebrew_plotly_theme(fig)
         st.plotly_chart(fig)
 
         # Display category metrics

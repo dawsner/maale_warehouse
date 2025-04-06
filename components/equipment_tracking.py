@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from database import get_db_connection
+from components.statistics import apply_hebrew_plotly_theme
 
 def get_equipment_status():
     """Get real-time equipment status from database"""
@@ -107,6 +108,7 @@ def show_equipment_tracking():
     # Setting RTL layout for Hebrew
     fig.update_yaxes(autorange="reversed")
     fig.update_xaxes(side="top")
+    apply_hebrew_plotly_theme(fig)
     st.plotly_chart(fig, use_container_width=True)
     
     # Detailed equipment table
@@ -198,13 +200,10 @@ def show_equipment_tracking():
     
     fig_pie.update_layout(
         autosize=True,
-        height=400,
-        font=dict(
-            family="Arial, sans-serif",
-            size=14
-        )
+        height=400
     )
     
+    apply_hebrew_plotly_theme(fig_pie)
     st.plotly_chart(fig_pie, use_container_width=True)
     
     # Top equipment utilization - horizontal bar chart
@@ -232,16 +231,13 @@ def show_equipment_tracking():
             yaxis_title='שם הפריט',
             autosize=True,
             height=500,
-            font=dict(
-                family="Arial, sans-serif",
-                size=14
-            ),
             xaxis=dict(
                 ticksuffix='%',
                 range=[0, 100]
             )
         )
         
+        apply_hebrew_plotly_theme(fig_util)
         st.plotly_chart(fig_util, use_container_width=True)
     else:
         st.info("אין מספיק נתונים להצגת ניצולת ציוד")
@@ -302,6 +298,7 @@ def show_equipment_tracking():
             )
         )
         
+        apply_hebrew_plotly_theme(fig_heatmap)
         st.plotly_chart(fig_heatmap, use_container_width=True)
         
         # Show the data table as well
