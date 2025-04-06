@@ -26,7 +26,7 @@ body {
 .sidebar .sidebar-content {
     direction: rtl;
     text-align: right;
-    padding: 1rem;
+    padding: 0;
 }
 
 /* עיצוב ראש הדף */
@@ -92,6 +92,7 @@ section[data-testid="stSidebar"] {
     border-left: 1px solid #eaeaea;
     box-shadow: -2px 0px 5px rgba(0,0,0,0.05);
     width: 17em !important;
+    padding-top: 0 !important;
 }
 
 /* עיצוב אזהרות */
@@ -116,8 +117,9 @@ div[data-testid="stMetricLabel"] {
 
 /* עיצוב תג לוגו */
 .logo-container {
-    margin-top: 0.5rem;
-    margin-bottom: 1.5rem;
+    margin-top: 0;
+    padding-top: 1rem;
+    margin-bottom: 1rem;
     text-align: center;
 }
 
