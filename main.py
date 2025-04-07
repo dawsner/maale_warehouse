@@ -18,7 +18,7 @@ def get_image_as_base64(path):
         return base64.b64encode(image_file.read()).decode()
 
 def main():
-    # Set page config with new layout and disable ability to collapse sidebar
+    # Set page config with new layout
     st.set_page_config(
         page_title="מערכת ניהול מחסן השאלות",
         page_icon="📦",
@@ -26,41 +26,25 @@ def main():
         initial_sidebar_state="expanded"
     )
     
-    # Create a completely different sidebar with CSS that can't be collapsed
+    # הסתרת כפתור קיפול הסייד-בר
     st.markdown('''
     <style>
-    /* First hide the default sidebar completely */
-    [data-testid="collapsedControl"],
-    div:has(> [data-testid="collapsedControl"]) {
+    /* מסתיר את כפתור הקיפול */
+    button[kind="headerButton"] {
         display: none !important;
-        width: 0 !important;
-        height: 0 !important;
-        opacity: 0 !important;
-        visibility: hidden !important;
-        position: absolute !important;
-        left: -9999px !important;
-        pointer-events: none !important;
     }
     
-    /* Force sidebar to remain open */
+    /* הסתרה של אייקון הקיפול */
+    [data-testid="collapsedControl"] {
+        display: none !important;
+    }
+    
+    /* הגדרה של מיקום וגודל קבוע לסייד-בר */
     section[data-testid="stSidebar"] {
-        width: 17rem !important;
-        min-width: 17rem !important;
-        max-width: 17rem !important;
-        transform: none !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        display: flex !important;
-        transition: none !important;
         position: fixed !important;
-    }
-    
-    /* Ensure main content area respects fixed sidebar */
-    .main .block-container {
-        max-width: calc(100% - 17rem) !important;
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
-        margin-left: 17rem !important;
+        left: 0 !important;
+        width: 7.5rem !important;
+        background-color: #E7E7E7 !important;
     }
     </style>
     ''', unsafe_allow_html=True)
