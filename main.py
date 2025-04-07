@@ -29,22 +29,9 @@ def main():
     # הסתרת כפתור קיפול הסייד-בר
     st.markdown('''
     <style>
-    /* מסתיר את כפתור הקיפול */
-    button[kind="headerButton"] {
-        display: none !important;
-    }
-    
-    /* הסתרה של אייקון הקיפול */
+    /* מסתיר את כפתור קיפול התפריט הצדדי */
     [data-testid="collapsedControl"] {
         display: none !important;
-    }
-    
-    /* הגדרה של מיקום וגודל קבוע לסייד-בר */
-    section[data-testid="stSidebar"] {
-        position: fixed !important;
-        left: 0 !important;
-        width: 7.5rem !important;
-        background-color: #E7E7E7 !important;
     }
     </style>
     ''', unsafe_allow_html=True)
