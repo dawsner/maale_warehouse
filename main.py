@@ -62,23 +62,35 @@ def main():
             padding: 0 20px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             direction: rtl;
-            margin-bottom: 20px;
+            margin-bottom: 5px;
             border-radius: 6px;
         }
         
         /* הסתרת האלמנטים המקוריים של סטרימליט */
         [data-testid="stHeader"] {
+            display: none !important;
             height: 0px !important;
             padding: 0 !important;
+            margin: 0 !important;
             overflow: hidden !important;
             position: absolute !important;
+            visibility: hidden !important;
             top: 0;
         }
         
-        /* מרווח בראש הדף כדי לתת מקום לתפריט העליון */
+        /* צמצום המרווח בין התפריט לתוכן העמוד */
         .main .block-container {
-            padding: 1rem;
+            padding-top: 0.1rem !important;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            margin-top: 0 !important;
             max-width: 100% !important;
+        }
+        
+        /* הסרת רווחים נוספים מהכותרת ותוכן העמוד */
+        .main h1, .main h2, .main h3 {
+            margin-top: 0.3rem !important;
+            padding-top: 0 !important;
         }
         
         /* הסתרת התפריט העליון של streamlit */
