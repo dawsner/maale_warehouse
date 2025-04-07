@@ -69,13 +69,13 @@ def main():
             top: 0;
             right: 0;
             left: 0;
-            height: 100px;
+            height: 70px;
             background-color: white;
             box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.05);
             z-index: 999;
             display: flex;
             align-items: center;
-            padding: 0 28px;
+            padding: 0 20px;
             border-bottom: 1px #CECECE solid;
             direction: rtl;
         }
@@ -83,7 +83,7 @@ def main():
         .main-content {
             background: #FAFBFF;
             min-height: calc(100vh - 100px);
-            padding: 2rem;
+            padding: 0.5rem;
         }
         
         .content-card {
@@ -129,7 +129,7 @@ header[data-testid="stHeader"],
         
         /* צמצום המרווח בין התפריט לתוכן העמוד */
         .main .block-container {
-            padding-top: 0.1rem !important;
+            padding-top: 0 !important;
             padding-left: 1rem;
             padding-right: 1rem;
             margin-top: 0 !important;
@@ -138,7 +138,7 @@ header[data-testid="stHeader"],
         
         /* הסרת רווחים נוספים מהכותרת ותוכן העמוד */
         .main h1, .main h2, .main h3 {
-            margin-top: 0.3rem !important;
+            margin-top: 0 !important;
             padding-top: 0 !important;
         }
         
@@ -151,8 +151,8 @@ header[data-testid="stHeader"],
         .top-menu-button {
             display: flex;
             align-items: center;
-            gap: 0.8rem;
-            padding: 0.8rem 1rem;
+            gap: 0.5rem;
+            padding: 0.6rem 0.8rem;
             border: none;
             background-color: transparent;
             color: #9197B3;
@@ -160,7 +160,7 @@ header[data-testid="stHeader"],
             font-weight: 500;
             transition: all 0.3s;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 14px;
             font-family: 'Outfit', sans-serif !important;
         }
         
@@ -184,8 +184,8 @@ header[data-testid="stHeader"],
         
         /* לוגו בתפריט העליון */
         .top-menu-logo {
-            height: 50px;
-            margin-left: 20px;
+            height: 40px;
+            margin-left: 15px;
         }
         
         /* אזור הודעות משתמש בתפריט העליון */
@@ -216,6 +216,13 @@ header[data-testid="stHeader"],
         /* Apply Open Sans font to table elements */
         table, th, td, div[data-testid="stTable"], div[data-testid="stDataFrame"] {
             font-family: 'Open Sans', sans-serif !important;
+        }
+        
+        /* הקטנת הרווח בין כותרת עמוד לתוכן */
+        .main .element-container:first-child h1 {
+            margin-top: 0 !important;
+            padding-top: 0.5rem !important;
+            margin-bottom: 0.5rem !important;
         }
         div[data-testid="stMetricLabel"] {
             direction: rtl;
