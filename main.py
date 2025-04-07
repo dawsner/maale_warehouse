@@ -18,25 +18,14 @@ def get_image_as_base64(path):
         return base64.b64encode(image_file.read()).decode()
 
 def main():
-    # Set page config with new layout
+    # Set page config with new layout - הידוס הסיידבר
     st.set_page_config(
         page_title="מערכת ניהול מחסן השאלות",
         page_icon="📦",
         layout="wide",
-        initial_sidebar_state="expanded"
+        initial_sidebar_state="collapsed"
     )
     
-    # הסתרת כפתור קיפול הסייד-בר
-    st.markdown('''
-    <style>
-    /* מסתיר את כפתור קיפול התפריט הצדדי */
-    [data-testid="collapsedControl"] {
-        display: none !important;
-    }
-    </style>
-    ''', unsafe_allow_html=True)
-    
-
     init_db()
     init_auth()
     
@@ -54,38 +43,70 @@ def main():
             font-family: 'Open Sans', sans-serif !important;
         }
         
+        /* ביטול התפריט הצדדי והפיכתו לתפריט עליון */
+        [data-testid="stSidebar"] {
+            display: none !important;
+        }
+        
+        /* יצירת תפריט עליון קבוע */
+        .top-menu {
+            position: fixed;
+            top: 0;
+            right: 0;
+            left: 0;
+            height: 80px;
+            background-color: #E7E7E7;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            direction: rtl;
+        }
+        
+        /* מרווח בראש הדף כדי לתת מקום לתפריט העליון */
         .main .block-container {
-            padding-top: 1rem;
-            padding-right: 7.5rem; /* שומר מקום לסייד-בר - צומצם לחצי */
-            padding-left: 1rem;
-            padding-bottom: 1rem;
-        }
-        
-        [data-testid="stSidebar"] {
-            width: 7.5rem !important;
-        }
-        .sidebar .sidebar-content {
-            direction: rtl;
-            text-align: right;
+            margin-top: 100px;
             padding: 1rem;
-            background-color: #E7E7E7 !important;
         }
         
-        [data-testid="stSidebar"] {
-            background-color: #E7E7E7 !important;
+        /* עיצוב הכפתורים בתפריט העליון */
+        .top-menu-button {
+            display: inline-block;
+            margin: 0 10px;
+            padding: 5px 15px;
+            border: none;
+            background-color: transparent;
+            color: #333;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            border-radius: 4px;
         }
         
-        [data-testid="stSidebarNav"] {
-            background-color: #E7E7E7 !important;
+        .top-menu-button:hover {
+            background-color: rgba(0,0,0,0.05);
         }
-        .stTabs [data-baseweb="tab-list"] {
-            direction: rtl;
+        
+        .top-menu-button.active {
+            background-color: #0078FF;
+            color: white;
         }
-        .stTabs [data-baseweb="tab"] {
-            direction: rtl;
-            margin-right: 0px;
-            margin-left: 10px;
+        
+        /* לוגו בתפריט העליון */
+        .top-menu-logo {
+            height: 50px;
+            margin-left: 20px;
         }
+        
+        /* אזור הודעות משתמש בתפריט העליון */
+        .user-info {
+            margin-right: auto;  /* דוחף לצד שמאל */
+            display: flex;
+            align-items: center;
+        }
+        
+        /* התאמות נוספות לממשק */
         button[kind="secondary"] {
             direction: rtl;
         }
@@ -111,15 +132,6 @@ def main():
             direction: rtl;
             text-align: right;
         }
-        .logo-container {
-            margin-bottom: 1rem;
-            text-align: center;
-        }
-        
-        .logo-container img {
-            image-rendering: -webkit-optimize-contrast;
-            image-rendering: crisp-edges;
-        }
         
         /* Custom styles for Hebrew headers */
         h1, h2, h3, h4, h5, h6, .stTitle {
@@ -132,6 +144,26 @@ def main():
         div[data-testid="stVerticalBlock"] > div {
             margin-bottom: 1rem;
         }
+        
+        /* עיצוב התפריט העליון כאשר חלון הדפדפן קטן */
+        @media (max-width: 992px) {
+            .top-menu {
+                overflow-x: auto;
+                white-space: nowrap;
+                padding: 0 10px;
+            }
+            
+            .top-menu-button {
+                margin: 0 5px;
+                padding: 5px 10px;
+                font-size: 14px;
+            }
+            
+            .top-menu-logo {
+                height: 40px;
+                margin-left: 10px;
+            }
+        }
     </style>
     ''', unsafe_allow_html=True)
     
@@ -139,55 +171,87 @@ def main():
     if 'current_page' not in st.session_state:
         st.session_state.current_page = 'מלאי' if st.session_state.get('user') and st.session_state.user.role == 'warehouse' else 'התחברות'
     
-    if st.session_state.user:
-        # Sidebar with logo and navigation
-        with st.sidebar:
-            # Logo container
-            st.markdown('<div class="logo-container">', unsafe_allow_html=True)
-            st.image('assets/logo.png', use_container_width=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-            
-            # User info
-            st.write(f"👤 שלום, {st.session_state.user.full_name}")
-            
-            # Role-based navigation
-            st.divider()
-            
-            if st.session_state.user.role == 'warehouse':
-                pages = {
-                    "מלאי": "",
-                    "השאלות": "",
-                    "התראות": "",
-                    "מעקב ציוד": "",
-                    "היסטוריה": "",
-                    "סטטיסטיקות": "",
-                    "ייבוא/ייצוא": "",
-                    "ניהול הזמנות": ""
-                }
-            else:  # student role
-                pages = {
-                    "הציוד שלי": "",
-                    "פריטים זמינים": "",
-                    "הזמנת ציוד": ""
-                }
-            
-            # Navigation buttons
-            for page, icon in pages.items():
-                if st.button(f"{icon} {page}", key=f"nav_{page}", use_container_width=True):
-                    st.session_state.current_page = page
-                    st.rerun()
-            
-            # Logout button at the bottom
-            st.divider()
-            if st.button("התנתק", use_container_width=True):
-                logout()
+    # יצירת התפריט העליון
+    if st.session_state.get('user'):
+        if st.session_state.user.role == 'warehouse':
+            pages = {
+                "מלאי": "",
+                "השאלות": "",
+                "התראות": "",
+                "מעקב ציוד": "",
+                "היסטוריה": "",
+                "סטטיסטיקות": "",
+                "ייבוא/ייצוא": "",
+                "ניהול הזמנות": ""
+            }
+        else:  # student role
+            pages = {
+                "הציוד שלי": "",
+                "פריטים זמינים": "",
+                "הזמנת ציוד": ""
+            }
+        
+        # בניית התפריט העליון כ-HTML
+        menu_html = '<div class="top-menu">'
+        # הוספת הלוגו
+        menu_html += f'<img src="data:image/png;base64,{get_image_as_base64("assets/logo.png")}" class="top-menu-logo" alt="Logo">'
+        
+        # הוספת הכפתורים
+        for page, icon in pages.items():
+            active_class = "active" if st.session_state.current_page == page else ""
+            page_id = page.replace(" ", "_")
+            menu_html += f'<button id="nav_{page_id}" class="top-menu-button {active_class}">{icon} {page}</button>'
+        
+        # הוספת פרטי המשתמש ולחצן ההתנתקות
+        menu_html += f'<div class="user-info">'
+        menu_html += f'<span>👤 שלום, {st.session_state.user.full_name}</span>'
+        menu_html += f'<button id="nav_logout" class="top-menu-button">התנתק</button>'
+        menu_html += '</div>'
+        
+        menu_html += '</div>'
+        
+        # הצגת התפריט העליון
+        st.markdown(menu_html, unsafe_allow_html=True)
+        
+        # JavaScript לטיפול בלחיצות על כפתורי התפריט
+        js = """
+        <script>
+            // כפתורי ניווט
+            document.querySelectorAll('.top-menu-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const id = this.id;
+                    
+                    if (id === 'nav_logout') {
+                        window.parent.postMessage({"type": "streamlit:setComponentValue", "value": {"action": "logout"}}, "*");
+                    } else {
+                        const page = id.replace('nav_', '').replace('_', ' ');
+                        window.parent.postMessage({"type": "streamlit:setComponentValue", "value": {"action": "navigate", "page": page}}, "*");
+                    }
+                });
+            });
+        </script>
+        """
+        st.markdown(js, unsafe_allow_html=True)
+        
+        # בדיקת ניווט מהתפריט
+        nav_callback = st.empty()
+        
+        if 'nav_action' in st.session_state:
+            action = st.session_state.nav_action
+            if action.get('action') == 'navigate':
+                st.session_state.current_page = action.get('page')
+                del st.session_state.nav_action
                 st.rerun()
-            
-            # Show overdue notifications badge for warehouse staff
-            if st.session_state.user.role == 'warehouse':
-                overdue_loans = get_overdue_loans()
-                if not overdue_loans.empty:
-                    st.warning(f"{len(overdue_loans)} השאלות באיחור")
+            elif action.get('action') == 'logout':
+                logout()
+                del st.session_state.nav_action
+                st.rerun()
+        
+        # הצגת מידע על השאלות באיחור לצוות המחסן
+        if st.session_state.user.role == 'warehouse':
+            overdue_loans = get_overdue_loans()
+            if not overdue_loans.empty:
+                st.warning(f"{len(overdue_loans)} השאלות באיחור")
         
         # Main content area based on selected page
         st.title(st.session_state.current_page)
@@ -240,19 +304,45 @@ def main():
             elif st.session_state.current_page == 'הזמנת ציוד':
                 show_reservations_page()
     else:
-        # Login/Register view with sidebar
-        with st.sidebar:
-            st.markdown('<div class="logo-container">', unsafe_allow_html=True)
-            st.image('assets/logo.png', use_container_width=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-            st.divider()
+        # תפריט עליון למסך ההתחברות/הרשמה
+        login_menu_html = '<div class="top-menu">'
+        # הוספת הלוגו
+        login_menu_html += f'<img src="data:image/png;base64,{get_image_as_base64("assets/logo.png")}" class="top-menu-logo" alt="Logo">'
+        
+        # כפתורי התחברות/הרשמה
+        login_active = "active" if st.session_state.current_page == 'התחברות' else ""
+        register_active = "active" if st.session_state.current_page == 'הרשמה' else ""
+        
+        login_menu_html += f'<button id="nav_login" class="top-menu-button {login_active}">התחברות</button>'
+        login_menu_html += f'<button id="nav_register" class="top-menu-button {register_active}">הרשמה</button>'
+        login_menu_html += '</div>'
+        
+        # הצגת התפריט העליון
+        st.markdown(login_menu_html, unsafe_allow_html=True)
+        
+        # JavaScript לטיפול בלחיצות על כפתורים
+        js = """
+        <script>
+            // כפתורי ניווט
+            document.getElementById('nav_login').addEventListener('click', function() {
+                window.parent.postMessage({"type": "streamlit:setComponentValue", "value": {"action": "navigate", "page": "התחברות"}}, "*");
+            });
             
-            # Switch between login and registration
-            if st.button("התחברות", key="nav_login", use_container_width=True):
-                st.session_state.current_page = 'התחברות'
-                st.rerun()
-            if st.button("הרשמה", key="nav_register", use_container_width=True):
-                st.session_state.current_page = 'הרשמה'
+            document.getElementById('nav_register').addEventListener('click', function() {
+                window.parent.postMessage({"type": "streamlit:setComponentValue", "value": {"action": "navigate", "page": "הרשמה"}}, "*");
+            });
+        </script>
+        """
+        st.markdown(js, unsafe_allow_html=True)
+        
+        # בדיקת ניווט מהתפריט
+        nav_callback = st.empty()
+        
+        if 'nav_action' in st.session_state:
+            action = st.session_state.nav_action
+            if action.get('action') == 'navigate':
+                st.session_state.current_page = action.get('page')
+                del st.session_state.nav_action
                 st.rerun()
         
         # Show login or registration based on current page
