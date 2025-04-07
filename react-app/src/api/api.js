@@ -26,37 +26,44 @@ axiosInstance.interceptors.request.use(
 export const inventoryAPI = {
   // קבלת כל פריטי המלאי
   getItems: async () => {
-    const response = await axiosInstance.get('/inventory');
-    return response.data;
+    try {
+      console.log('Fetching inventory from API...');
+      const response = await axiosInstance.get('/api/inventory');
+      console.log('Inventory response received:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching inventory:', error);
+      throw error;
+    }
   },
 
   // הוספת פריט חדש
   addItem: async (itemData) => {
-    const response = await axiosInstance.post('/inventory', itemData);
+    const response = await axiosInstance.post('/api/inventory', itemData);
     return response.data;
   },
 
   // עדכון פריט קיים
   updateItem: async (itemId, itemData) => {
-    const response = await axiosInstance.put(`/inventory/${itemId}`, itemData);
+    const response = await axiosInstance.put(`/api/inventory/${itemId}`, itemData);
     return response.data;
   },
 
   // מחיקת פריט
   deleteItem: async (itemId) => {
-    await axiosInstance.delete(`/inventory/${itemId}`);
+    await axiosInstance.delete(`/api/inventory/${itemId}`);
     return true;
   },
 
   // שינוי זמינות פריט
   toggleAvailability: async (itemId, isAvailable) => {
-    const response = await axiosInstance.put(`/inventory/${itemId}/availability`, { isAvailable });
+    const response = await axiosInstance.put(`/api/inventory/${itemId}/availability`, { isAvailable });
     return response.data;
   },
 
   // יבוא מקובץ אקסל
   importFromExcel: async (formData) => {
-    const response = await axiosInstance.post('/inventory/import', formData, {
+    const response = await axiosInstance.post('/api/inventory/import', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return response.data;
@@ -64,7 +71,7 @@ export const inventoryAPI = {
 
   // יצוא לקובץ אקסל
   exportToExcel: async () => {
-    const response = await axiosInstance.get('/inventory/export', { responseType: 'blob' });
+    const response = await axiosInstance.get('/api/inventory/export', { responseType: 'blob' });
     return response.data;
   },
 };
@@ -73,31 +80,43 @@ export const inventoryAPI = {
 export const loansAPI = {
   // קבלת כל ההשאלות
   getLoans: async () => {
-    const response = await axiosInstance.get('/loans');
-    return response.data;
+    try {
+      console.log('Fetching loans from API...');
+      const response = await axiosInstance.get('/api/loans');
+      console.log('Loans response received:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching loans:', error);
+      throw error;
+    }
   },
 
   // קבלת השאלות של משתמש ספציפי
   getUserLoans: async (userId) => {
-    const response = await axiosInstance.get(`/loans/user/${userId}`);
-    return response.data;
+    try {
+      const response = await axiosInstance.get(`/api/loans/user/${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user loans:', error);
+      throw error;
+    }
   },
 
   // יצירת השאלה חדשה
   createLoan: async (loanData) => {
-    const response = await axiosInstance.post('/loans', loanData);
+    const response = await axiosInstance.post('/api/loans', loanData);
     return response.data;
   },
 
   // החזרת פריט מושאל
   returnLoan: async (loanId, returnNotes) => {
-    const response = await axiosInstance.put(`/loans/${loanId}/return`, { returnNotes });
+    const response = await axiosInstance.put(`/api/loans/${loanId}/return`, { returnNotes });
     return response.data;
   },
 
   // קבלת פרטי השאלה
   getLoanDetails: async (loanId) => {
-    const response = await axiosInstance.get(`/loans/${loanId}`);
+    const response = await axiosInstance.get(`/api/loans/${loanId}`);
     return response.data;
   },
 };
@@ -106,25 +125,30 @@ export const loansAPI = {
 export const reservationsAPI = {
   // קבלת כל ההזמנות
   getReservations: async () => {
-    const response = await axiosInstance.get('/reservations');
-    return response.data;
+    try {
+      const response = await axiosInstance.get('/api/reservations');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching reservations:', error);
+      throw error;
+    }
   },
 
   // קבלת הזמנות של משתמש ספציפי
   getUserReservations: async (userId) => {
-    const response = await axiosInstance.get(`/reservations/user/${userId}`);
+    const response = await axiosInstance.get(`/api/reservations/user/${userId}`);
     return response.data;
   },
 
   // יצירת הזמנה חדשה
   createReservation: async (reservationData) => {
-    const response = await axiosInstance.post('/reservations', reservationData);
+    const response = await axiosInstance.post('/api/reservations', reservationData);
     return response.data;
   },
 
   // עדכון סטטוס הזמנה
   updateReservationStatus: async (reservationId, status) => {
-    const response = await axiosInstance.put(`/reservations/${reservationId}/status`, { status });
+    const response = await axiosInstance.put(`/api/reservations/${reservationId}/status`, { status });
     return response.data;
   },
 };
@@ -199,25 +223,32 @@ export const authAPI = {
 export const statsAPI = {
   // קבלת נתוני שימוש בציוד
   getEquipmentUsage: async () => {
-    const response = await axiosInstance.get('/stats/equipment-usage');
-    return response.data;
+    try {
+      console.log('Fetching equipment usage stats...');
+      const response = await axiosInstance.get('/api/stats/equipment-usage');
+      console.log('Stats received:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching statistics:', error);
+      throw error;
+    }
   },
 
   // קבלת נתוני סטטיסטיקה לפי סטודנטים
   getStudentStats: async () => {
-    const response = await axiosInstance.get('/stats/student-usage');
+    const response = await axiosInstance.get('/api/stats/student-usage');
     return response.data;
   },
 
   // קבלת מגמות חודשיות
   getMonthlyTrends: async () => {
-    const response = await axiosInstance.get('/stats/monthly-trends');
+    const response = await axiosInstance.get('/api/stats/monthly-trends');
     return response.data;
   },
 
   // קבלת ניתוח קטגוריות
   getCategoryAnalysis: async () => {
-    const response = await axiosInstance.get('/stats/category-analysis');
+    const response = await axiosInstance.get('/api/stats/category-analysis');
     return response.data;
   },
 };
@@ -226,7 +257,7 @@ export const statsAPI = {
 export const importExportAPI = {
   // יבוא נתונים מאקסל
   importData: async (formData) => {
-    const response = await axiosInstance.post('/import', formData, {
+    const response = await axiosInstance.post('/api/import', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return response.data;
@@ -234,7 +265,7 @@ export const importExportAPI = {
 
   // יצוא נתונים לאקסל
   exportData: async () => {
-    const response = await axiosInstance.get('/export', { responseType: 'blob' });
+    const response = await axiosInstance.get('/api/export', { responseType: 'blob' });
     return response.data;
   },
 };
