@@ -43,41 +43,65 @@ def main():
             background-color: #FAFBFF !important;
         }
         
-        /* הסתרת צלמית החץ המובנית של Streamlit להסתרת הסייד-בר */
-        section[data-testid="stSidebar"] > div > div:first-child > div > button[kind="header"] {
+        /* חסימה מוחלטת של כפתור התפריט בסרגל הצד */
+        section[data-testid="stSidebar"] button[kind="header"],
+        button[data-testid="collapseSidebarButton"],
+        [data-testid="collapsedControl"],
+        [data-testid="expandControl"],
+        div:has(> button[kind="header"]),
+        div:has(> [data-testid="collapseSidebarButton"]),
+        .css-fblp2m, .css-1rs6os, .css-17ziqus, .css-1mgrnw, .css-ch5dnh {
             display: none !important;
             visibility: hidden !important;
-            opacity: 0 !important;
-            height: 0 !important;
             width: 0 !important;
+            height: 0 !important;
             position: absolute !important;
             top: -9999px !important;
             left: -9999px !important;
+            z-index: -9999 !important;
         }
         
-        /* הסתרת כפתור התכווצות של הסייד-בר */
-        .css-fblp2m,  /* סלקטור של כפתור ההתכווצות */
-        .css-1rs6os, /* סלקטור חלופי */
-        .css-17ziqus, /* סלקטור חלופי */
-        .css-1mgrnw  /* סלקטור חלופי */
-        {
-            display: none !important;
-            visibility: hidden !important;
+        /* נעילת הסייד-בר כאלמנט קבוע בצד ימין */
+        [data-testid="stSidebar"] {
+            position: fixed !important;
+            right: 0 !important;
+            top: 0 !important;
+            width: 306px !important;
+            height: 100vh !important;
+            transform: none !important;
+            transition: none !important;
+            opacity: 1 !important;
+            visibility: visible !important;
         }
         
-        /* פס ניווט עליון חדש */
+        /* פס ניווט עליון בדיוק כמו בדוגמה */
         .top-header {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            height: 100px;
+            height: 80px;
             background-color: white;
             border-bottom: 1px #CECECE solid;
             z-index: 999;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            padding: 0 20px;
+        }
+        
+        /* צדדים שמאל וימין של הכותרת */
+        .left-side, .right-side {
+            display: flex;
+            align-items: center;
+            height: 100%;
+        }
+        
+        /* סגנון לאייקון הורדה (חץ למטה) */
+        .user-dropdown-icon {
+            margin-right: 8px;
+            font-size: 12px;
+            color: #666;
         }
         
         /* אזור תוכן ראשי חדש עם תמיכה מלאה ב-RTL */
@@ -308,18 +332,23 @@ def main():
     if 'current_page' not in st.session_state:
         st.session_state.current_page = 'מלאי' if st.session_state.get('user') and st.session_state.user.role == 'warehouse' else 'התחברות'
     
-    # Create header area with user profile and logo
+    # Create header area with user profile and logo - עיצוב בדיוק כמו בדוגמה
     st.markdown(f'''
     <div class="top-header">
-        <div class="user-profile">
-            <div class="user-avatar">{''.join([name[0] for name in st.session_state.user.full_name.split()]) if st.session_state.get('user') else 'G'}</div>
-            <div class="user-info">
-                <p class="welcome-text">{'Welcome back,' if st.session_state.get('user') else 'Guest'}</p>
-                <p class="user-name">{st.session_state.user.full_name if st.session_state.get('user') else 'אורח'}</p>
+        <div class="left-side">
+            <div class="user-profile">
+                <div class="user-avatar">{''.join([name[0] for name in st.session_state.user.full_name.split()]) if st.session_state.get('user') else 'G'}</div>
+                <div class="user-info">
+                    <p class="welcome-text">{'Welcome back,' if st.session_state.get('user') else 'Guest'}</p>
+                    <p class="user-name">{st.session_state.user.full_name if st.session_state.get('user') else 'אורח'}</p>
+                </div>
+                <div class="user-dropdown-icon">&#9662;</div>
             </div>
         </div>
-        <div class="logo-container">
-            <img src="./assets/logo.png" alt="Logo">
+        <div class="right-side">
+            <div class="logo-container">
+                <img src="./assets/logo.png" alt="Logo">
+            </div>
         </div>
     </div>
     ''', unsafe_allow_html=True)
