@@ -32,10 +32,25 @@ def main():
     # Add RTL CSS and Open Sans Hebrew font
     st.markdown('''
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Outfit:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@300;400;500;600;700&display=swap');
         
         * {
-            font-family: 'Poppins', sans-serif !important;
+            font-family: 'IBM Plex Sans Hebrew', sans-serif !important;
+        }
+        
+        .stApp > header {
+            background-color: transparent !important;
+        }
+        
+        .main .block-container {
+            padding: 0 !important;
+            max-width: 1440px !important;
+            background: #FAFBFF;
+            min-height: 100vh;
+        }
+        
+        [data-testid="stHeader"] {
+            display: none;
         }
         
         .stApp {
@@ -56,6 +71,7 @@ def main():
             left: 0;
             height: 100px;
             background-color: white;
+            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.05);
             z-index: 999;
             display: flex;
             align-items: center;
@@ -72,9 +88,9 @@ def main():
         
         .content-card {
             background: white;
-            border-radius: 10px;
-            border: 2px solid #EBEBEE;
-            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.15);
+            border-radius: 12px;
+            border: 1px solid #E8EFF7;
+            box-shadow: 0px 4px 8px rgba(30, 40, 117, 0.08);
             padding: 2rem;
             margin-bottom: 2rem;
         }
