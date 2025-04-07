@@ -48,13 +48,13 @@ def main():
             display: none !important;
         }
         
-        /* יצירת תפריט עליון קבוע */
+        /* יצירת תפריט עליון קבוע מתחת לתפריט של streamlit */
         .top-menu {
-            position: fixed;
+            position: sticky;
             top: 0;
             right: 0;
             left: 0;
-            height: 80px;
+            height: 60px;
             background-color: #E7E7E7;
             z-index: 999;
             display: flex;
@@ -62,12 +62,28 @@ def main():
             padding: 0 20px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             direction: rtl;
+            margin-bottom: 20px;
+            border-radius: 6px;
+        }
+        
+        /* הסתרת האלמנטים המקוריים של סטרימליט */
+        [data-testid="stHeader"] {
+            height: 0px !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+            position: absolute !important;
+            top: 0;
         }
         
         /* מרווח בראש הדף כדי לתת מקום לתפריט העליון */
         .main .block-container {
-            margin-top: 100px;
             padding: 1rem;
+            max-width: 100% !important;
+        }
+        
+        /* הסתרת התפריט העליון של streamlit */
+        header[data-testid="stHeader"] {
+            display: none !important;
         }
         
         /* עיצוב הכפתורים בתפריט העליון */
@@ -220,12 +236,15 @@ def main():
             document.querySelectorAll('.top-menu-button').forEach(button => {
                 button.addEventListener('click', function() {
                     const id = this.id;
+                    const nav_btn = window.parent.document.querySelector('button[key="nav_btn_action"]');
                     
                     if (id === 'nav_logout') {
-                        window.parent.postMessage({"type": "streamlit:setComponentValue", "value": {"action": "logout"}}, "*");
+                        window.parent.Streamlit.setComponentValue({do_logout: true});
+                        if (nav_btn) nav_btn.click();
                     } else {
-                        const page = id.replace('nav_', '').replace('_', ' ');
-                        window.parent.postMessage({"type": "streamlit:setComponentValue", "value": {"action": "navigate", "page": page}}, "*");
+                        const page = id.replace('nav_', '').replace(/_/g, ' ');
+                        window.parent.Streamlit.setComponentValue({nav_page: page});
+                        if (nav_btn) nav_btn.click();
                     }
                 });
             });
@@ -233,18 +252,20 @@ def main():
         """
         st.markdown(js, unsafe_allow_html=True)
         
-        # בדיקת ניווט מהתפריט
-        nav_callback = st.empty()
-        
-        if 'nav_action' in st.session_state:
-            action = st.session_state.nav_action
-            if action.get('action') == 'navigate':
-                st.session_state.current_page = action.get('page')
-                del st.session_state.nav_action
+        # מאזין ישירות ללחיצות - מסתיר את הכפתור
+        st.markdown('<style>[data-testid="baseButton-secondary"] {visibility: hidden; height: 1px !important;}</style>', unsafe_allow_html=True)
+        btn_action = st.button(".", key="nav_btn_action")
+        if btn_action:
+            # בדיקת התפריט החדש שלנו
+            # הקוד פה יופעל רק כאשר יתקבל אירוע מהתפריט (באמצעות Streamlit.setComponentValue מה-JavaScript)
+            if "nav_page" in st.session_state:
+                st.session_state.current_page = st.session_state.nav_page
+                del st.session_state.nav_page
                 st.rerun()
-            elif action.get('action') == 'logout':
+            
+            if "do_logout" in st.session_state and st.session_state.do_logout:
                 logout()
-                del st.session_state.nav_action
+                del st.session_state.do_logout
                 st.rerun()
         
         # הצגת מידע על השאלות באיחור לצוות המחסן
@@ -325,24 +346,28 @@ def main():
         <script>
             // כפתורי ניווט
             document.getElementById('nav_login').addEventListener('click', function() {
-                window.parent.postMessage({"type": "streamlit:setComponentValue", "value": {"action": "navigate", "page": "התחברות"}}, "*");
+                const nav_btn = window.parent.document.querySelector('button[key="nav_btn_action"]');
+                window.parent.Streamlit.setComponentValue({nav_page: "התחברות"});
+                if (nav_btn) nav_btn.click();
             });
             
             document.getElementById('nav_register').addEventListener('click', function() {
-                window.parent.postMessage({"type": "streamlit:setComponentValue", "value": {"action": "navigate", "page": "הרשמה"}}, "*");
+                const nav_btn = window.parent.document.querySelector('button[key="nav_btn_action"]');
+                window.parent.Streamlit.setComponentValue({nav_page: "הרשמה"});
+                if (nav_btn) nav_btn.click();
             });
         </script>
         """
         st.markdown(js, unsafe_allow_html=True)
         
-        # בדיקת ניווט מהתפריט
-        nav_callback = st.empty()
-        
-        if 'nav_action' in st.session_state:
-            action = st.session_state.nav_action
-            if action.get('action') == 'navigate':
-                st.session_state.current_page = action.get('page')
-                del st.session_state.nav_action
+        # מאזין ישירות ללחיצות - מסתיר את הכפתור
+        st.markdown('<style>[data-testid="baseButton-secondary"] {visibility: hidden; height: 1px !important;}</style>', unsafe_allow_html=True)
+        btn_action = st.button(".", key="nav_btn_action")
+        if btn_action:
+            # בדיקת התפריט החדש שלנו
+            if "nav_page" in st.session_state:
+                st.session_state.current_page = st.session_state.nav_page
+                del st.session_state.nav_page
                 st.rerun()
         
         # Show login or registration based on current page
