@@ -11,3 +11,6 @@ enableCORS = false
 port = 5000
 baseUrlPath = ""
 headless = true
+
+[browser]
+gatherUsageStats = false

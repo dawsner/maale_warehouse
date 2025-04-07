@@ -94,6 +94,19 @@ section[data-testid="stSidebar"] {
     width: 17em !important;
 }
 
+/* Hide sidebar collapse button */
+button[kind="header"] {
+    display: none !important;
+}
+
+/* Ensure sidebar is always shown */
+section[data-testid="stSidebar"] {
+    min-width: 17em !important;
+    max-width: 17em !important;
+    position: fixed !important;
+    overflow-y: auto !important;
+}
+
 /* עיצוב אזהרות */
 div[data-baseweb="notification"] {
     border-radius: 5px;
