@@ -19,9 +19,13 @@ def main():
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # שליפת כל פריטי המלאי
+        # שליפת כל פריטי המלאי (אם is_available לא קיים, נחשיב כtrue)
         cur.execute('''
-            SELECT id, name, category, quantity, notes, is_available
+            SELECT id, name, category, quantity, notes, 
+                   CASE WHEN pg_typeof(is_available) = 'boolean'::regtype 
+                        THEN is_available 
+                        ELSE TRUE 
+                   END as is_available
             FROM items 
             ORDER BY category, name
         ''')
