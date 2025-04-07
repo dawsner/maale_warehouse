@@ -59,7 +59,7 @@ def main():
             z-index: 999;
             display: flex;
             align-items: center;
-            padding: 0 20px;
+            padding: 0 10px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             direction: rtl;
             margin-bottom: 5px;
@@ -67,16 +67,18 @@ def main():
         }
         
         /* הסתרת האלמנטים המקוריים של סטרימליט */
-        [data-testid="stHeader"] {
-            display: none !important;
-            height: 0px !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            overflow: hidden !important;
-            position: absolute !important;
-            visibility: hidden !important;
-            top: 0;
-        }
+[data-testid="stHeader"], 
+header[data-testid="stHeader"],
+.stDeployButton {
+    display: none !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    position: absolute !important;
+    visibility: hidden !important;
+    top: 0;
+}
         
         /* צמצום המרווח בין התפריט לתוכן העמוד */
         .main .block-container {
@@ -101,8 +103,8 @@ def main():
         /* עיצוב הכפתורים בתפריט העליון בסגנון מודרני */
         .top-menu-button {
             display: inline-block;
-            margin: 0 10px;
-            padding: 8px 16px;
+            margin: 0 0px;
+            padding: 8px 0px;
             border: none;
             background-color: transparent;
             color: #373B5C;
