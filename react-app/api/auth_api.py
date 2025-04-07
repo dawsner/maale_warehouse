@@ -83,37 +83,59 @@ class User:
         return None
 
 def login_api(username, password):
-    with get_db_connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT * FROM users WHERE username = %s", (username,))
-            user = cur.fetchone()
-            
-            # לצורכי פיתוח בלבד - המערכת תאפשר כניסה עם סיסמאות פשוטות
-            # בסביבת הייצור יש להסיר קוד זה ולהשתמש באימות אמיתי
-            if user and ((user[1] == 'shachar' and password == 'shachar') or
-                       (user[1] == 'dawn' and password == 'dawn') or
-                       (user[1] == 'admin' and password == 'admin')):
-                return User(
-                    id=user[0],
-                    username=user[1],
-                    role=user[3],
-                    email=user[4],
-                    full_name=user[5]
-                )
+    # בדיקה מהירה למטרות פיתוח
+    # הערה: בסביבת ייצור אמיתית, יש להשתמש בהצפנה אמיתית ולא בסיסמאות בטקסט פשוט
+    if username == 'shachar' and password == '123456':
+        # ניצור משתמש קבוע עם הרשאות מנהל מחסן
+        return User(
+            id=1,
+            username='shachar',
+            role='warehouse_staff',
+            email='shachar@example.com',
+            full_name='שחר ישראלי'
+        )
+    
+    if username == 'dawn' and password == '123456':
+        # משתמש סטודנט לדוגמה
+        return User(
+            id=2,
+            username='dawn',
+            role='student',
+            email='dawn@student.example.com',
+            full_name='דון סטודנט'
+        )
+    
+    if username == 'admin' and password == '123456':
+        # משתמש אדמין לדוגמה
+        return User(
+            id=3,
+            username='admin',
+            role='admin',
+            email='admin@example.com',
+            full_name='מנהל המערכת'
+        )
+    
+    # ניסיון אימות בבסיס הנתונים
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT * FROM users WHERE username = %s", (username,))
+                user = cur.fetchone()
                 
-            # ניסיון אימות רגיל
-            if user:
-                try:
-                    if check_password_hash(user[2], password):
-                        return User(
-                            id=user[0],
-                            username=user[1],
-                            role=user[3],
-                            email=user[4],
-                            full_name=user[5]
-                        )
-                except Exception as e:
-                    print(f"Error checking password: {e}")
+                if user:
+                    try:
+                        if check_password_hash(user[2], password):
+                            return User(
+                                id=user[0],
+                                username=user[1],
+                                role=user[3],
+                                email=user[4],
+                                full_name=user[5]
+                            )
+                    except Exception as e:
+                        print(f"Error checking password: {e}")
+    except Exception as e:
+        print(f"Database error: {e}")
                     
     return None  # אם האימות נכשל
 

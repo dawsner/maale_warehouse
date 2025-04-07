@@ -138,7 +138,7 @@ export const authAPI = {
       const response = await axiosInstance.post('/api/auth/login', { username, password });
       console.log('Login response:', response.data);
       
-      if (response.data && response.data.token) {
+      if (response.data && response.data.success && response.data.token) {
         localStorage.setItem('token', response.data.token);
         // החזרת פרטי המשתמש מתוך תשובת השרת
         return {
