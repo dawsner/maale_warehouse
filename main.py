@@ -32,10 +32,10 @@ def main():
     # Add RTL CSS and Open Sans Hebrew font
     st.markdown('''
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Outfit:wght@400;500;600&display=swap');
         
         * {
-            font-family: 'Open Sans', sans-serif !important;
+            font-family: 'Poppins', sans-serif !important;
         }
         
         .stApp {
@@ -54,16 +54,47 @@ def main():
             top: 0;
             right: 0;
             left: 0;
-            height: 60px;
+            height: 100px;
             background-color: white;
             z-index: 999;
             display: flex;
             align-items: center;
-            padding: 0 10px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            direction: rtl;
-            margin-bottom: 5px;
+            padding: 0 28px;
             border-bottom: 1px #CECECE solid;
+            direction: rtl;
+        }
+        
+        .main-content {
+            background: #FAFBFF;
+            min-height: calc(100vh - 100px);
+            padding: 2rem;
+        }
+        
+        .content-card {
+            background: white;
+            border-radius: 10px;
+            border: 2px solid #EBEBEE;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.15);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.7rem;
+            background: rgba(255, 255, 255, 0.50);
+            border-radius: 8px;
+            border: 1px solid #E8EFF7;
+        }
+        
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: #FFA78D;
+            overflow: hidden;
         }
         
         /* הסתרת האלמנטים המקוריים של סטרימליט */
@@ -102,17 +133,28 @@ header[data-testid="stHeader"],
         
         /* עיצוב הכפתורים בתפריט העליון בסגנון מודרני */
         .top-menu-button {
-            display: inline-block;
-            margin: 0 0px;
-            padding: 8px 0px;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.8rem 1rem;
             border: none;
             background-color: transparent;
-            color: #373B5C;
+            color: #9197B3;
             cursor: pointer;
             font-weight: 500;
             transition: all 0.3s;
-            border-radius: 6px;
-            font-size: 14px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: 'Outfit', sans-serif !important;
+        }
+        
+        .top-menu-button.active {
+            background-color: #1E2875;
+            color: white;
+        }
+        
+        .top-menu-button:hover:not(.active) {
+            background-color: rgba(30, 40, 117, 0.05);
         }
         
         .top-menu-button:hover {
