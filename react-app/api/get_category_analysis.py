@@ -4,6 +4,12 @@
 
 import json
 import sys
+import os
+
+# הוסף את תיקיית השורש של הפרויקט ל-path כדי שנוכל לייבא את database.py
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(project_root)
+
 from database import get_db_connection
 
 def get_category_analysis():

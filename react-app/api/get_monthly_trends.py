@@ -4,8 +4,14 @@
 
 import json
 import sys
-from database import get_db_connection
+import os
 from datetime import datetime, timedelta
+
+# הוסף את תיקיית השורש של הפרויקט ל-path כדי שנוכל לייבא את database.py
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(project_root)
+
+from database import get_db_connection
 
 def get_monthly_trends():
     """מחזיר נתונים על מגמות חודשיות בהשאלות"""

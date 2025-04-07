@@ -7,6 +7,11 @@ import json
 import sys
 import os
 import pandas as pd
+
+# הוסף את תיקיית השורש של הפרויקט ל-path כדי שנוכל לייבא את database.py
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(project_root)
+
 from database import get_db_connection, add_item
 
 def preview_excel(file_path):
