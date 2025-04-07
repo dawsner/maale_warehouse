@@ -44,8 +44,25 @@ def main():
         }
         
         /* הסתרת צלמית החץ המובנית של Streamlit להסתרת הסייד-בר */
-        button[kind="header"] {
+        section[data-testid="stSidebar"] > div > div:first-child > div > button[kind="header"] {
             display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            height: 0 !important;
+            width: 0 !important;
+            position: absolute !important;
+            top: -9999px !important;
+            left: -9999px !important;
+        }
+        
+        /* הסתרת כפתור התכווצות של הסייד-בר */
+        .css-fblp2m,  /* סלקטור של כפתור ההתכווצות */
+        .css-1rs6os, /* סלקטור חלופי */
+        .css-17ziqus, /* סלקטור חלופי */
+        .css-1mgrnw  /* סלקטור חלופי */
+        {
+            display: none !important;
+            visibility: hidden !important;
         }
         
         /* פס ניווט עליון חדש */
@@ -193,8 +210,9 @@ def main():
             order: -1;
         }
         
-        /* סידור כותרות ותוכן כך שיהיו מיושרים לימין */
-        h1, h2, h3, h4, h5, h6, .stTitle, p, div {
+        /* סידור כותרות ותוכן כך שיהיו מיושרים לימין - עם סלקטור יותר ספציפי כדי למנוע התנגשויות */
+        .content-box h1, .content-box h2, .content-box h3, .content-box h4, .content-box h5, .content-box h6, 
+        .content-box .stTitle, .content-box p, [data-testid="stSidebarContent"] div {
             text-align: right;
             direction: rtl;
         }
