@@ -43,6 +43,11 @@ def main():
             background-color: #FAFBFF !important;
         }
         
+        /* הסתרת צלמית החץ המובנית של Streamlit להסתרת הסייד-בר */
+        button[kind="header"] {
+            display: none !important;
+        }
+        
         /* פס ניווט עליון חדש */
         .top-header {
             position: fixed;
@@ -58,11 +63,11 @@ def main():
             justify-content: space-between;
         }
         
-        /* אזור תוכן ראשי חדש */
+        /* אזור תוכן ראשי חדש עם תמיכה מלאה ב-RTL */
         .main .block-container {
             padding-top: 120px;
-            padding-right: 1rem;
-            padding-left: 350px;
+            padding-left: 1rem;
+            padding-right: 320px;
             padding-bottom: 1rem;
             margin: 0 auto;
         }
@@ -76,27 +81,36 @@ def main():
             padding: 20px;
             margin-bottom: 20px;
             border: 2px #EBEBEE solid;
+            direction: rtl;
+            text-align: right;
         }
         
-        /* סייד-בר חדש */
+        /* סייד-בר חדש שממוקם בצד ימין */
         [data-testid="stSidebar"] {
             background-color: white !important;
             padding-top: 100px !important;
             width: 306px !important;
+            border-right: none !important;
             border-left: none !important;
             box-shadow: 0px 10px 60px rgba(225, 236, 248, 0.50) !important;
             position: fixed;
             right: 0 !important;
             left: auto !important;
+            direction: rtl;
+        }
+        
+        [data-testid="stSidebarContent"] {
+            direction: rtl !important;
         }
         
         /* לוגו */
         .logo-container {
             display: flex;
-            justify-content: center;
+            justify-content: flex-start;
             align-items: center;
             height: 100%;
             padding-top: 16px;
+            padding-right: 20px;
         }
         
         .logo-container img {
@@ -109,7 +123,8 @@ def main():
             display: flex;
             align-items: center;
             gap: 18px;
-            margin-left: 28px;
+            margin-right: 28px;
+            direction: rtl;
         }
         
         .user-avatar {
@@ -126,9 +141,10 @@ def main():
         }
         
         .user-info {
-            text-align: left;
+            text-align: right;
             display: flex;
             flex-direction: column;
+            direction: rtl;
         }
         
         .welcome-text {
@@ -158,9 +174,10 @@ def main():
             text-align: right;
             padding: 0.75rem 1rem;
             display: flex;
-            justify-content: flex-start;
+            justify-content: space-between;
             align-items: center;
             width: 100%;
+            direction: rtl;
         }
         
         .stButton > button:hover {
@@ -169,11 +186,28 @@ def main():
         
         .stButton > button::after {
             content: "❯";
-            margin-left: auto;
-            margin-right: 0;
+            margin-right: auto;
+            margin-left: 10px;
             font-size: 0.8rem;
-            transform: rotate(180deg);
             color: #9197B3;
+            order: -1;
+        }
+        
+        /* סידור כותרות ותוכן כך שיהיו מיושרים לימין */
+        h1, h2, h3, h4, h5, h6, .stTitle, p, div {
+            text-align: right;
+            direction: rtl;
+        }
+        
+        /* תיקון תצוגת טבלאות */
+        [data-testid="stTable"], [data-testid="stDataFrame"] {
+            direction: rtl;
+        }
+        
+        /* הגדרות תצוגה עבור אגריד */
+        .ag-theme-streamlit, .element-container [data-testid] {
+            text-align: right !important;
+            direction: rtl !important;
         }
         
         /* מעטפת לפרופיל משתמש עם עיצוב */
@@ -188,6 +222,7 @@ def main():
             display: flex;
             align-items: center;
             gap: 11.52px;
+            direction: rtl;
         }
         
         /* עיצוב תוויות מדדים */
@@ -210,6 +245,13 @@ def main():
         /* תיבות טקסט */
         .stTextInput > div > div > input {
             direction: rtl;
+            text-align: right;
+        }
+        
+        .stTextInput label {
+            right: 0;
+            left: auto;
+            text-align: right;
         }
         
         button[kind="secondary"] {
@@ -220,6 +262,8 @@ def main():
         div[data-baseweb="notification"] {
             border-radius: 5px;
             border-width: 1px;
+            text-align: right;
+            direction: rtl;
         }
         
         /* כפתור דשבורד מיוחד */
@@ -231,6 +275,13 @@ def main():
             background-color: none !important;
             padding: 0 !important;
             margin-bottom: 1rem !important;
+            text-align: right;
+        }
+        
+        /* תיקון למיקום רכיבי טפסים */
+        .stSelectbox, .stMultiselect, .stDateInput {
+            direction: rtl;
+            text-align: right;
         }
     </style>
     ''', unsafe_allow_html=True)
