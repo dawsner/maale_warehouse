@@ -1,177 +1,152 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { ThemeProvider, createTheme, responsiveFontSizes } from '@mui/material/styles';
-import rtlPlugin from 'stylis-plugin-rtl';
-import { prefixer } from 'stylis';
+import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
+import { ThemeProvider } from '@mui/material/styles';
 import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
+import { theme, rtlPlugins } from './theme';
+import CssBaseline from '@mui/material/CssBaseline';
+import Container from '@mui/material/Container';
+import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
 
-// יבוא של רכיבים (Components)
+// Components
 import TopNavigation from './components/TopNavigation';
+
+// Pages
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Inventory from './pages/Inventory';
 import Loans from './pages/Loans';
-import Alerts from './pages/Alerts';
-import EquipmentTracking from './pages/EquipmentTracking';
-import History from './pages/History';
 import Statistics from './pages/Statistics';
-import ImportExport from './pages/ImportExport';
-import Reservations from './pages/Reservations';
-import MyEquipment from './pages/student/MyEquipment';
 import AvailableItems from './pages/student/AvailableItems';
 import BookEquipment from './pages/student/BookEquipment';
+import MyEquipment from './pages/student/MyEquipment';
+import NotFound from './pages/NotFound';
 
-// יצירת ערכת עיצוב מותאמת
-let theme = createTheme({
-  direction: 'rtl',
-  palette: {
-    primary: {
-      main: '#1E2875',
-      light: '#E6E8F5',
-    },
-    secondary: {
-      main: '#373B5C',
-    },
-    error: {
-      main: '#FF4D4F',
-    },
-    warning: {
-      main: '#FAAD14',
-    },
-    success: {
-      main: '#52C41A',
-    },
-  },
-  typography: {
-    fontFamily: '"Open Sans", sans-serif',
-    h1: { fontWeight: 700 },
-    h2: { fontWeight: 700 },
-    h3: { fontWeight: 600 },
-    h4: { fontWeight: 600 },
-    h5: { fontWeight: 600 },
-    h6: { fontWeight: 600 },
-    button: { fontWeight: 600 },
-  },
-  shape: {
-    borderRadius: 5,
-  },
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          textTransform: 'none',
-          fontWeight: 600,
-        },
-      },
-    },
-    MuiTable: {
-      styleOverrides: {
-        root: {
-          direction: 'rtl',
-        },
-      },
-    },
-    MuiTextField: {
-      styleOverrides: {
-        root: {
-          direction: 'rtl',
-        },
-      },
-    },
-  },
-});
+// Services
+import { authAPI } from './api/api';
 
-// עושה את הטיפוגרפיה רספונסיבית
-theme = responsiveFontSizes(theme);
-
-// RTL לתמיכה בכיוון עברית
+// עיטוף עם הגדרות RTL (מימין לשמאל)
 const cacheRtl = createCache({
   key: 'muirtl',
-  stylisPlugins: [prefixer, rtlPlugin],
+  stylisPlugins: rtlPlugins,
 });
 
-// פונקציית רכיב ראשי של האפליקציה
 function App() {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // בדיקה אם המשתמש מחובר
+  // בדיקת משתמש מחובר בעת טעינת האפליקציה
   useEffect(() => {
-    // כאן נבדוק במצב אמיתי אם המשתמש מחובר מהשרת או מזיכרון מקומי
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        localStorage.removeItem('user');
-      }
+    const token = localStorage.getItem('token');
+    if (token) {
+      authAPI.getCurrentUser()
+        .then(userData => {
+          setUser(userData);
+          setLoading(false);
+        })
+        .catch(() => {
+          localStorage.removeItem('token');
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
     }
   }, []);
 
-  // פונקציה להתחברות
   const handleLogin = (userData) => {
     setUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData));
-    navigate(userData.role === 'warehouse' ? '/inventory' : '/my-equipment');
+    if (userData.role === 'admin') {
+      navigate('/inventory');
+    } else {
+      navigate('/available-items');
+    }
   };
 
-  // פונקציה להתנתקות
   const handleLogout = () => {
+    localStorage.removeItem('token');
     setUser(null);
-    localStorage.removeItem('user');
     navigate('/login');
   };
+
+  // סוגי דפים שדורשים הרשאות מנהל
+  const AdminRoute = ({ children }) => {
+    if (loading) return <CircularProgress />;
+    if (!user) return <Navigate to="/login" />;
+    if (user.role !== 'admin') return <Navigate to="/available-items" />;
+    return children;
+  };
+
+  // סוגי דפים שדורשים התחברות בלבד
+  const ProtectedRoute = ({ children }) => {
+    if (loading) return <CircularProgress />;
+    if (!user) return <Navigate to="/login" />;
+    return children;
+  };
+
+  if (loading) {
+    return (
+      <Box 
+        display="flex" 
+        justifyContent="center" 
+        alignItems="center" 
+        minHeight="100vh"
+        bgcolor="#FAFBFF"
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <CacheProvider value={cacheRtl}>
       <ThemeProvider theme={theme}>
-        <div className="app">
-          <TopNavigation user={user} onLogout={handleLogout} />
-          
-          <main className="main-content">
-            <Routes>
-              {/* נתיבים לגישה ללא התחברות */}
-              <Route path="/login" element={user ? <Navigate to="/" /> : <Login onLogin={handleLogin} />} />
-              <Route path="/register" element={user ? <Navigate to="/" /> : <Register onLogin={handleLogin} />} />
-              
-              {/* נתיבים לצוות מחסן */}
-              {user && user.role === 'warehouse' && (
-                <>
-                  <Route path="/inventory" element={<Inventory />} />
-                  <Route path="/loans" element={<Loans />} />
-                  <Route path="/alerts" element={<Alerts />} />
-                  <Route path="/equipment-tracking" element={<EquipmentTracking />} />
-                  <Route path="/history" element={<History />} />
-                  <Route path="/statistics" element={<Statistics />} />
-                  <Route path="/import-export" element={<ImportExport />} />
-                  <Route path="/reservations" element={<Reservations />} />
-                </>
-              )}
-              
-              {/* נתיבים לסטודנטים */}
-              {user && user.role === 'student' && (
-                <>
-                  <Route path="/my-equipment" element={<MyEquipment userId={user.id} />} />
-                  <Route path="/available-items" element={<AvailableItems />} />
-                  <Route path="/book-equipment" element={<BookEquipment userId={user.id} />} />
-                </>
-              )}
-              
-              {/* נתיב ברירת מחדל */}
-              <Route path="/" element={
-                user 
-                  ? user.role === 'warehouse' 
-                    ? <Navigate to="/inventory" /> 
-                    : <Navigate to="/my-equipment" />
-                  : <Navigate to="/login" />
-              } />
-              
-              {/* נתיב לכל דף אחר */}
-              <Route path="*" element={<Navigate to="/" />} />
-            </Routes>
-          </main>
-        </div>
+        <CssBaseline />
+        <TopNavigation user={user} onLogout={handleLogout} />
+        <Container maxWidth="lg" sx={{ mt: 3, mb: 4 }}>
+          <Routes>
+            {/* דפים פתוחים לכל */}
+            <Route path="/login" element={<Login onLogin={handleLogin} />} />
+            <Route path="/register" element={<Register onLogin={handleLogin} />} />
+            
+            {/* דפים למנהלים בלבד */}
+            <Route path="/inventory" element={
+              <AdminRoute><Inventory /></AdminRoute>
+            } />
+            <Route path="/loans" element={
+              <AdminRoute><Loans /></AdminRoute>
+            } />
+            <Route path="/statistics" element={
+              <AdminRoute><Statistics /></AdminRoute>
+            } />
+            
+            {/* דפים לסטודנטים */}
+            <Route path="/available-items" element={
+              <ProtectedRoute><AvailableItems /></ProtectedRoute>
+            } />
+            <Route path="/book-equipment" element={
+              <ProtectedRoute><BookEquipment userId={user?.id} /></ProtectedRoute>
+            } />
+            <Route path="/my-equipment" element={
+              <ProtectedRoute><MyEquipment userId={user?.id} /></ProtectedRoute>
+            } />
+            
+            {/* דף ברירת מחדל */}
+            <Route path="/" element={
+              user ? (
+                user.role === 'admin' ? 
+                <Navigate to="/inventory" /> : 
+                <Navigate to="/available-items" />
+              ) : (
+                <Navigate to="/login" />
+              )
+            } />
+            
+            {/* דף שגיאה 404 */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Container>
       </ThemeProvider>
     </CacheProvider>
   );

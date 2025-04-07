@@ -1,6 +1,6 @@
 """
-סקריפט זה מטפל בתהליך ההתחברות למערכת.
-מקבל שם משתמש וסיסמה, ומחזיר פרטי משתמש אם האימות הצליח.
+סקריפט זה מטפל בתהליך ההרשמה למערכת.
+מקבל פרטי משתמש ומנסה ליצור משתמש חדש במערכת.
 """
 
 import sys
@@ -13,30 +13,39 @@ from datetime import datetime, timedelta
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 # ייבוא פונקציות אימות
-from auth import login
+from auth import create_user
 
-# מפתח סודי ליצירת טוקן JWT
-SECRET_KEY = "your-secret-key-cinema-equipment-management"  # במערכת אמיתית יש לשמור זאת בקובץ .env
+# מפתח סודי ליצירת טוקן JWT - חייב להיות זהה למפתח בקובץ login.py
+SECRET_KEY = "your-secret-key-cinema-equipment-management"
 JWT_EXPIRATION = 24  # תוקף הטוקן בשעות
 
 def main():
-    """פונקציה ראשית שמטפלת בתהליך ההתחברות"""
+    """פונקציה ראשית שמטפלת בתהליך ההרשמה"""
     try:
         # קריאת נתוני הקלט מה-JSON שנשלח לסקריפט
         input_data = json.loads(sys.stdin.read())
         
-        # חילוץ שם משתמש וסיסמה מהקלט
+        # חילוץ פרטי המשתמש מהקלט
         username = input_data.get('username')
         password = input_data.get('password')
+        role = input_data.get('role', 'student')  # ברירת מחדל: סטודנט
+        email = input_data.get('email')
+        full_name = input_data.get('full_name')
         
         # בדיקות תקינות בסיסיות
-        if not username or not password:
-            raise ValueError("שם משתמש וסיסמה הם שדות חובה")
+        if not all([username, password, role, email, full_name]):
+            raise ValueError("שם משתמש, סיסמה, תפקיד, כתובת דוא״ל ושם מלא הם שדות חובה")
         
-        # ניסיון להתחבר
-        user = login(username, password)
+        # ניסיון ליצור משתמש חדש
+        user = create_user(
+            username=username,
+            password=password,
+            role=role,
+            email=email,
+            full_name=full_name
+        )
         
-        # אם ההתחברות הצליחה, יצירת טוקן JWT
+        # אם ההרשמה הצליחה, יצירת טוקן JWT
         if user:
             # מידע שיוכנס לטוקן
             payload = {
@@ -60,13 +69,13 @@ def main():
                 'email': user.email,
                 'full_name': user.full_name,
                 'token': token,
-                'message': 'התחברות הצליחה'
+                'message': 'הרשמה הצליחה'
             }
         else:
-            # במקרה של שם משתמש או סיסמה שגויים
+            # במקרה של כישלון ביצירת המשתמש
             response = {
                 'success': False,
-                'message': 'שם משתמש או סיסמה שגויים'
+                'message': 'שגיאה ביצירת משתמש חדש'
             }
         
         # החזרת התוצאה כ-JSON
@@ -85,7 +94,7 @@ def main():
         # שגיאות כלליות
         error_response = {
             'success': False,
-            'message': f"שגיאה בהתחברות: {str(e)}"
+            'message': f"שגיאה בהרשמה: {str(e)}"
         }
         print(json.dumps(error_response, ensure_ascii=False))
         sys.exit(1)

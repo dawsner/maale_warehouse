@@ -1,45 +1,50 @@
-#!/usr/bin/env python3
 """
 סקריפט זה יוצר השאלה חדשה מנתונים שהתקבלו כ-JSON.
 משמש את ה-API של React ליצירת השאלות חדשות.
 """
 
-import json
 import sys
+import json
+import os
 from datetime import datetime
-sys.path.append(".")  # מוסיף את התיקיה הנוכחית לנתיב החיפוש של מודולים
-from database import create_loan, get_loan_details
+
+# הוספת תיקיית הפרויקט הראשית לנתיב החיפוש
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+# ייבוא פונקציות מבסיס הנתונים
+from database import create_loan
 
 def main():
     """פונקציה ראשית שיוצרת השאלה חדשה מקלט JSON"""
     try:
-        # קריאת הנתונים מה-stdin
+        # קריאת נתוני הקלט מה-JSON שנשלח לסקריפט
         input_data = json.loads(sys.stdin.read())
         
-        # חילוץ השדות הדרושים
-        item_id = input_data.get('itemId')
-        student_name = input_data.get('studentName')
-        student_id = input_data.get('studentId')
-        quantity = input_data.get('quantity', 1)
-        due_date_str = input_data.get('dueDate')
-        notes = input_data.get('notes', '')
-        user_id = input_data.get('userId')
+        # חילוץ שדות חובה
+        item_id = input_data.get('item_id')
+        student_name = input_data.get('student_name')
+        student_id = input_data.get('student_id')
+        quantity = input_data.get('quantity')
+        due_date_str = input_data.get('due_date')
         
-        # פרטי הפקה
-        director = input_data.get('director', '')
-        producer = input_data.get('producer', '')
-        photographer = input_data.get('photographer', '')
-        price_per_unit = input_data.get('pricePerUnit', 0)
-        total_price = input_data.get('totalPrice', 0)
+        # בדיקות תקינות בסיסיות
+        if not all([item_id, student_name, student_id, quantity, due_date_str]):
+            raise ValueError("חסרים שדות חובה: מזהה פריט, שם סטודנט, ת.ז. סטודנט, כמות ותאריך החזרה הם שדות חובה")
         
-        # המרת תאריך יעד מחרוזת לאובייקט תאריך
-        due_date = datetime.fromisoformat(due_date_str.replace('Z', '+00:00')) if due_date_str else None
+        # המרת תאריך החזרה מתבנית ISO לאובייקט תאריך
+        due_date = datetime.fromisoformat(due_date_str.replace('Z', '+00:00'))
         
-        # בדיקות תקינות
-        if not all([item_id, student_name, student_id, quantity, due_date]):
-            raise ValueError("חסרים נתונים הכרחיים ליצירת השאלה")
+        # שדות רשות
+        user_id = input_data.get('user_id')
+        loan_notes = input_data.get('loan_notes')
+        checkout_notes = input_data.get('checkout_notes')
+        director = input_data.get('director')
+        producer = input_data.get('producer')
+        photographer = input_data.get('photographer')
+        price_per_unit = input_data.get('price_per_unit')
+        total_price = input_data.get('total_price')
         
-        # יצירת ההשאלה במסד הנתונים
+        # יצירת השאלה חדשה
         loan_id = create_loan(
             item_id=item_id,
             student_name=student_name,
@@ -47,7 +52,8 @@ def main():
             quantity=quantity,
             due_date=due_date,
             user_id=user_id,
-            loan_notes=notes,
+            loan_notes=loan_notes,
+            checkout_notes=checkout_notes,
             director=director,
             producer=producer,
             photographer=photographer,
@@ -55,25 +61,30 @@ def main():
             total_price=total_price
         )
         
-        # קבלת פרטי ההשאלה שנוצרה
-        loan_details = get_loan_details(loan_id)
-        
-        # בניית אובייקט התשובה
+        # החזרת תוצאה חיובית
         response = {
-            "id": loan_id,
-            "message": "ההשאלה נוצרה בהצלחה",
-            "loan": loan_details
+            'success': True,
+            'loan_id': loan_id,
+            'message': f"השאלה #{loan_id} נוצרה בהצלחה"
         }
         
-        # החזרת התשובה כ-JSON
         print(json.dumps(response, ensure_ascii=False))
         
-    except ValueError as ve:
-        error_response = {"error": f"שגיאת תקינות: {str(ve)}"}
+    except ValueError as e:
+        # שגיאות תקינות קלט
+        error_response = {
+            'success': False,
+            'message': str(e)
+        }
         print(json.dumps(error_response, ensure_ascii=False))
         sys.exit(1)
+        
     except Exception as e:
-        error_response = {"error": f"שגיאה ביצירת השאלה: {str(e)}"}
+        # שגיאות כלליות
+        error_response = {
+            'success': False,
+            'message': f"שגיאה ביצירת השאלה: {str(e)}"
+        }
         print(json.dumps(error_response, ensure_ascii=False))
         sys.exit(1)
 

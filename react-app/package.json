@@ -1,36 +1,36 @@
 {
   "name": "cinema-equipment-management",
-  "version": "0.1.0",
+  "version": "1.0.0",
+  "description": "Cinema Equipment Management System",
   "private": true,
   "dependencies": {
-    "@emotion/react": "^11.10.6",
-    "@emotion/styled": "^11.10.6",
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0",
     "@mui/icons-material": "^5.11.16",
-    "@mui/material": "^5.12.0",
-    "@mui/x-date-pickers": "^6.2.0",
-    "axios": "^1.3.5",
-    "date-fns": "^2.29.3",
+    "@mui/material": "^5.13.0",
+    "@mui/x-date-pickers": "^6.5.0",
+    "axios": "^1.4.0",
+    "date-fns": "^2.30.0",
     "jwt-decode": "^3.1.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.10.0",
+    "react-router-dom": "^6.11.1",
     "react-scripts": "5.0.1",
-    "recharts": "^2.5.0",
-    "stylis": "^4.1.3",
+    "recharts": "^2.6.0",
+    "stylis": "^4.2.0",
     "stylis-plugin-rtl": "^2.1.1"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "PORT=5000 BROWSER=none HOST=0.0.0.0 WDS_SOCKET_HOST=0.0.0.0 react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
     "server": "node server/server.js",
-    "dev": "concurrently \"npm run server\" \"npm run start\""
+    "dev": "concurrently \"npm run server\" \"npm run start\"",
+    "eject": "react-scripts eject"
   },
+  "proxy": "http://localhost:5100",
   "eslintConfig": {
     "extends": [
-      "react-app",
-      "react-app/jest"
+      "react-app"
     ]
   },
   "browserslist": {
@@ -46,7 +46,9 @@
     ]
   },
   "devDependencies": {
-    "concurrently": "^8.0.1"
-  },
-  "proxy": "http://localhost:5001"
+    "concurrently": "^8.0.1",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "express": "^4.17.1"
+  }
 }

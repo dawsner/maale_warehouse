@@ -1,17 +1,22 @@
+/**
+ * שרת Express עבור מערכת ניהול ציוד קולנוע
+ * משמש כשכבת ביניים בין ממשק המשתמש React לבין קוד הפייתון הקיים
+ */
+
 const express = require('express');
-const cors = require('cors');
 const bodyParser = require('body-parser');
+const cors = require('cors');
 const { spawn } = require('child_process');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5100;
 
-// אפשר CORS לפיתוח
+// Middlewares
 app.use(cors());
-
-// עיבוד גוף בקשות JSON
 app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname, '../build')));
 
 /**
  * פונקציה כללית להפעלת סקריפט פייתון
@@ -22,258 +27,356 @@ app.use(bodyParser.json());
  */
 function runPythonScript(scriptPath, args = [], inputData = null) {
   return new Promise((resolve, reject) => {
-    const fullPath = path.resolve(__dirname, '../api', scriptPath);
-    const pythonProcess = spawn('python3', [fullPath, ...args]);
-    
-    let resultData = '';
-    let errorData = '';
-    
-    // אם יש נתוני קלט, שלח אותם לסקריפט
+    // נבדוק אם הקובץ קיים
+    try {
+      fs.accessSync(scriptPath, fs.constants.F_OK);
+    } catch (err) {
+      console.error(`Script not found: ${scriptPath}`);
+      return reject(new Error(`Script not found: ${scriptPath}`));
+    }
+
+    const pythonProcess = spawn('python3', [scriptPath, ...args]);
+    let dataString = '';
+    let errorString = '';
+
+    // אם יש נתוני קלט, נשלח אותם לסקריפט
     if (inputData) {
       pythonProcess.stdin.write(JSON.stringify(inputData));
       pythonProcess.stdin.end();
     }
-    
-    // איסוף פלט מהסקריפט
+
     pythonProcess.stdout.on('data', (data) => {
-      resultData += data.toString();
+      dataString += data.toString();
     });
-    
-    // איסוף שגיאות מהסקריפט
+
     pythonProcess.stderr.on('data', (data) => {
-      errorData += data.toString();
-      console.error(`Python stderr: ${data}`);
+      errorString += data.toString();
     });
-    
-    // טיפול בסיום הסקריפט
+
     pythonProcess.on('close', (code) => {
       if (code !== 0) {
-        console.error(`Python process exited with code ${code}`);
-        return reject(new Error(`Process exited with code ${code}: ${errorData}`));
+        console.error(`Python script error (${code}): ${errorString}`);
+        return reject(new Error(errorString || 'Python script error'));
       }
-      
+
       try {
-        // נסה לנתח את הפלט כ-JSON
-        const jsonResult = JSON.parse(resultData);
-        resolve(jsonResult);
-      } catch (err) {
-        // אם הפלט לא JSON תקין, החזר את הפלט כמחרוזת
-        resolve(resultData);
+        const result = JSON.parse(dataString);
+        resolve(result);
+      } catch (e) {
+        if (dataString.trim()) {
+          resolve(dataString.trim());
+        } else {
+          resolve({ success: true });
+        }
       }
-    });
-    
-    // טיפול בשגיאות בהפעלת התהליך
-    pythonProcess.on('error', (err) => {
-      console.error('Failed to start Python process', err);
-      reject(err);
     });
   });
 }
 
-// ניתובים ל-API
-
-// מלאי
-app.get('/api/inventory', async (req, res) => {
-  try {
-    const result = await runPythonScript('get_inventory.py');
-    res.json(result);
-  } catch (err) {
-    console.error('Error fetching inventory:', err);
-    res.status(500).json({ error: 'Failed to fetch inventory', details: err.message });
-  }
-});
-
-app.post('/api/inventory', async (req, res) => {
-  try {
-    const result = await runPythonScript('create_item.py', [], req.body);
-    res.status(201).json(result);
-  } catch (err) {
-    console.error('Error creating item:', err);
-    res.status(500).json({ error: 'Failed to create item', details: err.message });
-  }
-});
-
-app.put('/api/inventory/:id', async (req, res) => {
-  try {
-    const itemId = req.params.id;
-    const result = await runPythonScript('update_item.py', [itemId], req.body);
-    res.json(result);
-  } catch (err) {
-    console.error('Error updating item:', err);
-    res.status(500).json({ error: 'Failed to update item', details: err.message });
-  }
-});
-
-app.delete('/api/inventory/:id', async (req, res) => {
-  try {
-    const itemId = req.params.id;
-    const result = await runPythonScript('delete_item.py', [itemId]);
-    res.json(result);
-  } catch (err) {
-    console.error('Error deleting item:', err);
-    res.status(500).json({ error: 'Failed to delete item', details: err.message });
-  }
-});
-
-app.patch('/api/inventory/:id/availability', async (req, res) => {
-  try {
-    const itemId = req.params.id;
-    const { isAvailable } = req.body;
-    const result = await runPythonScript('toggle_availability.py', [itemId, isAvailable]);
-    res.json(result);
-  } catch (err) {
-    console.error('Error toggling availability:', err);
-    res.status(500).json({ error: 'Failed to toggle availability', details: err.message });
-  }
-});
-
-// השאלות
-app.get('/api/loans', async (req, res) => {
-  try {
-    const result = await runPythonScript('get_loans.py');
-    res.json(result);
-  } catch (err) {
-    console.error('Error fetching loans:', err);
-    res.status(500).json({ error: 'Failed to fetch loans', details: err.message });
-  }
-});
-
-app.get('/api/loans/user/:userId', async (req, res) => {
-  try {
-    const userId = req.params.userId;
-    const result = await runPythonScript('get_user_loans.py', [userId]);
-    res.json(result);
-  } catch (err) {
-    console.error('Error fetching user loans:', err);
-    res.status(500).json({ error: 'Failed to fetch user loans', details: err.message });
-  }
-});
-
-app.post('/api/loans', async (req, res) => {
-  try {
-    const result = await runPythonScript('create_loan.py', [], req.body);
-    res.status(201).json(result);
-  } catch (err) {
-    console.error('Error creating loan:', err);
-    res.status(500).json({ error: 'Failed to create loan', details: err.message });
-  }
-});
-
-app.patch('/api/loans/:id/return', async (req, res) => {
-  try {
-    const loanId = req.params.id;
-    const { returnNotes } = req.body;
-    const result = await runPythonScript('return_loan.py', [loanId], { returnNotes });
-    res.json(result);
-  } catch (err) {
-    console.error('Error returning loan:', err);
-    res.status(500).json({ error: 'Failed to return loan', details: err.message });
-  }
-});
-
-// הזמנות
-app.get('/api/reservations', async (req, res) => {
-  try {
-    const result = await runPythonScript('get_reservations.py');
-    res.json(result);
-  } catch (err) {
-    console.error('Error fetching reservations:', err);
-    res.status(500).json({ error: 'Failed to fetch reservations', details: err.message });
-  }
-});
-
-app.get('/api/reservations/user/:userId', async (req, res) => {
-  try {
-    const userId = req.params.userId;
-    const result = await runPythonScript('get_user_reservations.py', [userId]);
-    res.json(result);
-  } catch (err) {
-    console.error('Error fetching user reservations:', err);
-    res.status(500).json({ error: 'Failed to fetch user reservations', details: err.message });
-  }
-});
-
-app.patch('/api/reservations/:id/status', async (req, res) => {
-  try {
-    const reservationId = req.params.id;
-    const { status } = req.body;
-    const result = await runPythonScript('update_reservation_status.py', [reservationId, status]);
-    res.json(result);
-  } catch (err) {
-    console.error('Error updating reservation status:', err);
-    res.status(500).json({ error: 'Failed to update reservation status', details: err.message });
-  }
-});
+// נתיבי API
 
 // אימות והרשאות
 app.post('/api/auth/login', async (req, res) => {
   try {
-    const result = await runPythonScript('login.py', [], req.body);
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/login.py'),
+      [],
+      req.body
+    );
     res.json(result);
-  } catch (err) {
-    console.error('Error during login:', err);
-    res.status(401).json({ error: 'Authentication failed', details: err.message });
+  } catch (error) {
+    res.status(401).json({ message: 'שם משתמש או סיסמה שגויים' });
   }
 });
 
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const result = await runPythonScript('register.py', [], req.body);
-    res.status(201).json(result);
-  } catch (err) {
-    console.error('Error during registration:', err);
-    res.status(400).json({ error: 'Registration failed', details: err.message });
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/register.py'),
+      [],
+      req.body
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: 'שגיאה בהרשמה: ' + error.message });
+  }
+});
+
+app.get('/api/auth/me', async (req, res) => {
+  // טוקן נשלח בכותרת Authorization
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ message: 'לא התקבל טוקן הרשאה' });
+  }
+
+  const token = authHeader.split(' ')[1];
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/verify_token.py'),
+      [],
+      { token }
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(401).json({ message: 'טוקן לא תקין או פג תוקף' });
+  }
+});
+
+// ניהול מלאי
+app.get('/api/inventory', async (req, res) => {
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/get_inventory.py')
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: 'שגיאה בקבלת נתוני מלאי: ' + error.message });
+  }
+});
+
+app.post('/api/inventory', async (req, res) => {
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/add_item.py'),
+      [],
+      req.body
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: 'שגיאה בהוספת פריט: ' + error.message });
+  }
+});
+
+app.put('/api/inventory/:id', async (req, res) => {
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/update_item.py'),
+      [],
+      { id: req.params.id, ...req.body }
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: 'שגיאה בעדכון פריט: ' + error.message });
+  }
+});
+
+app.delete('/api/inventory/:id', async (req, res) => {
+  try {
+    await runPythonScript(
+      path.join(__dirname, '../api/delete_item.py'),
+      [],
+      { id: req.params.id }
+    );
+    res.json({ success: true });
+  } catch (error) {
+    res.status(400).json({ message: 'שגיאה במחיקת פריט: ' + error.message });
+  }
+});
+
+app.put('/api/inventory/:id/availability', async (req, res) => {
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/toggle_availability.py'),
+      [],
+      { id: req.params.id, isAvailable: req.body.isAvailable }
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: 'שגיאה בעדכון זמינות פריט: ' + error.message });
+  }
+});
+
+// ניהול השאלות
+app.get('/api/loans', async (req, res) => {
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/get_loans.py')
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: 'שגיאה בקבלת נתוני השאלות: ' + error.message });
+  }
+});
+
+app.get('/api/loans/user/:userId', async (req, res) => {
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/get_user_loans.py'),
+      [],
+      { userId: req.params.userId }
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: 'שגיאה בקבלת נתוני השאלות: ' + error.message });
+  }
+});
+
+app.post('/api/loans', async (req, res) => {
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/create_loan.py'),
+      [],
+      req.body
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: 'שגיאה ביצירת השאלה: ' + error.message });
+  }
+});
+
+app.put('/api/loans/:id/return', async (req, res) => {
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/return_loan.py'),
+      [],
+      { loanId: req.params.id, returnNotes: req.body.returnNotes }
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: 'שגיאה בהחזרת פריט: ' + error.message });
+  }
+});
+
+app.get('/api/loans/:id', async (req, res) => {
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/get_loan_details.py'),
+      [],
+      { loanId: req.params.id }
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: 'שגיאה בקבלת פרטי השאלה: ' + error.message });
+  }
+});
+
+// ניהול הזמנות
+app.get('/api/reservations', async (req, res) => {
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/get_reservations.py')
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: 'שגיאה בקבלת נתוני הזמנות: ' + error.message });
+  }
+});
+
+app.get('/api/reservations/user/:userId', async (req, res) => {
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/get_user_reservations.py'),
+      [],
+      { userId: req.params.userId }
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: 'שגיאה בקבלת נתוני הזמנות: ' + error.message });
+  }
+});
+
+app.post('/api/reservations', async (req, res) => {
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/create_reservation.py'),
+      [],
+      req.body
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: 'שגיאה ביצירת הזמנה: ' + error.message });
+  }
+});
+
+app.put('/api/reservations/:id/status', async (req, res) => {
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/update_reservation_status.py'),
+      [],
+      { reservationId: req.params.id, status: req.body.status }
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: 'שגיאה בעדכון סטטוס הזמנה: ' + error.message });
   }
 });
 
 // סטטיסטיקות
 app.get('/api/stats/equipment-usage', async (req, res) => {
   try {
-    const result = await runPythonScript('get_equipment_usage_stats.py');
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/get_equipment_usage_stats.py')
+    );
     res.json(result);
-  } catch (err) {
-    console.error('Error fetching equipment usage stats:', err);
-    res.status(500).json({ error: 'Failed to fetch equipment usage stats', details: err.message });
+  } catch (error) {
+    res.status(500).json({ message: 'שגיאה בקבלת נתוני שימוש בציוד: ' + error.message });
   }
 });
 
-// ייבוא/ייצוא Excel
-app.post('/api/import-export/import', async (req, res) => {
-  // הערה: צריך להוסיף טיפול בקבצים עם multer
+app.get('/api/stats/student-usage', async (req, res) => {
   try {
-    const result = await runPythonScript('import_excel.py');
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/get_student_stats.py')
+    );
     res.json(result);
-  } catch (err) {
-    console.error('Error importing Excel:', err);
-    res.status(500).json({ error: 'Failed to import Excel', details: err.message });
+  } catch (error) {
+    res.status(500).json({ message: 'שגיאה בקבלת נתוני סטודנטים: ' + error.message });
   }
 });
 
-app.get('/api/import-export/export', async (req, res) => {
+app.get('/api/stats/monthly-trends', async (req, res) => {
   try {
-    const result = await runPythonScript('export_excel.py');
-    // הערה: צריך לטפל בהחזרת קובץ במקום JSON
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/get_monthly_trends.py')
+    );
     res.json(result);
-  } catch (err) {
-    console.error('Error exporting Excel:', err);
-    res.status(500).json({ error: 'Failed to export Excel', details: err.message });
+  } catch (error) {
+    res.status(500).json({ message: 'שגיאה בקבלת נתוני מגמות חודשיות: ' + error.message });
   }
 });
 
-// שירות קבצים סטטיים (בעתיד, לפיתוח)
-if (process.env.NODE_ENV === 'production') {
-  // שירות קבצים סטטיים מתיקיית הבילד
-  app.use(express.static(path.join(__dirname, '../build')));
-  
-  // כל בקשה אחרת תחזיר את ה-index.html
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../build', 'index.html'));
-  });
-}
+app.get('/api/stats/category-analysis', async (req, res) => {
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/get_category_analysis.py')
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: 'שגיאה בקבלת ניתוח קטגוריות: ' + error.message });
+  }
+});
+
+// יבוא/יצוא
+app.post('/api/import', async (req, res) => {
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/import_excel.py'),
+      [],
+      req.body
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: 'שגיאה ביבוא נתונים: ' + error.message });
+  }
+});
+
+app.get('/api/export', async (req, res) => {
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/export_excel.py')
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: 'שגיאה ביצוא נתונים: ' + error.message });
+  }
+});
+
+// ניתוב כל בקשה אחרת לאפליקציית React
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../build', 'index.html'));
+});
 
 // הפעלת השרת
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-
-module.exports = app;

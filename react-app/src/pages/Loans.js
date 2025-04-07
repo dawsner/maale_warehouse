@@ -25,11 +25,10 @@ import {
   Tabs,
   InputAdornment,
   Chip,
-  MenuItem
+  MenuItem,
+  Divider
 } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+// Temporarily removed date picker due to compatibility issues
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import AssignmentReturnIcon from '@mui/icons-material/AssignmentReturn';
@@ -476,21 +475,22 @@ function Loans() {
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <LocalizationProvider dateAdapter={AdapterDateFns}>
-                <DatePicker
-                  label="תאריך החזרה"
-                  value={newLoan.dueDate}
-                  onChange={handleDateChange}
-                  renderInput={(params) => (
-                    <TextField 
-                      {...params} 
-                      fullWidth 
-                      required 
-                      sx={{ direction: 'rtl' }}
-                    />
-                  )}
-                />
-              </LocalizationProvider>
+              <TextField
+                label="תאריך החזרה"
+                name="dueDate"
+                type="date"
+                fullWidth
+                required
+                value={newLoan.dueDate instanceof Date ? newLoan.dueDate.toISOString().split('T')[0] : ''}
+                onChange={e => {
+                  const newDate = new Date(e.target.value);
+                  handleDateChange(newDate);
+                }}
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                sx={{ direction: 'rtl' }}
+              />
             </Grid>
             
             {/* שדות נוספים */}

@@ -1,177 +1,156 @@
 import React, { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { 
-  Container, 
-  Box, 
-  Typography, 
-  TextField, 
   Button, 
+  TextField, 
+  Typography, 
   Paper, 
+  Box, 
+  Grid,
   Link,
-  Divider,
+  InputAdornment,
+  IconButton,
   Alert,
-  Grid
+  Container
 } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { authAPI } from '../api/api';
 
 function Login({ onLogin }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // בדיקות בסיסיות לשדות חובה
     if (!username || !password) {
       setError('יש למלא את כל השדות');
       return;
     }
-    
+
     setLoading(true);
     setError('');
-    
+
     try {
-      const response = await authAPI.login({ username, password });
-      onLogin(response.data.user);
+      const user = await authAPI.login(username, password);
+      onLogin(user);
     } catch (err) {
-      console.error('Login error:', err);
-      setError(err.response?.data?.message || 'שגיאה בהתחברות, אנא נסו שוב');
+      setError(err.response?.data?.message || 'שגיאה בהתחברות. אנא נסה שנית');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleShowPassword = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
-    <Container component="main" maxWidth="sm">
-      <Box
-        sx={{
-          mt: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
+    <Container maxWidth="sm">
+      <Paper 
+        elevation={3} 
+        sx={{ 
+          p: 4, 
+          mt: 8, 
+          borderRadius: 2,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
         }}
       >
-        <Paper 
-          elevation={2} 
-          sx={{ 
-            p: 4, 
-            width: '100%', 
-            borderRadius: 2,
-            border: '1px solid #CECECE',
-            backgroundColor: 'white'
-          }}
+        <Box 
+          display="flex" 
+          flexDirection="column" 
+          alignItems="center"
+          mb={4}
         >
-          <Box 
-            sx={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'center', 
-              mb: 3 
+          <img 
+            src="/logo.png" 
+            alt="לוגו המערכת" 
+            style={{ width: '100px', marginBottom: '16px' }} 
+          />
+          <Typography component="h1" variant="h4" fontWeight="600" color="primary">
+            התחברות למערכת
+          </Typography>
+          <Typography variant="body2" color="text.secondary" mt={1}>
+            התחבר כדי לנהל את מערכת ציוד הקולנוע
+          </Typography>
+        </Box>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+
+        <Box component="form" onSubmit={handleSubmit} noValidate>
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="username"
+            label="שם משתמש"
+            name="username"
+            autoComplete="username"
+            autoFocus
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            variant="outlined"
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            name="password"
+            label="סיסמה"
+            type={showPassword ? 'text' : 'password'}
+            id="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            variant="outlined"
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label="toggle password visibility"
+                    onClick={handleShowPassword}
+                    edge="end"
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
             }}
+          />
+          
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            color="primary"
+            size="large"
+            disabled={loading}
+            sx={{ mt: 4, mb: 2, py: 1.5, fontWeight: 'bold' }}
           >
-            <img 
-              src="/assets/logo.png" 
-              alt="Logo" 
-              style={{ height: '80px', marginBottom: '16px' }} 
-            />
-            <Typography component="h1" variant="h5" sx={{ fontWeight: 'bold', color: '#373B5C' }}>
-              התחברות למערכת ניהול ציוד
-            </Typography>
-            <Typography component="p" variant="body2" sx={{ mt: 1, color: '#9197B3', textAlign: 'center' }}>
-              ברוכים הבאים למערכת ניהול ציוד לסטודנטים לקולנוע
-            </Typography>
-          </Box>
-
-          {error && (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              {error}
-            </Alert>
-          )}
-
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="username"
-              label="שם משתמש"
-              name="username"
-              autoComplete="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              sx={{ 
-                direction: 'rtl',
-                mb: 2,
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': {
-                    borderColor: '#CECECE',
-                  },
-                  '&:hover fieldset': {
-                    borderColor: '#1E2875',
-                  },
-                }
-              }}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="password"
-              label="סיסמה"
-              type="password"
-              id="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              sx={{ 
-                direction: 'rtl',
-                mb: 2,
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': {
-                    borderColor: '#CECECE',
-                  },
-                  '&:hover fieldset': {
-                    borderColor: '#1E2875',
-                  },
-                }
-              }}
-            />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              disabled={loading}
-              sx={{ 
-                mt: 3, 
-                mb: 2, 
-                py: 1.5,
-                backgroundColor: '#1E2875',
-                fontWeight: 'bold',
-                fontSize: '16px',
-                '&:hover': {
-                  backgroundColor: '#171E5A',
-                }
-              }}
-            >
-              {loading ? 'מתחבר...' : 'התחברות'}
-            </Button>
-            
-            <Grid container sx={{ mt: 2 }}>
-              <Grid item xs>
-                <Link component={RouterLink} to="#" variant="body2" sx={{ color: '#1E2875' }}>
-                  שכחת סיסמה?
+            {loading ? 'מתחבר...' : 'התחברות'}
+          </Button>
+          
+          <Grid container justifyContent="center" mt={2}>
+            <Grid item>
+              <Typography variant="body2" textAlign="center">
+                אין לך חשבון עדיין?{' '}
+                <Link component={RouterLink} to="/register" variant="body2" color="primary" fontWeight="600">
+                  הירשם עכשיו
                 </Link>
-              </Grid>
-              <Grid item>
-                <Link component={RouterLink} to="/register" variant="body2" sx={{ color: '#1E2875' }}>
-                  אין לך חשבון? הירשם כאן
-                </Link>
-              </Grid>
+              </Typography>
             </Grid>
-          </Box>
-        </Paper>
-      </Box>
+          </Grid>
+        </Box>
+      </Paper>
     </Container>
   );
 }
