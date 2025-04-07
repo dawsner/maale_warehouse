@@ -38,16 +38,14 @@ function ExcelImport() {
 
   const excelColumns = [
     { title: 'שם פריט', field: 'name', required: true },
-    { title: 'קטגוריה', field: 'category', required: true },
-    { title: 'כמות', field: 'quantity', required: true },
-    { title: 'הערות', field: 'notes', required: false },
+    { title: 'קטגוריה', field: 'category', required: false },
+    { title: 'כמות', field: 'quantity', required: false },
   ];
 
   const [columnMapping, setColumnMapping] = useState({
     name: '',
     category: '',
-    quantity: '',
-    notes: ''
+    quantity: ''
   });
 
   const handleFileChange = (e) => {
@@ -245,8 +243,11 @@ function ExcelImport() {
                   מיפוי עמודות
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 3, color: '#9197B3' }}>
-                  יש לבחור לאיזה שדה במערכת מתאימה כל עמודה בקובץ האקסל
+                  יש לבחור רק את העמודה שמכילה את שם הפריט. כל יתר העמודות יובאו אוטומטית מהקובץ.
                 </Typography>
+                <Alert severity="info" sx={{ mb: 3 }}>
+                  המערכת תייבא את כל עמודות האקסל ותשמור אותן בבסיס הנתונים.
+                </Alert>
                 
                 <Grid container spacing={2}>
                   {excelColumns.map((column) => (

@@ -56,56 +56,123 @@ def import_excel_to_database(file_path, column_mapping):
         # קורא את הקובץ
         df = pd.read_excel(file_path)
         
-        # חילוץ המיפוי
+        # חילוץ המיפוי העיקרי
         name_column = column_mapping.get('name')
         category_column = column_mapping.get('category')
         quantity_column = column_mapping.get('quantity')
-        notes_column = column_mapping.get('notes')
         
-        if not name_column or not category_column or not quantity_column:
-            return {"error": "חסרים שדות חובה במיפוי העמודות"}
+        # מיפוי לכל השדות האפשריים בקובץ האקסל
+        excel_to_db_mapping = {
+            'פריט': 'name',
+            'Unnamed: 0': 'category_original',
+            'הזמנה': 'ordered',
+            'הערות על הזמנה (מחסן באדום. סטודנט בכחול)': 'order_notes',
+            'יצא': 'checked_out',
+            'בדקתי': 'checked',
+            'הערות על הוצאה (מחסן באדום. סטודנט בכחול)': 'checkout_notes',
+            'חזר': 'returned',
+            'הערות על החזרה': 'return_notes',
+            'מחיר ליחידה': 'price_per_unit',
+            'מחיר כולל': 'total_price',
+            'Unnamed: 11': 'unnnamed_11',
+            'במאית: ': 'director',
+            'מפיקה: ': 'producer',
+            'צלמת: ': 'photographer'
+        }
+        
+        # יצירת מיפוי הפוך - מעמודות האקסל לשדות בבסיס הנתונים
+        column_to_db_field = {}
+        for excel_col, db_field in excel_to_db_mapping.items():
+            if excel_col in df.columns:
+                column_to_db_field[excel_col] = db_field
+        
+        if not name_column:
+            return {"error": "חסר שם השדה שמכיל את שם הפריט (עמודת name)"}
         
         # יבוא הנתונים
         items_added = 0
         for _, row in df.iterrows():
+            # חילוץ הנתונים הבסיסיים
             name = str(row[name_column]) if not pd.isna(row[name_column]) else ""
-            category = str(row[category_column]) if not pd.isna(row[category_column]) else ""
             
-            # טיפול בכמות - המרה למספר שלם
-            quantity_val = row[quantity_column]
-            if pd.isna(quantity_val):
-                quantity = 0
-            else:
+            # קביעת קטגוריה
+            category = ""
+            if category_column and not pd.isna(row[category_column]):
+                category = str(row[category_column])
+            
+            # קביעת כמות
+            quantity = 1  # ברירת מחדל
+            if quantity_column and not pd.isna(row[quantity_column]):
                 try:
-                    quantity = int(quantity_val)
+                    quantity_val = row[quantity_column]
+                    quantity = int(quantity_val) if not pd.isna(quantity_val) else 1
                 except:
-                    quantity = 0
+                    quantity = 1
             
-            # טיפול בהערות
-            notes = ""
-            if notes_column and not pd.isna(row[notes_column]):
-                notes = str(row[notes_column])
+            # דילוג על שורות ריקות
+            if not name:
+                continue
+                
+            # שמירת כל שדות האקסל
+            item_data = {
+                'name': name,
+                'category': category or "כללי",  # ברירת מחדל אם אין קטגוריה
+                'quantity': quantity
+            }
             
-            # הוספת הפריט רק אם יש לו שם וקטגוריה
-            if name and category:
-                # בדיקה אם הפריט כבר קיים
-                cursor.execute(
-                    "SELECT id FROM items WHERE name = %s AND category = %s",
-                    (name, category)
-                )
-                existing_item = cursor.fetchone()
+            # הוספת כל השדות הנוספים מהאקסל
+            for excel_col, db_field in column_to_db_field.items():
+                # דילוג על השדות שכבר הוגדרו
+                if db_field in ['name', 'category', 'quantity']:
+                    continue
+                    
+                value = row[excel_col] if excel_col in row and not pd.isna(row[excel_col]) else None
                 
-                if existing_item:
-                    # עדכון פריט קיים
-                    cursor.execute(
-                        "UPDATE items SET quantity = %s, notes = %s WHERE id = %s",
-                        (quantity, notes, existing_item[0])
-                    )
-                else:
-                    # הוספת פריט חדש
-                    add_item(name, category, quantity, notes)
-                
-                items_added += 1
+                # טיפול בטיפוסי נתונים שונים
+                if value is not None:
+                    if db_field in ['ordered', 'checked_out', 'checked', 'returned']:
+                        # המרה לערך בוליאני
+                        if isinstance(value, bool):
+                            item_data[db_field] = value
+                        elif isinstance(value, (int, float)):
+                            item_data[db_field] = value > 0
+                        elif isinstance(value, str):
+                            item_data[db_field] = value.lower() in ['true', 'yes', 'כן', '1', 'נכון']
+                        else:
+                            item_data[db_field] = False
+                    elif db_field in ['price_per_unit', 'total_price']:
+                        # המרת מספרים
+                        try:
+                            item_data[db_field] = float(value) if value is not None else 0.0
+                        except:
+                            item_data[db_field] = 0.0
+                    else:
+                        # טקסט רגיל
+                        item_data[db_field] = str(value)
+            
+            # הכנת שדות להוספה/עדכון
+            fields = ', '.join(item_data.keys())
+            placeholders = ', '.join(['%s'] * len(item_data))
+            update_set = ', '.join([f"{field} = %s" for field in item_data.keys()])
+            values = list(item_data.values())
+            
+            # בדיקה אם הפריט כבר קיים
+            cursor.execute(
+                "SELECT id FROM items WHERE name = %s",
+                (name,)
+            )
+            existing_item = cursor.fetchone()
+            
+            if existing_item:
+                # עדכון פריט קיים
+                update_query = f"UPDATE items SET {update_set} WHERE id = %s"
+                cursor.execute(update_query, values + [existing_item[0]])
+            else:
+                # הוספת פריט חדש
+                insert_query = f"INSERT INTO items ({fields}) VALUES ({placeholders})"
+                cursor.execute(insert_query, values)
+            
+            items_added += 1
         
         conn.commit()
         conn.close()
