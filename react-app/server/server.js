@@ -9,6 +9,8 @@ const cors = require('cors');
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const multer = require('multer');
+const os = require('os');
 
 const app = express();
 const PORT = process.env.PORT || 5100;
@@ -350,16 +352,40 @@ app.get('/api/stats/category-analysis', async (req, res) => {
   }
 });
 
+// קונפיגורציה של multer לטיפול בקבצים
+const upload = multer({
+  dest: os.tmpdir(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // מקסימום 10MB
+  }
+});
+
 // יבוא/יצוא
-app.post('/api/import', async (req, res) => {
+app.post('/api/import', upload.single('file'), async (req, res) => {
   try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'לא נשלח קובץ' });
+    }
+
+    console.log('File received:', req.file);
+    console.log('Form data:', req.body);
+
+    const action = req.body.action || 'preview';
+    const mapping = req.body.mapping ? JSON.parse(req.body.mapping) : {};
+
     const result = await runPythonScript(
-      path.join(__dirname, '../api/import_excel.py'),
+      path.join(__dirname, '../api/excel_preview.py'),
       [],
-      req.body
+      {
+        action,
+        file_path: req.file.path,
+        mapping
+      }
     );
+
     res.json(result);
   } catch (error) {
+    console.error('Error processing import:', error);
     res.status(400).json({ message: 'שגיאה ביבוא נתונים: ' + error.message });
   }
 });

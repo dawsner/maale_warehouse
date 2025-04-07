@@ -18,6 +18,7 @@ import Register from './pages/Register';
 import Inventory from './pages/Inventory';
 import Loans from './pages/Loans';
 import Statistics from './pages/Statistics';
+import ExcelImport from './pages/ExcelImport';
 import AvailableItems from './pages/student/AvailableItems';
 import BookEquipment from './pages/student/BookEquipment';
 import MyEquipment from './pages/student/MyEquipment';
@@ -120,6 +121,9 @@ function App() {
             } />
             <Route path="/statistics" element={
               <AdminRoute><Statistics /></AdminRoute>
+            } />
+            <Route path="/import-excel" element={
+              <AdminRoute><ExcelImport /></AdminRoute>
             } />
             
             {/* דפים לסטודנטים */}

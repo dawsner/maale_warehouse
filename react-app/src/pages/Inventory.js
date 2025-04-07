@@ -55,8 +55,10 @@ function Inventory() {
   const fetchItems = async () => {
     try {
       setLoading(true);
-      const response = await inventoryAPI.getAll();
-      setItems(response.data);
+      console.log('Trying to fetch inventory items...');
+      const data = await inventoryAPI.getItems();
+      console.log('Inventory data received:', data);
+      setItems(data || []);
       setError('');
     } catch (err) {
       console.error('Error fetching inventory:', err);

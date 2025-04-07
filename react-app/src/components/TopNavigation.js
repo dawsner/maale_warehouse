@@ -6,6 +6,7 @@ import InventoryIcon from '@mui/icons-material/Inventory';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 
 function TopNavigation({ user, onLogout }) {
   const navigate = useNavigate();
@@ -64,6 +65,13 @@ function TopNavigation({ user, onLogout }) {
                     startIcon={<BarChartIcon />}
                   >
                     סטטיסטיקות
+                  </Button>
+                  <Button 
+                    color="inherit" 
+                    onClick={() => navigate('/import-excel')}
+                    startIcon={<UploadFileIcon />}
+                  >
+                    ייבוא אקסל
                   </Button>
                 </>
               )}
