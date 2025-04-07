@@ -14,7 +14,11 @@ const app = express();
 const PORT = process.env.PORT || 5100;
 
 // Middlewares
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, '../build')));
 

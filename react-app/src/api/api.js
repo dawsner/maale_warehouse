@@ -1,7 +1,9 @@
 import axios from 'axios';
 
 // קונפיגורציה בסיסית לבקשות Axios
-const API_URL = '/api';
+// בסביבת פיתוח צריך להתחבר לפורט ספציפי
+const isDevelopment = process.env.NODE_ENV === 'development';
+const API_URL = isDevelopment ? 'http://localhost:5100' : '';
 const axiosInstance = axios.create({
   baseURL: API_URL,
   headers: {
@@ -133,7 +135,10 @@ export const authAPI = {
   // התחברות
   login: async (username, password) => {
     try {
+      console.log('Sending login request to:', `${API_URL}/api/auth/login`);
       const response = await axiosInstance.post('/api/auth/login', { username, password });
+      console.log('Login response:', response.data);
+      
       if (response.data && response.data.token) {
         localStorage.setItem('token', response.data.token);
         // החזרת פרטי המשתמש מתוך תשובת השרת
