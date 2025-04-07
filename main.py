@@ -28,302 +28,97 @@ def main():
     init_db()
     init_auth()
     
-    # Add custom CSS based on provided design
+    # Add RTL CSS and Open Sans Hebrew font
     st.markdown('''
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Outfit:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap');
         
-        /* בסיס */
         * {
-            font-family: 'Poppins', 'Open Sans', sans-serif !important;
+            font-family: 'Open Sans', sans-serif !important;
         }
         
         .stApp {
             direction: rtl;
-            background-color: #FAFBFF !important;
+            font-family: 'Open Sans', sans-serif !important;
         }
         
-        /* חסימה מוחלטת של כפתור התפריט בסרגל הצד */
-        section[data-testid="stSidebar"] button[kind="header"],
-        button[data-testid="collapseSidebarButton"],
-        [data-testid="collapsedControl"],
-        [data-testid="expandControl"],
-        div:has(> button[kind="header"]),
-        div:has(> [data-testid="collapseSidebarButton"]),
-        .css-fblp2m, .css-1rs6os, .css-17ziqus, .css-1mgrnw, .css-ch5dnh {
-            display: none !important;
-            visibility: hidden !important;
-            width: 0 !important;
-            height: 0 !important;
-            position: absolute !important;
-            top: -9999px !important;
-            left: -9999px !important;
-            z-index: -9999 !important;
-        }
-        
-        /* נעילת הסייד-בר כאלמנט קבוע בצד ימין */
-        [data-testid="stSidebar"] {
-            position: fixed !important;
-            right: 0 !important;
-            top: 0 !important;
-            width: 306px !important;
-            height: 100vh !important;
-            transform: none !important;
-            transition: none !important;
-            opacity: 1 !important;
-            visibility: visible !important;
-        }
-        
-        /* פס ניווט עליון בדיוק כמו בדוגמה */
-        .top-header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 80px;
-            background-color: white;
-            border-bottom: 1px #CECECE solid;
-            z-index: 999;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
-        }
-        
-        /* צדדים שמאל וימין של הכותרת */
-        .left-side, .right-side {
-            display: flex;
-            align-items: center;
-            height: 100%;
-        }
-        
-        /* סגנון לאייקון הורדה (חץ למטה) */
-        .user-dropdown-icon {
-            margin-right: 8px;
-            font-size: 12px;
-            color: #666;
-        }
-        
-        /* אזור תוכן ראשי חדש עם תמיכה מלאה ב-RTL */
         .main .block-container {
-            padding-top: 120px;
+            padding-top: 1rem;
+            padding-right: 7.5rem; /* שומר מקום לסייד-בר - צומצם לחצי */
             padding-left: 1rem;
-            padding-right: 320px;
             padding-bottom: 1rem;
-            margin: 0 auto;
         }
         
-        /* עיצוב תיבת תוכן חדש */
-        .content-box {
-            width: 100%;
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.15);
-            padding: 20px;
-            margin-bottom: 20px;
-            border: 2px #EBEBEE solid;
-            direction: rtl;
-            text-align: right;
-        }
-        
-        /* סייד-בר חדש שממוקם בצד ימין */
         [data-testid="stSidebar"] {
-            background-color: white !important;
-            padding-top: 100px !important;
-            width: 306px !important;
-            border-right: none !important;
-            border-left: none !important;
-            box-shadow: 0px 10px 60px rgba(225, 236, 248, 0.50) !important;
-            position: fixed;
-            right: 0 !important;
-            left: auto !important;
-            direction: rtl;
+            width: 7.5rem !important;
         }
-        
-        [data-testid="stSidebarContent"] {
-            direction: rtl !important;
-        }
-        
-        /* לוגו */
-        .logo-container {
-            display: flex;
-            justify-content: flex-start;
-            align-items: center;
-            height: 100%;
-            padding-top: 16px;
-            padding-right: 20px;
-        }
-        
-        .logo-container img {
-            height: 54px;
-            width: auto;
-        }
-        
-        /* פרופיל משתמש */
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-            margin-right: 28px;
-            direction: rtl;
-        }
-        
-        .user-avatar {
-            width: 36.85px;
-            height: 36.85px;
-            border-radius: 7.68px;
-            background-color: #FFA78D;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 500;
-            overflow: hidden;
-        }
-        
-        .user-info {
-            text-align: right;
-            display: flex;
-            flex-direction: column;
-            direction: rtl;
-        }
-        
-        .welcome-text {
-            font-size: 11.52px;
-            color: #373B5C;
-            margin: 0;
-            font-family: Poppins !important;
-            font-weight: 500;
-        }
-        
-        .user-name {
-            font-size: 19.58px;
-            color: #373B5C;
-            margin: 0;
-            font-family: Poppins !important;
-            font-weight: 500;
-        }
-        
-        /* כפתורי תפריט */
-        .stButton > button {
-            font-family: 'Outfit', sans-serif !important;
-            font-weight: 500 !important;
-            font-size: 16px !important;
-            color: #9197B3 !important;
-            border: none !important;
-            background: none !important;
-            text-align: right;
-            padding: 0.75rem 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-            direction: rtl;
-        }
-        
-        .stButton > button:hover {
-            background-color: rgba(0, 0, 0, 0.05) !important;
-        }
-        
-        .stButton > button::after {
-            content: "❯";
-            margin-right: auto;
-            margin-left: 10px;
-            font-size: 0.8rem;
-            color: #9197B3;
-            order: -1;
-        }
-        
-        /* סידור כותרות ותוכן כך שיהיו מיושרים לימין - עם סלקטור יותר ספציפי כדי למנוע התנגשויות */
-        .content-box h1, .content-box h2, .content-box h3, .content-box h4, .content-box h5, .content-box h6, 
-        .content-box .stTitle, .content-box p, [data-testid="stSidebarContent"] div {
-            text-align: right;
-            direction: rtl;
-        }
-        
-        /* תיקון תצוגת טבלאות */
-        [data-testid="stTable"], [data-testid="stDataFrame"] {
-            direction: rtl;
-        }
-        
-        /* הגדרות תצוגה עבור אגריד */
-        .ag-theme-streamlit, .element-container [data-testid] {
-            text-align: right !important;
-            direction: rtl !important;
-        }
-        
-        /* מעטפת לפרופיל משתמש עם עיצוב */
-        .profile-wrapper {
-            flex: 1;
-            height: 61.03px;
-            padding: 11.52px;
-            background: rgba(255, 255, 255, 0.50);
-            border-radius: 9.21px;
-            outline: 1.15px #E8EFF7 solid;
-            outline-offset: -1.15px;
-            display: flex;
-            align-items: center;
-            gap: 11.52px;
-            direction: rtl;
-        }
-        
-        /* עיצוב תוויות מדדים */
-        div[data-testid="stMetricLabel"] {
+        .sidebar .sidebar-content {
             direction: rtl;
             text-align: right;
+            padding: 1rem;
+            background-color: #E7E7E7 !important;
         }
         
-        /* טאבים */
+        [data-testid="stSidebar"] {
+            background-color: #E7E7E7 !important;
+        }
+        
+        [data-testid="stSidebarNav"] {
+            background-color: #E7E7E7 !important;
+        }
         .stTabs [data-baseweb="tab-list"] {
             direction: rtl;
         }
-        
         .stTabs [data-baseweb="tab"] {
             direction: rtl;
             margin-right: 0px;
             margin-left: 10px;
         }
-        
-        /* תיבות טקסט */
-        .stTextInput > div > div > input {
-            direction: rtl;
-            text-align: right;
-        }
-        
-        .stTextInput label {
-            right: 0;
-            left: auto;
-            text-align: right;
-        }
-        
         button[kind="secondary"] {
             direction: rtl;
         }
-        
-        /* התראות */
-        div[data-baseweb="notification"] {
+        .stTextInput > div > div > input {
+            direction: rtl;
+        }
+        .stButton > button {
             border-radius: 5px;
-            border-width: 1px;
-            text-align: right;
-            direction: rtl;
+            font-weight: 600;
+            font-family: 'Open Sans', sans-serif !important;
         }
         
-        /* כפתור דשבורד מיוחד */
-        .dashboard-button {
-            color: white !important;
-            font-size: 14px !important;
-            font-family: Poppins !important;
-            font-weight: 500 !important;
-            background-color: none !important;
-            padding: 0 !important;
-            margin-bottom: 1rem !important;
-            text-align: right;
+        /* Apply Open Sans font to inputs */
+        input, textarea, div[data-baseweb="input"], div[data-baseweb="select"] {
+            font-family: 'Open Sans', sans-serif !important;
         }
         
-        /* תיקון למיקום רכיבי טפסים */
-        .stSelectbox, .stMultiselect, .stDateInput {
+        /* Apply Open Sans font to table elements */
+        table, th, td, div[data-testid="stTable"], div[data-testid="stDataFrame"] {
+            font-family: 'Open Sans', sans-serif !important;
+        }
+        div[data-testid="stMetricLabel"] {
             direction: rtl;
             text-align: right;
+        }
+        .logo-container {
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .logo-container img {
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+        }
+        
+        /* Custom styles for Hebrew headers */
+        h1, h2, h3, h4, h5, h6, .stTitle {
+            font-family: 'Open Sans', sans-serif !important;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        /* Add some space to widgets for better readability */
+        div[data-testid="stVerticalBlock"] > div {
+            margin-bottom: 1rem;
         }
     </style>
     ''', unsafe_allow_html=True)
@@ -332,43 +127,19 @@ def main():
     if 'current_page' not in st.session_state:
         st.session_state.current_page = 'מלאי' if st.session_state.get('user') and st.session_state.user.role == 'warehouse' else 'התחברות'
     
-    # Create header area with user profile and logo - עיצוב בדיוק כמו בדוגמה
-    st.markdown(f'''
-    <div class="top-header">
-        <div class="left-side">
-            <div class="user-profile">
-                <div class="user-avatar">{''.join([name[0] for name in st.session_state.user.full_name.split()]) if st.session_state.get('user') else 'G'}</div>
-                <div class="user-info">
-                    <p class="welcome-text">{'Welcome back,' if st.session_state.get('user') else 'Guest'}</p>
-                    <p class="user-name">{st.session_state.user.full_name if st.session_state.get('user') else 'אורח'}</p>
-                </div>
-                <div class="user-dropdown-icon">&#9662;</div>
-            </div>
-        </div>
-        <div class="right-side">
-            <div class="logo-container">
-                <img src="./assets/logo.png" alt="Logo">
-            </div>
-        </div>
-    </div>
-    ''', unsafe_allow_html=True)
-    
     if st.session_state.user:
-        # No need for additional profile markup as it's already in the main layout
-        
         # Sidebar with logo and navigation
         with st.sidebar:
-            # Add dashboard button and navigation icons
-            st.markdown('''
-            <div style="width: 24px; height: 20.51px; position: relative; margin-bottom: 20px; overflow: hidden">
-              <div style="width: 20px; height: 17.10px; position: absolute; left: 2px; top: 1.71px; outline: 1.50px #1E2875 solid; outline-offset: -0.75px"></div>
-              <div style="width: 10.99px; height: 9.39px; position: absolute; left: 6.50px; top: 5.57px; outline: 1.50px #1E2875 solid; outline-offset: -0.75px"></div>
-            </div>
-            <div style="color: #1E2875; font-size: 14px; font-family: Poppins; font-weight: 500; margin-bottom: 20px; word-wrap: break-word">Dashboard</div>
-            ''', unsafe_allow_html=True)
-            # No user info or logo in sidebar - it's in the header now
+            # Logo container
+            st.markdown('<div class="logo-container">', unsafe_allow_html=True)
+            st.image('assets/logo.png', use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            # User info
+            st.write(f"👤 שלום, {st.session_state.user.full_name}")
             
             # Role-based navigation
+            st.divider()
             
             if st.session_state.user.role == 'warehouse':
                 pages = {
@@ -407,7 +178,6 @@ def main():
                     st.warning(f"{len(overdue_loans)} השאלות באיחור")
         
         # Main content area based on selected page
-        st.markdown('<div class="content-box">', unsafe_allow_html=True)
         st.title(st.session_state.current_page)
         
         # Display page content based on current_page
@@ -460,7 +230,10 @@ def main():
     else:
         # Login/Register view with sidebar
         with st.sidebar:
-            # No logo in sidebar for login page - moved to header
+            st.markdown('<div class="logo-container">', unsafe_allow_html=True)
+            st.image('assets/logo.png', use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+            st.divider()
             
             # Switch between login and registration
             if st.button("התחברות", key="nav_login", use_container_width=True):
@@ -471,14 +244,12 @@ def main():
                 st.rerun()
         
         # Show login or registration based on current page
-        st.markdown('<div class="content-box">', unsafe_allow_html=True)
         if st.session_state.current_page == 'התחברות':
             st.title("התחברות")
             show_login_page()
         else:
             st.title("הרשמה")
             show_registration_page()
-        st.markdown('</div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()

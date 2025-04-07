@@ -31,7 +31,7 @@ task = "packager.installForAll"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "streamlit run main.py --server.port=5000 --server.enableXsrfProtection=false --server.headless=true"
+args = "streamlit run main.py --server.port=5000 --server.enableXsrfProtection=false"
 waitForPort = 5000
 
 [[workflows.workflow]]
@@ -49,7 +49,7 @@ task = "shell.exec"
 args = "python3 analyze_excel.py"
 
 [deployment]
-run = ["sh", "-c", "streamlit run main.py --server.port=5000 --server.enableXsrfProtection=false --server.headless=true"]
+run = ["sh", "-c", "streamlit run main.py --server.port=5000 --server.enableXsrfProtection=false"]
 
 [[ports]]
 localPort = 5000
