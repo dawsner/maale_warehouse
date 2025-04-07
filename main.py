@@ -25,6 +25,29 @@ def main():
         layout="wide",
         initial_sidebar_state="expanded"
     )
+    
+    # Hide the sidebar collapse button completely
+    st.markdown("""
+    <style>
+        [data-testid="collapsedControl"] {
+            display: none !important;
+        }
+        
+        /* Additional selector to definitely hide the collapse button */
+        button[kind="headerButton"] {
+            display: none !important;
+        }
+        
+        section[data-testid="stSidebar"] > div.css-6qob1r.eczjsme3 {
+            pointer-events: none !important;
+        }
+        
+        /* Ensure sidebar is always visible */
+        .main .block-container {
+            padding-right: 17rem !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
     init_db()
     init_auth()
     
