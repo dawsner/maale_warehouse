@@ -12,6 +12,10 @@ from datetime import datetime
 # הוספת תיקיית הפרויקט הראשית לנתיב החיפוש
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
+# הוספת תיקיית ה-API לנתיב החיפוש
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+from auth_api import verify_token_api
+
 # מפתח סודי לאימות טוקן JWT - חייב להיות זהה למפתח בקובץ login.py
 SECRET_KEY = "your-secret-key-cinema-equipment-management"
 
@@ -39,6 +43,11 @@ def main():
             exp_datetime = datetime.fromtimestamp(exp_timestamp)
             if exp_datetime < datetime.utcnow():
                 raise jwt.ExpiredSignatureError("תוקף הטוקן פג")
+            
+            # אימות קיום המשתמש במערכת
+            user = verify_token_api(payload.get('id'))
+            if not user:
+                raise jwt.InvalidTokenError("המשתמש אינו קיים במערכת")
                 
             # אם הגענו לכאן, הטוקן תקין ובתוקף
             response = {

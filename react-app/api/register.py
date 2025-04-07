@@ -12,8 +12,9 @@ from datetime import datetime, timedelta
 # הוספת תיקיית הפרויקט הראשית לנתיב החיפוש
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-# ייבוא פונקציות אימות
-from auth import create_user
+# ייבוא פונקציות אימות מהמודול החדש המותאם ל-API
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+from auth_api import register_api
 
 # מפתח סודי ליצירת טוקן JWT - חייב להיות זהה למפתח בקובץ login.py
 SECRET_KEY = "your-secret-key-cinema-equipment-management"
@@ -36,8 +37,8 @@ def main():
         if not all([username, password, role, email, full_name]):
             raise ValueError("שם משתמש, סיסמה, תפקיד, כתובת דוא״ל ושם מלא הם שדות חובה")
         
-        # ניסיון ליצור משתמש חדש
-        user = create_user(
+        # ניסיון ליצור משתמש חדש עם הפונקציה החדשה המותאמת ל-API
+        success, result = register_api(
             username=username,
             password=password,
             role=role,
@@ -46,7 +47,8 @@ def main():
         )
         
         # אם ההרשמה הצליחה, יצירת טוקן JWT
-        if user:
+        if success:
+            user = result  # התוצאה מכילה את אובייקט המשתמש
             # מידע שיוכנס לטוקן
             payload = {
                 'id': user.id,
@@ -63,7 +65,7 @@ def main():
             # החזרת תשובה חיובית עם פרטי המשתמש והטוקן
             response = {
                 'success': True,
-                'id': user.id,
+                'id': str(user.id),  # המרה ל-string למניעת שגיאת LSP
                 'username': user.username,
                 'role': user.role,
                 'email': user.email,
@@ -75,7 +77,7 @@ def main():
             # במקרה של כישלון ביצירת המשתמש
             response = {
                 'success': False,
-                'message': 'שגיאה ביצירת משתמש חדש'
+                'message': result  # התוצאה מכילה את הודעת השגיאה
             }
         
         # החזרת התוצאה כ-JSON

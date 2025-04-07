@@ -12,8 +12,9 @@ from datetime import datetime, timedelta
 # הוספת תיקיית הפרויקט הראשית לנתיב החיפוש
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-# ייבוא פונקציות אימות
-from auth import login
+# ייבוא פונקציות אימות מהמודול החדש המותאם ל-API
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+from auth_api import login_api
 
 # מפתח סודי ליצירת טוקן JWT
 SECRET_KEY = "your-secret-key-cinema-equipment-management"  # במערכת אמיתית יש לשמור זאת בקובץ .env
@@ -33,8 +34,8 @@ def main():
         if not username or not password:
             raise ValueError("שם משתמש וסיסמה הם שדות חובה")
         
-        # ניסיון להתחבר
-        user = login(username, password)
+        # ניסיון להתחבר עם הפונקציה החדשה המותאמת ל-API
+        user = login_api(username, password)
         
         # אם ההתחברות הצליחה, יצירת טוקן JWT
         if user:
