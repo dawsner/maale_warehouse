@@ -56,8 +56,9 @@ function App() {
   }, []);
 
   const handleLogin = (userData) => {
+    console.log('Login successful, user data:', userData);
     setUser(userData);
-    if (userData.role === 'admin') {
+    if (userData.role === 'admin' || userData.role === 'warehouse') {
       navigate('/inventory');
     } else {
       navigate('/available-items');
@@ -70,11 +71,11 @@ function App() {
     navigate('/login');
   };
 
-  // סוגי דפים שדורשים הרשאות מנהל
+  // סוגי דפים שדורשים הרשאות מנהל או מחסנאי
   const AdminRoute = ({ children }) => {
     if (loading) return <CircularProgress />;
     if (!user) return <Navigate to="/login" />;
-    if (user.role !== 'admin') return <Navigate to="/available-items" />;
+    if (user.role !== 'admin' && user.role !== 'warehouse') return <Navigate to="/available-items" />;
     return children;
   };
 
@@ -135,7 +136,7 @@ function App() {
             {/* דף ברירת מחדל */}
             <Route path="/" element={
               user ? (
-                user.role === 'admin' ? 
+                (user.role === 'admin' || user.role === 'warehouse') ? 
                 <Navigate to="/inventory" /> : 
                 <Navigate to="/available-items" />
               ) : (

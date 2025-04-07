@@ -36,9 +36,17 @@ function Login({ onLogin }) {
     setError('');
 
     try {
+      console.log('Attempting login with:', { username, password });
       const user = await authAPI.login(username, password);
-      onLogin(user);
+      console.log('Login response:', user);
+      
+      if (user) {
+        onLogin(user);
+      } else {
+        setError('שגיאה בהתחברות. אנא נסה שנית');
+      }
     } catch (err) {
+      console.error('Login error:', err);
       setError(err.response?.data?.message || 'שגיאה בהתחברות. אנא נסה שנית');
     } finally {
       setLoading(false);

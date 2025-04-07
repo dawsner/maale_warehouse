@@ -132,26 +132,57 @@ export const reservationsAPI = {
 export const authAPI = {
   // התחברות
   login: async (username, password) => {
-    const response = await axiosInstance.post('/auth/login', { username, password });
-    if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
+    try {
+      const response = await axiosInstance.post('/api/auth/login', { username, password });
+      if (response.data && response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        // החזרת פרטי המשתמש מתוך תשובת השרת
+        return {
+          id: response.data.id,
+          username: response.data.username,
+          role: response.data.role,
+          email: response.data.email,
+          full_name: response.data.full_name
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
     }
-    return response.data.user;
   },
 
   // הרשמה
   register: async (userData) => {
-    const response = await axiosInstance.post('/auth/register', userData);
-    if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
+    try {
+      const response = await axiosInstance.post('/api/auth/register', userData);
+      if (response.data && response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        // החזרת פרטי המשתמש מתוך תשובת השרת
+        return {
+          id: response.data.id,
+          username: response.data.username,
+          role: response.data.role,
+          email: response.data.email,
+          full_name: response.data.full_name
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw error;
     }
-    return response.data.user;
   },
 
   // קבלת פרטי משתמש נוכחי
   getCurrentUser: async () => {
-    const response = await axiosInstance.get('/auth/me');
-    return response.data;
+    try {
+      const response = await axiosInstance.get('/api/auth/me');
+      return response.data;
+    } catch (error) {
+      console.error('Get current user error:', error);
+      throw error;
+    }
   },
 
   // התנתקות
