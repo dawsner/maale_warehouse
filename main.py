@@ -48,22 +48,22 @@ def main():
             display: none !important;
         }
         
-        /* יצירת תפריט עליון קבוע מתחת לתפריט של streamlit */
+        /* יצירת תפריט עליון קבוע מתחת לתפריט של streamlit - בסגנון מודרני יותר */
         .top-menu {
             position: sticky;
             top: 0;
             right: 0;
             left: 0;
             height: 60px;
-            background-color: #E7E7E7;
+            background-color: white;
             z-index: 999;
             display: flex;
             align-items: center;
             padding: 0 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             direction: rtl;
             margin-bottom: 5px;
-            border-radius: 6px;
+            border-bottom: 1px #CECECE solid;
         }
         
         /* הסתרת האלמנטים המקוריים של סטרימליט */
@@ -98,26 +98,27 @@ def main():
             display: none !important;
         }
         
-        /* עיצוב הכפתורים בתפריט העליון */
+        /* עיצוב הכפתורים בתפריט העליון בסגנון מודרני */
         .top-menu-button {
             display: inline-block;
             margin: 0 10px;
-            padding: 5px 15px;
+            padding: 8px 16px;
             border: none;
             background-color: transparent;
-            color: #333;
+            color: #373B5C;
             cursor: pointer;
-            font-weight: 600;
+            font-weight: 500;
             transition: all 0.3s;
-            border-radius: 4px;
+            border-radius: 6px;
+            font-size: 14px;
         }
         
         .top-menu-button:hover {
-            background-color: rgba(0,0,0,0.05);
+            background-color: rgba(0,0,0,0.03);
         }
         
         .top-menu-button.active {
-            background-color: #0078FF;
+            background-color: #1E2875;
             color: white;
         }
         
@@ -224,16 +225,41 @@ def main():
         # הוספת הלוגו
         menu_html += f'<img src="data:image/png;base64,{get_image_as_base64("assets/logo.png")}" class="top-menu-logo" alt="Logo">'
         
-        # הוספת הכפתורים
-        for page, icon in pages.items():
+        # הוספת הכפתורים עם אייקונים חדשים
+        icons = {
+            "מלאי": '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>',
+            "השאלות": '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>',
+            "התראות": '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>',
+            "מעקב ציוד": '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>',
+            "היסטוריה": '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>',
+            "סטטיסטיקות": '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>',
+            "ייבוא/ייצוא": '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>',
+            "ניהול הזמנות": '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>',
+            "הציוד שלי": '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>',
+            "פריטים זמינים": '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>',
+            "הזמנת ציוד": '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>'
+        }
+        
+        for page, _ in pages.items():
             active_class = "active" if st.session_state.current_page == page else ""
             page_id = page.replace(" ", "_")
+            icon = icons.get(page, "")
             menu_html += f'<button id="nav_{page_id}" class="top-menu-button {active_class}">{icon} {page}</button>'
         
-        # הוספת פרטי המשתמש ולחצן ההתנתקות
+        # הוספת פרטי המשתמש ולחצן ההתנתקות - עיצוב מודרני יותר
         menu_html += f'<div class="user-info">'
-        menu_html += f'<span>👤 שלום, {st.session_state.user.full_name}</span>'
-        menu_html += f'<button id="nav_logout" class="top-menu-button">התנתק</button>'
+        menu_html += f'''
+          <div style="background-color: #F5F6FA; padding: 6px 12px; border-radius: 8px; display: flex; align-items: center; margin-right: 10px;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background-color: #1E2875; color: white; display: flex; align-items: center; justify-content: center; margin-left: 8px; font-weight: bold;">
+              {st.session_state.user.full_name[0]}
+            </div>
+            <div style="display: flex; flex-direction: column;">
+              <span style="font-size: 12px; color: #9197B3;">שלום,</span>
+              <span style="font-size: 14px; color: #373B5C; font-weight: 500;">{st.session_state.user.full_name}</span>
+            </div>
+          </div>
+        '''
+        menu_html += f'<button id="nav_logout" class="top-menu-button"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> התנתק</button>'
         menu_html += '</div>'
         
         menu_html += '</div>'
