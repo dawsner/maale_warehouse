@@ -42,7 +42,7 @@ function TopNavigation({ user, onLogout }) {
         {user ? (
           <>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              {user.role === 'admin' && (
+              {(user.role === 'admin' || user.role === 'warehouse_staff') && (
                 <>
                   <Button 
                     color="inherit" 
