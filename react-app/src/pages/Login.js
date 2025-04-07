@@ -47,7 +47,16 @@ function Login({ onLogin }) {
       }
     } catch (err) {
       console.error('Login error:', err);
-      setError(err.response?.data?.message || 'שגיאה בהתחברות. אנא נסה שנית');
+      
+      // טיפול בסוגי שגיאות שונים
+      if (err.message === 'Network Error') {
+        setError('שגיאת תקשורת. אנא ודא כי השרת פועל ונסה שנית.');
+      } else {
+        setError(
+          err.response?.data?.message || 
+          'שגיאה בהתחברות. אנא נסה שנית. סיסמה או שם משתמש שגויים.'
+        );
+      }
     } finally {
       setLoading(false);
     }

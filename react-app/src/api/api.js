@@ -1,9 +1,8 @@
 import axios from 'axios';
 
 // קונפיגורציה בסיסית לבקשות Axios
-// בסביבת פיתוח צריך להתחבר לפורט ספציפי
-const isDevelopment = process.env.NODE_ENV === 'development';
-const API_URL = isDevelopment ? 'http://localhost:5100' : '';
+// אנחנו משתמשים באותו שרת שמגיש את האפליקציה
+const API_URL = ''; // ריק משמעותו אותה דומיין בה רצה האפליקציה
 const axiosInstance = axios.create({
   baseURL: API_URL,
   headers: {

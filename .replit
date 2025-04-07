@@ -17,11 +17,7 @@ args = "Excel Analysis"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Express Server"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "React App"
+args = "Full App"
 
 [[workflows.workflow]]
 name = "Excel Analysis"
@@ -38,7 +34,7 @@ task = "shell.exec"
 args = "python3 analyze_excel.py"
 
 [[workflows.workflow]]
-name = "Express Server"
+name = "Full App"
 author = "agent"
 
 [workflows.workflow.metadata]
@@ -49,22 +45,7 @@ task = "packager.installForAll"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd react-app && node server/server.js"
-waitForPort = 5100
-
-[[workflows.workflow]]
-name = "React App"
-author = "agent"
-
-[workflows.workflow.metadata]
-agentRequireRestartOnSave = false
-
-[[workflows.workflow.tasks]]
-task = "packager.installForAll"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd react-app && DANGEROUSLY_DISABLE_HOST_CHECK=true npm run start"
+args = "cd react-app && npm run dev"
 waitForPort = 5000
 
 [deployment]
