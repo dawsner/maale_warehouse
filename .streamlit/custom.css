@@ -94,17 +94,25 @@ section[data-testid="stSidebar"] {
     width: 17em !important;
 }
 
-/* Hide sidebar collapse button */
-button[kind="header"] {
+/* Hide collapse button in the top left corner */
+button[data-testid="collapseSidebarButton"] {
     display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    position: absolute !important;
+    left: -9999px !important;
 }
 
-/* Ensure sidebar is always shown */
+/* Force the sidebar to be always expanded */
 section[data-testid="stSidebar"] {
+    transform: none !important;
+    transition: none !important;
     min-width: 17em !important;
     max-width: 17em !important;
+    top: 0 !important;
+    height: 100vh !important;
     position: fixed !important;
-    overflow-y: auto !important;
 }
 
 /* עיצוב אזהרות */
