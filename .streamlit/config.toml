@@ -14,3 +14,7 @@ headless = true
 
 [browser]
 gatherUsageStats = false
+
+[runner]
+fixMatplotlib = true
+magicEnabled = true

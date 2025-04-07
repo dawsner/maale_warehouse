@@ -18,7 +18,7 @@ def get_image_as_base64(path):
         return base64.b64encode(image_file.read()).decode()
 
 def main():
-    # Set page config with new layout
+    # Set page config with new layout and disable ability to collapse sidebar
     st.set_page_config(
         page_title="מערכת ניהול מחסן השאלות",
         page_icon="📦",
@@ -26,28 +26,46 @@ def main():
         initial_sidebar_state="expanded"
     )
     
-    # Hide the sidebar collapse button completely
-    st.markdown("""
+    # Create a completely different sidebar with CSS that can't be collapsed
+    st.markdown('''
     <style>
-        [data-testid="collapsedControl"] {
-            display: none !important;
-        }
-        
-        /* Additional selector to definitely hide the collapse button */
-        button[kind="headerButton"] {
-            display: none !important;
-        }
-        
-        section[data-testid="stSidebar"] > div.css-6qob1r.eczjsme3 {
-            pointer-events: none !important;
-        }
-        
-        /* Ensure sidebar is always visible */
-        .main .block-container {
-            padding-right: 17rem !important;
-        }
+    /* First hide the default sidebar completely */
+    [data-testid="collapsedControl"],
+    div:has(> [data-testid="collapsedControl"]) {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        position: absolute !important;
+        left: -9999px !important;
+        pointer-events: none !important;
+    }
+    
+    /* Force sidebar to remain open */
+    section[data-testid="stSidebar"] {
+        width: 17rem !important;
+        min-width: 17rem !important;
+        max-width: 17rem !important;
+        transform: none !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        display: flex !important;
+        transition: none !important;
+        position: fixed !important;
+    }
+    
+    /* Ensure main content area respects fixed sidebar */
+    .main .block-container {
+        max-width: calc(100% - 17rem) !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        margin-left: 17rem !important;
+    }
     </style>
-    """, unsafe_allow_html=True)
+    ''', unsafe_allow_html=True)
+    
+
     init_db()
     init_auth()
     
