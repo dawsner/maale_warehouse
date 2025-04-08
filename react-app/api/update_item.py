@@ -36,13 +36,42 @@ def main():
         if not isinstance(quantity, int) or quantity < 0:
             raise ValueError("כמות חייבת להיות מספר שלם לא שלילי")
         
-        # עדכון הפריט
-        success = update_item(
+        # עדכון הפריט עם כל השדות הנדרשים
+        order_notes = input_data.get('order_notes')
+        ordered = input_data.get('ordered')
+        checkout_notes = input_data.get('checkout_notes')
+        checked_out = input_data.get('checked_out')
+        checked = input_data.get('checked')
+        return_notes = input_data.get('return_notes')
+        returned = input_data.get('returned')
+        price_per_unit = input_data.get('price_per_unit')
+        total_price = input_data.get('total_price')
+        director = input_data.get('director')
+        producer = input_data.get('producer')
+        photographer = input_data.get('photographer')
+        unnnamed_11 = input_data.get('unnnamed_11')
+        is_available = input_data.get('is_available')
+        
+        success, message = update_item(
             item_id=item_id,
             name=name,
             category=category,
             quantity=quantity,
-            notes=notes
+            notes=notes,
+            order_notes=order_notes,
+            ordered=ordered,
+            checkout_notes=checkout_notes,
+            checked_out=checked_out,
+            checked=checked,
+            return_notes=return_notes,
+            returned=returned,
+            price_per_unit=price_per_unit,
+            total_price=total_price,
+            director=director,
+            producer=producer,
+            photographer=photographer,
+            unnnamed_11=unnnamed_11,
+            is_available=is_available
         )
         
         if success:

@@ -9,7 +9,7 @@ def get_db_connection():
 def init_db():
     with get_db_connection() as conn:
         with conn.cursor() as cur:
-            # Create items table
+            # Create items table with all needed fields from Excel
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS items (
                     id SERIAL PRIMARY KEY,
@@ -17,7 +17,22 @@ def init_db():
                     category TEXT NOT NULL,
                     quantity INTEGER NOT NULL,
                     available INTEGER NOT NULL,
-                    notes TEXT
+                    notes TEXT,
+                    is_available BOOLEAN DEFAULT TRUE,
+                    category_original TEXT,
+                    order_notes TEXT,
+                    ordered BOOLEAN DEFAULT FALSE,
+                    checked_out BOOLEAN DEFAULT FALSE,
+                    checked BOOLEAN DEFAULT FALSE,
+                    checkout_notes TEXT,
+                    returned BOOLEAN DEFAULT FALSE,
+                    return_notes TEXT,
+                    price_per_unit NUMERIC DEFAULT 0,
+                    total_price NUMERIC DEFAULT 0,
+                    unnnamed_11 TEXT,
+                    director TEXT,
+                    producer TEXT,
+                    photographer TEXT
                 )
             """)
             
@@ -80,13 +95,26 @@ def init_db():
             
             conn.commit()
 
-def add_item(name, category, quantity, notes=""):
+def add_item(name, category, quantity, notes="", order_notes=None, ordered=False,
+             checkout_notes=None, checked_out=False, checked=False,
+             return_notes=None, returned=False, price_per_unit=0, total_price=0,
+             director=None, producer=None, photographer=None, unnnamed_11=None):
+    """
+    מוסיף פריט חדש למלאי עם תמיכה מלאה בכל שדות האקסל
+    """
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                """INSERT INTO items (name, category, quantity, available, notes)
-                   VALUES (%s, %s, %s, %s, %s)""",
-                (name, category, quantity, quantity, notes)
+                """INSERT INTO items (
+                    name, category, quantity, available, notes,
+                    order_notes, ordered, checkout_notes, checked_out, checked,
+                    return_notes, returned, price_per_unit, total_price,
+                    director, producer, photographer, unnnamed_11
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                (name, category, quantity, quantity, notes,
+                 order_notes, ordered, checkout_notes, checked_out, checked,
+                 return_notes, returned, price_per_unit, total_price,
+                 director, producer, photographer, unnnamed_11)
             )
             conn.commit()
 
@@ -157,7 +185,13 @@ def get_loan_details(loan_id):
             """, (loan_id,))
             return cur.fetchone()
 
-def update_item(item_id, name, category, quantity, notes):
+def update_item(item_id, name, category, quantity, notes, order_notes=None, ordered=None,
+                checkout_notes=None, checked_out=None, checked=None, return_notes=None, returned=None,
+                price_per_unit=None, total_price=None, director=None, producer=None,
+                photographer=None, unnnamed_11=None, is_available=None):
+    """
+    מעדכן פריט קיים במערכת עם תמיכה מלאה בכל שדות האקסל
+    """
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             # Check if quantity is less than current loans
@@ -166,25 +200,97 @@ def update_item(item_id, name, category, quantity, notes):
                 FROM loans
                 WHERE item_id = %s AND status = 'active'
             """, (item_id,))
-            loaned_quantity = cur.fetchone()[0]
+            result = cur.fetchone()
+            loaned_quantity = result[0] if result else 0
             
             if quantity < loaned_quantity:
                 return False, "לא ניתן להפחית את הכמות מתחת לכמות המושאלת"
             
-            # Update item
-            cur.execute("""
-                UPDATE items 
-                SET name = %s, 
-                    category = %s, 
-                    quantity = %s + COALESCE((
-                        SELECT SUM(quantity) 
-                        FROM loans 
-                        WHERE item_id = %s AND status = 'active'
-                    ), 0),
-                    notes = %s
-                WHERE id = %s
-                RETURNING *
-            """, (name, category, quantity, item_id, notes, item_id))
+            # Get current item to handle NULL values
+            cur.execute("SELECT * FROM items WHERE id = %s", (item_id,))
+            current_item = cur.fetchone()
+            
+            if not current_item:
+                return False, "הפריט לא נמצא"
+            
+            # Build the update query dynamically based on provided fields
+            update_fields = []
+            values = []
+            
+            update_fields.append("name = %s")
+            values.append(name)
+            
+            update_fields.append("category = %s")
+            values.append(category)
+            
+            update_fields.append("quantity = %s")
+            values.append(quantity)
+            
+            update_fields.append("notes = %s")
+            values.append(notes if notes is not None else '')
+            
+            # Handle optional fields
+            if order_notes is not None:
+                update_fields.append("order_notes = %s")
+                values.append(order_notes)
+                
+            if ordered is not None:
+                update_fields.append("ordered = %s")
+                values.append(ordered)
+                
+            if checkout_notes is not None:
+                update_fields.append("checkout_notes = %s")
+                values.append(checkout_notes)
+                
+            if checked_out is not None:
+                update_fields.append("checked_out = %s")
+                values.append(checked_out)
+                
+            if checked is not None:
+                update_fields.append("checked = %s")
+                values.append(checked)
+                
+            if return_notes is not None:
+                update_fields.append("return_notes = %s")
+                values.append(return_notes)
+                
+            if returned is not None:
+                update_fields.append("returned = %s")
+                values.append(returned)
+                
+            if price_per_unit is not None:
+                update_fields.append("price_per_unit = %s")
+                values.append(price_per_unit)
+                
+            if total_price is not None:
+                update_fields.append("total_price = %s")
+                values.append(total_price)
+                
+            if director is not None:
+                update_fields.append("director = %s")
+                values.append(director)
+                
+            if producer is not None:
+                update_fields.append("producer = %s")
+                values.append(producer)
+                
+            if photographer is not None:
+                update_fields.append("photographer = %s")
+                values.append(photographer)
+                
+            if unnnamed_11 is not None:
+                update_fields.append("unnnamed_11 = %s")
+                values.append(unnnamed_11)
+                
+            if is_available is not None:
+                update_fields.append("is_available = %s")
+                values.append(is_available)
+            
+            # Build and execute the final query
+            query = f"UPDATE items SET {', '.join(update_fields)} WHERE id = %s RETURNING *"
+            values.append(item_id)
+            
+            cur.execute(query, values)
             
             if cur.rowcount == 0:
                 return False, "הפריט לא נמצא"
@@ -202,7 +308,8 @@ def delete_item(item_id):
                 WHERE item_id = %s AND status = 'active'
             """, (item_id,))
             
-            if cur.fetchone()[0] > 0:
+            result = cur.fetchone()
+            if result and result[0] > 0:
                 return False, "לא ניתן למחוק פריט עם השאלות פעילות"
             
             # Delete the item

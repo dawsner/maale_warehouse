@@ -75,24 +75,25 @@ def import_excel_to_db(file_path):
         print(f"\nImporting Excel file {file_path} to database...")
         df = pd.read_excel(file_path, engine='openpyxl')
         
-        # קובע עמודות רלוונטיות
-        note_columns = [
-            'הערות על הזמנה (מחסן באדום. סטודנט בכחול)',
-            'הערות על הוצאה (מחסן באדום. סטודנט בכחול)',
-            'הערות על החזרה'
-        ]
-        status_columns = ['הזמנה', 'יצא', 'בדקתי', 'חזר']
-        production_team_columns = ['במאית: ', 'מפיקה: ', 'צלמת: ']
-        price_columns = ['מחיר ליחידה', 'מחיר כולל']
-        
-        # מאתר את העמודות שקיימות בקובץ
-        available_note_columns = [col for col in note_columns if col in df.columns]
-        available_status_columns = [col for col in status_columns if col in df.columns]
-        available_team_columns = [col for col in production_team_columns if col in df.columns]
-        available_price_columns = [col for col in price_columns if col in df.columns]
-        
-        print(f"Found {len(df)} rows in Excel file")
-        
+        # מיפוי עמודות של אקסל לשדות בבסיס הנתונים
+        excel_to_db_mapping = {
+            'Unnamed: 0': 'category_original',
+            'פריט': 'name',  
+            'הזמנה': 'ordered',
+            'הערות על הזמנה (מחסן באדום. סטודנט בכחול)': 'order_notes',
+            'יצא': 'checked_out',
+            'בדקתי': 'checked',
+            'הערות על הוצאה (מחסן באדום. סטודנט בכחול)': 'checkout_notes',
+            'חזר': 'returned',
+            'הערות על החזרה': 'return_notes',
+            'מחיר ליחידה': 'price_per_unit',
+            'מחיר כולל': 'total_price',
+            'Unnamed: 11': 'unnnamed_11',  # שים לב שזו טעות כתיב מקורית בשם העמודה
+            'במאית: ': 'director',
+            'מפיקה: ': 'producer',
+            'צלמת: ': 'photographer'
+        }
+
         # מנקה את בסיס הנתונים לפני הייבוא
         conn = get_db_connection()
         cur = conn.cursor()
@@ -120,41 +121,6 @@ def import_excel_to_db(file_path):
             if pd.notna(item_name) and str(item_name).strip():
                 item_name = str(item_name).strip()
                 
-                # אוסף הערות
-                notes = []
-                
-                for note_col in available_note_columns:
-                    if pd.notna(row.get(note_col)):
-                        note_text = str(row[note_col]).strip()
-                        if note_text:
-                            notes.append(f"{note_col}: {note_text}")
-                
-                # אוסף מידע על סטטוס
-                for status_col in available_status_columns:
-                    if pd.notna(row.get(status_col)):
-                        status_value = str(row[status_col]).strip()
-                        if status_value:
-                            notes.append(f"{status_col}: {status_value}")
-                
-                # אוסף מידע על צוות
-                for team_col in available_team_columns:
-                    if pd.notna(row.get(team_col)):
-                        team_member = str(row[team_col]).strip()
-                        if team_member:
-                            notes.append(f"{team_col}{team_member}")
-                
-                # אוסף מידע על מחירים
-                for price_col in available_price_columns:
-                    if pd.notna(row.get(price_col)):
-                        try:
-                            price_value = float(row[price_col])
-                            notes.append(f"{price_col}: {price_value}")
-                        except (ValueError, TypeError):
-                            pass
-                
-                # מצרף את כל ההערות
-                combined_notes = ' | '.join(notes)
-                
                 # קובע כמות (ברירת מחדל 1)
                 quantity = 1
                 
@@ -178,20 +144,59 @@ def import_excel_to_db(file_path):
                     if current_category:
                         final_category = f"{current_category} - אביזרים"
                 
+                # מכין מילון עם כל הערכים לפי המיפוי
+                item_data = {
+                    'name': item_name,
+                    'category': final_category,
+                    'quantity': quantity,
+                    'available': quantity,
+                    'category_original': current_category
+                }
+                
+                # מעבד את כל השדות מהאקסל ומוסיף לפי המיפוי
+                for excel_col, db_field in excel_to_db_mapping.items():
+                    if excel_col != 'Unnamed: 0' and excel_col != 'פריט' and excel_col in row:
+                        if pd.notna(row[excel_col]):
+                            # טיפול בשדות בוליאניים (סטטוס)
+                            if db_field in ['ordered', 'checked_out', 'checked', 'returned']:
+                                item_data[db_field] = True if str(row[excel_col]).strip() else False
+                            # טיפול בשדות מספריים
+                            elif db_field in ['price_per_unit', 'total_price']:
+                                try:
+                                    item_data[db_field] = float(row[excel_col])
+                                except (ValueError, TypeError):
+                                    item_data[db_field] = 0
+                            # שאר השדות הם טקסט
+                            else:
+                                item_data[db_field] = str(row[excel_col]).strip()
+                
+                # בניית שאילתת SQL דינמית ומשתנים
+                fields = []
+                values = []
+                placeholders = []
+                
+                for field, value in item_data.items():
+                    fields.append(field)
+                    values.append(value)
+                    placeholders.append("%s")
+                
                 # מוסיף את הפריט לבסיס הנתונים
                 try:
-                    add_item(
-                        name=item_name,
-                        category=final_category,
-                        quantity=quantity,
-                        notes=combined_notes
+                    field_str = ", ".join(fields)
+                    placeholder_str = ", ".join(placeholders)
+                    
+                    cur.execute(
+                        f"INSERT INTO items ({field_str}) VALUES ({placeholder_str})",
+                        values
                     )
+                    
                     items_added += 1
                     print(f"Added item #{items_added}: {item_name} in category: {final_category}")
                 except Exception as e:
                     print(f"Error adding item {item_name}: {str(e)}")
         
         print(f"\nFinished importing excel file. Added {items_added} items to database.")
+        conn.commit()
         
         # סוגר את החיבור
         cur.close()

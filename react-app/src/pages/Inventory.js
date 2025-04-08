@@ -58,7 +58,7 @@ function Inventory() {
     return_notes: '',
     price_per_unit: 0,
     total_price: 0,
-    unnamed_11: '',
+    unnnamed_11: '',
     director: '',
     producer: '',
     photographer: ''
@@ -118,7 +118,7 @@ function Inventory() {
         return_notes: '',
         price_per_unit: 0,
         total_price: 0,
-        unnamed_11: '',
+        unnnamed_11: '',
         director: '',
         producer: '',
         photographer: ''
@@ -713,9 +713,9 @@ function Inventory() {
               <Grid item xs={12}>
                 <TextField
                   label="שדה נוסף מהאקסל"
-                  name="unnamed_11"
+                  name="unnnamed_11"
                   fullWidth
-                  value={currentItem.unnamed_11 || ''}
+                  value={currentItem.unnnamed_11 || ''}
                   onChange={handleInputChange}
                   sx={{ direction: 'rtl' }}
                 />

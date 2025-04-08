@@ -32,6 +32,7 @@ def main():
                    director, producer, photographer
             FROM items 
             ORDER BY category, name
+            LIMIT 100
         ''')
         
         items = cur.fetchall()
@@ -76,7 +77,7 @@ def main():
                 'return_notes': item[13] or '',
                 'price_per_unit': float(item[14]) if item[14] is not None else 0.0,
                 'total_price': float(item[15]) if item[15] is not None else 0.0,
-                'unnamed_11': item[16] or '',
+                'unnnamed_11': item[16] or '',
                 'director': item[17] or '',
                 'producer': item[18] or '',
                 'photographer': item[19] or ''
