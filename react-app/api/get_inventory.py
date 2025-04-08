@@ -15,15 +15,18 @@ from database import get_db_connection
 
 def main():
     """פונקציה ראשית שמחזירה את כל פריטי המלאי כ-JSON"""
+    conn = None  # הגדרה מוקדמת של משתנים
+    cursor = None  # שימוש בשם אחר כדי למנוע התנגשות 
+    items = []
+    loaned_quantities = {}
+    
     try:
-        print(f"Debug: Starting database connection...", file=sys.stderr)
+        # יצירת חיבור לבסיס הנתונים
         conn = get_db_connection()
-        print(f"Debug: Database connection successful", file=sys.stderr)
-        cur = conn.cursor()
-        print(f"Debug: Got cursor", file=sys.stderr)
+        cursor = conn.cursor()
         
         # שליפת כל פריטי המלאי עם כל העמודות
-        cur.execute('''
+        cursor.execute('''
             SELECT id, name, category, quantity, notes, 
                    CASE WHEN pg_typeof(is_available) = 'boolean'::regtype 
                         THEN is_available 
@@ -38,20 +41,23 @@ def main():
             LIMIT 100
         ''')
         
-        items = cur.fetchall()
+        items = cursor.fetchall()
         
         # שליפת כמויות פריטים שמושאלים כרגע
-        cur.execute('''
+        cursor.execute('''
             SELECT item_id, SUM(quantity) as loaned_quantity
             FROM loans
             WHERE return_date IS NULL
             GROUP BY item_id
         ''')
         
-        loaned_quantities = {row[0]: row[1] for row in cur.fetchall()}
+        loaned_quantities = {row[0]: row[1] for row in cursor.fetchall()}
         
-        cur.close()
+        # סגירת החיבור לבסיס הנתונים
+        cursor.close()
         conn.close()
+        cursor = None
+        conn = None
         
         # המרת התוצאה לפורמט JSON
         items_json = []

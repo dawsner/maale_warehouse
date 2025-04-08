@@ -42,6 +42,7 @@ function runPythonScript(scriptPath, args = [], inputData = null) {
       return reject(new Error(`Script not found: ${scriptPath}`));
     }
 
+    console.log(`Running Python script: ${scriptPath}`);
     const pythonProcess = spawn('python3', [scriptPath, ...args]);
     let dataString = '';
     let errorString = '';
@@ -54,25 +55,33 @@ function runPythonScript(scriptPath, args = [], inputData = null) {
 
     pythonProcess.stdout.on('data', (data) => {
       dataString += data.toString();
+      console.log(`Python stdout: ${data.toString().substring(0, 150)}${data.toString().length > 150 ? '...' : ''}`);
     });
 
     pythonProcess.stderr.on('data', (data) => {
       errorString += data.toString();
+      console.error(`Python stderr: ${data.toString()}`);
     });
 
     pythonProcess.on('close', (code) => {
+      console.log(`Python script exited with code ${code}`);
       if (code !== 0) {
         console.error(`Python script error (${code}): ${errorString}`);
         return reject(new Error(errorString || 'Python script error'));
       }
 
       try {
+        console.log(`Trying to parse JSON: ${dataString.substring(0, 150)}${dataString.length > 150 ? '...' : ''}`);
         const result = JSON.parse(dataString);
+        console.log(`Successfully parsed JSON. Type: ${Array.isArray(result) ? 'Array' : typeof result}`);
         resolve(result);
       } catch (e) {
+        console.error(`Error parsing JSON: ${e.message}`);
         if (dataString.trim()) {
+          console.log(`Returning raw string (${dataString.length} chars)`);
           resolve(dataString.trim());
         } else {
+          console.log('Returning success object');
           resolve({ success: true });
         }
       }
@@ -132,11 +141,14 @@ app.get('/api/auth/me', async (req, res) => {
 // ניהול מלאי
 app.get('/api/inventory', async (req, res) => {
   try {
+    console.log('Received request for inventory data');
     const result = await runPythonScript(
       path.join(__dirname, '../api/get_inventory.py')
     );
+    console.log('Inventory API result:', typeof result === 'string' ? 'Text response' : (Array.isArray(result) ? `Array with ${result.length} items` : typeof result));
     res.json(result);
   } catch (error) {
+    console.error('Error fetching inventory:', error);
     res.status(500).json({ message: 'שגיאה בקבלת נתוני מלאי: ' + error.message });
   }
 });
