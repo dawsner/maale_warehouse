@@ -1940,8 +1940,8 @@ function InventoryEnhanced() {
 
   // תצוגת טבלה
   const TableView = () => (
-    <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2, width: '100%' }}>
-      <Table sx={{ minWidth: 1200 }}>
+    <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2, width: '100%', overflow: 'auto' }}>
+      <Table sx={{ minWidth: 1600, width: '100%' }}>
         <TableHead sx={{ bgcolor: '#f5f5f5' }}>
           <TableRow>
             <TableCell 
@@ -2057,7 +2057,7 @@ function InventoryEnhanced() {
                       <Typography 
                         sx={{ 
                           fontSize: '0.85rem', 
-                          maxWidth: '250px',
+                          maxWidth: '350px',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
@@ -2104,7 +2104,7 @@ function InventoryEnhanced() {
                       <Typography 
                         sx={{ 
                           fontSize: '0.85rem', 
-                          maxWidth: '250px',
+                          maxWidth: '350px',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
@@ -2148,7 +2148,7 @@ function InventoryEnhanced() {
                       <Typography 
                         sx={{ 
                           fontSize: '0.85rem', 
-                          maxWidth: '250px',
+                          maxWidth: '350px',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
@@ -2599,7 +2599,7 @@ function InventoryEnhanced() {
 
   // UI ראשי
   return (
-    <Container maxWidth={false} sx={{ mt: 4, mb: 4, width: '95%' }}>
+    <Box sx={{ mt: 4, mb: 4, px: 1, width: '100%' }}>
       {/* כותרת ודרכי ניווט */}
       <Box sx={{ mb: 4 }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
@@ -2653,7 +2653,7 @@ function InventoryEnhanced() {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Container>
+    </Box>
   );
 }
 
