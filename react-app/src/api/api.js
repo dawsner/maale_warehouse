@@ -137,21 +137,63 @@ export const reservationsAPI = {
 
   // קבלת הזמנות של משתמש ספציפי
   getUserReservations: async (userId) => {
-    const response = await axiosInstance.get(`/api/reservations/user/${userId}`);
-    return response.data;
+    try {
+      const response = await axiosInstance.get(`/api/reservations/user/${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user reservations:', error);
+      throw error;
+    }
   },
 
   // יצירת הזמנה חדשה
   createReservation: async (reservationData) => {
-    const response = await axiosInstance.post('/api/reservations', reservationData);
-    return response.data;
+    try {
+      const response = await axiosInstance.post('/api/reservations', reservationData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating reservation:', error);
+      throw error;
+    }
   },
 
   // עדכון סטטוס הזמנה
   updateReservationStatus: async (reservationId, status) => {
-    const response = await axiosInstance.put(`/api/reservations/${reservationId}/status`, { status });
-    return response.data;
+    try {
+      const response = await axiosInstance.put(`/api/reservations/${reservationId}/status`, { status });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating reservation status:', error);
+      throw error;
+    }
   },
+  
+  // בדיקת זמינות פריט בטווח תאריכים
+  checkItemAvailability: async (itemId, startDate, endDate, quantity = 1) => {
+    try {
+      const response = await axiosInstance.post('/api/reservations/check-availability', {
+        item_id: itemId,
+        start_date: startDate,
+        end_date: endDate,
+        quantity: quantity
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error checking item availability:', error);
+      throw error;
+    }
+  },
+  
+  // קבלת מידע סטטיסטי על הזמנות
+  getReservationStats: async () => {
+    try {
+      const response = await axiosInstance.get('/api/reservations/stats');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching reservation stats:', error);
+      throw error;
+    }
+  }
 };
 
 // API לאותנטיקציה

@@ -21,14 +21,14 @@ def check_item_availability(item_id, start_date, end_date, quantity=1):
                             (SELECT SUM(r.quantity)
                              FROM reservations r
                              WHERE r.item_id = i.id
-                             AND r.status = 'approved'
+                             AND r.status IN ('approved', 'pending')
                              AND (
                                  (r.start_date <= %s AND r.end_date >= %s)
                                  OR (r.start_date <= %s AND r.end_date >= %s)
                                  OR (r.start_date >= %s AND r.end_date <= %s)
                              )), 0) as available_quantity
                     FROM items i
-                    WHERE i.id = %s
+                    WHERE i.id = %s AND i.is_available = true
                 """, (end_date, start_date, end_date, start_date, start_date, end_date, item_id))
                 
                 row = cur.fetchone()
@@ -39,10 +39,10 @@ def check_item_availability(item_id, start_date, end_date, quantity=1):
                 
                 # מידע נוסף על הזמנות קיימות לפריט זה בטווח התאריכים
                 cur.execute("""
-                    SELECT r.id, r.start_date, r.end_date, r.quantity, r.student_name
+                    SELECT r.id, r.start_date, r.end_date, r.quantity, r.student_name, r.status
                     FROM reservations r
                     WHERE r.item_id = %s
-                    AND r.status = 'approved'
+                    AND r.status IN ('approved', 'pending')
                     AND (
                         (r.start_date <= %s AND r.end_date >= %s)
                         OR (r.start_date <= %s AND r.end_date >= %s)
@@ -53,13 +53,14 @@ def check_item_availability(item_id, start_date, end_date, quantity=1):
                 
                 existing_reservations = []
                 for res_row in cur.fetchall():
-                    res_id, res_start, res_end, res_quantity, res_student = res_row
+                    res_id, res_start, res_end, res_quantity, res_student, res_status = res_row
                     existing_reservations.append({
                         "id": res_id,
                         "start_date": res_start.strftime("%Y-%m-%d") if res_start else None,
                         "end_date": res_end.strftime("%Y-%m-%d") if res_end else None,
                         "quantity": res_quantity,
-                        "student_name": res_student
+                        "student_name": res_student,
+                        "status": res_status
                     })
                 
                 # החזרת תוצאה

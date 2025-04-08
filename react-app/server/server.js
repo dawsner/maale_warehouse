@@ -320,6 +320,20 @@ app.put('/api/reservations/:id/status', async (req, res) => {
   }
 });
 
+// בדיקת זמינות פריט בטווח תאריכים
+app.post('/api/reservations/check-availability', async (req, res) => {
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/check_item_availability.py'),
+      [],
+      req.body
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: 'שגיאה בבדיקת זמינות: ' + error.message });
+  }
+});
+
 // סטטיסטיקות
 app.get('/api/stats/equipment-usage', async (req, res) => {
   try {

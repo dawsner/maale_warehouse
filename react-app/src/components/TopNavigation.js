@@ -10,6 +10,8 @@ import UploadFileIcon from '@mui/icons-material/UploadFile';
 import GridViewIcon from '@mui/icons-material/GridView';
 import SettingsIcon from '@mui/icons-material/Settings';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import EventNoteIcon from '@mui/icons-material/EventNote';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 
 function TopNavigation({ user, onLogout }) {
   const navigate = useNavigate();
@@ -72,6 +74,13 @@ function TopNavigation({ user, onLogout }) {
                     startIcon={<AssignmentIcon />}
                   >
                     השאלות
+                  </Button>
+                  <Button 
+                    color="inherit" 
+                    onClick={() => navigate('/reservations')}
+                    startIcon={<EventNoteIcon />}
+                  >
+                    הזמנות
                   </Button>
                   <Button 
                     color="inherit" 
@@ -143,6 +152,20 @@ function TopNavigation({ user, onLogout }) {
                     startIcon={<InventoryIcon />}
                   >
                     הציוד שלי
+                  </Button>
+                  <Button 
+                    color="inherit" 
+                    onClick={() => navigate('/create-reservation')}
+                    startIcon={<EventNoteIcon />}
+                  >
+                    הזמנה חדשה
+                  </Button>
+                  <Button 
+                    color="inherit" 
+                    onClick={() => navigate('/my-reservations')}
+                    startIcon={<CalendarTodayIcon />}
+                  >
+                    ההזמנות שלי
                   </Button>
                 </>
               )}

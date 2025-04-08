@@ -21,9 +21,12 @@ import Loans from './pages/Loans';
 import Statistics from './pages/Statistics';
 import ExcelImport from './pages/ExcelImport';
 import Settings from './pages/Settings';
+import Reservations from './pages/Reservations';
 import AvailableItems from './pages/student/AvailableItems';
 import BookEquipment from './pages/student/BookEquipment';
 import MyEquipment from './pages/student/MyEquipment';
+import CreateReservation from './pages/student/CreateReservation';
+import MyReservations from './pages/student/MyReservations';
 import NotFound from './pages/NotFound';
 
 // Services
@@ -124,6 +127,9 @@ function App() {
             <Route path="/loans" element={
               <AdminRoute><Loans /></AdminRoute>
             } />
+            <Route path="/reservations" element={
+              <AdminRoute><Reservations /></AdminRoute>
+            } />
             <Route path="/statistics" element={
               <AdminRoute><Statistics /></AdminRoute>
             } />
@@ -143,6 +149,12 @@ function App() {
             } />
             <Route path="/my-equipment" element={
               <ProtectedRoute><MyEquipment userId={user?.id} /></ProtectedRoute>
+            } />
+            <Route path="/create-reservation" element={
+              <ProtectedRoute><CreateReservation userId={user?.id} /></ProtectedRoute>
+            } />
+            <Route path="/my-reservations" element={
+              <ProtectedRoute><MyReservations userId={user?.id} /></ProtectedRoute>
             } />
             
             {/* דף ברירת מחדל */}

@@ -20,17 +20,18 @@ def create_reservation(item_id, student_name, student_id, quantity, start_date, 
                         (SELECT SUM(r.quantity)
                          FROM reservations r
                          WHERE r.item_id = i.id
-                         AND r.status = 'approved'
+                         AND r.status IN ('approved', 'pending')
                          AND (
                              (r.start_date <= %s AND r.end_date >= %s)
                              OR (r.start_date <= %s AND r.end_date >= %s)
                              OR (r.start_date >= %s AND r.end_date <= %s)
                          )), 0) as available_quantity
                     FROM items i
-                    WHERE i.id = %s
+                    WHERE i.id = %s AND i.is_available = true
                 """, (end_date, start_date, end_date, start_date, start_date, end_date, item_id))
                 
-                available = cur.fetchone()[0]
+                result = cur.fetchone()
+                available = result[0] if result else 0
                 
                 if available < quantity:
                     return {
@@ -46,7 +47,13 @@ def create_reservation(item_id, student_name, student_id, quantity, start_date, 
                     RETURNING id
                 """, (user_id, item_id, student_name, student_id, quantity, start_date, end_date, notes))
                 
-                reservation_id = cur.fetchone()[0]
+                result = cur.fetchone()
+                reservation_id = result[0] if result else None
+                if not reservation_id:
+                    return {
+                        "success": False,
+                        "message": "שגיאה ביצירת ההזמנה"
+                    }
                 
                 conn.commit()
                 return {
