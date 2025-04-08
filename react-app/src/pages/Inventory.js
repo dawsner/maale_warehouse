@@ -300,7 +300,10 @@ function Inventory() {
                 <TableCell sx={{ fontWeight: 'bold' }}>שם הפריט</TableCell>
                 <TableCell sx={{ fontWeight: 'bold' }}>קטגוריה</TableCell>
                 <TableCell sx={{ fontWeight: 'bold' }}>כמות</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>הערות</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>הזמנה</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>יצא/חזר</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>תפקידים</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>מחיר</TableCell>
                 <TableCell sx={{ fontWeight: 'bold' }}>זמינות</TableCell>
                 <TableCell align="center" sx={{ fontWeight: 'bold' }}>פעולות</TableCell>
               </TableRow>
@@ -308,11 +311,48 @@ function Inventory() {
             <TableBody>
               {filteredItems.length > 0 ? (
                 filteredItems.map((item) => (
-                  <TableRow key={item.id} hover>
+                  <TableRow key={item.id} hover sx={{ '&:hover': { backgroundColor: '#f5f5f5' } }}>
                     <TableCell>{item.name}</TableCell>
                     <TableCell>{item.category}</TableCell>
                     <TableCell>{item.quantity}</TableCell>
-                    <TableCell>{item.notes}</TableCell>
+                    <TableCell>
+                      {item.ordered ? 
+                        <Typography component="span" sx={{ 
+                          color: 'success.main', 
+                          fontWeight: 'bold',
+                          display: 'flex',
+                          alignItems: 'center'
+                        }}>
+                          <span style={{ marginLeft: '4px' }}>הוזמן</span> 
+                          {item.order_notes && <Typography variant="caption" sx={{ fontSize: '0.7rem', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'inline-block' }}>
+                            ({item.order_notes})
+                          </Typography>}
+                        </Typography>
+                        : 'לא הוזמן'
+                      }
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexDirection: 'column' }}>
+                        {item.checked_out ? 
+                          <Typography component="span" sx={{ color: 'error.main', fontSize: '0.9rem' }}>יצא</Typography> : 
+                          <Typography component="span" sx={{ color: 'text.disabled', fontSize: '0.9rem' }}>לא יצא</Typography>
+                        }
+                        {item.returned ? 
+                          <Typography component="span" sx={{ color: 'success.main', fontSize: '0.9rem' }}>חזר</Typography> : 
+                          (item.checked_out ? <Typography component="span" sx={{ color: 'warning.main', fontSize: '0.9rem' }}>לא חזר</Typography> : null)
+                        }
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', fontSize: '0.9rem' }}>
+                        {item.director && <span><strong>במאית:</strong> {item.director}</span>}
+                        {item.producer && <span><strong>מפיקה:</strong> {item.producer}</span>}
+                        {item.photographer && <span><strong>צלמת:</strong> {item.photographer}</span>}
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      {item.price_per_unit > 0 && <span>{item.price_per_unit} ₪</span>}
+                    </TableCell>
                     <TableCell>
                       <Button
                         variant={item.is_available ? "contained" : "outlined"}
@@ -325,10 +365,10 @@ function Inventory() {
                       </Button>
                     </TableCell>
                     <TableCell align="center">
-                      <IconButton onClick={() => handleOpenDialog(item)} color="primary">
+                      <IconButton onClick={() => handleOpenDialog(item)} color="primary" size="small" sx={{ mx: 0.5 }}>
                         <EditIcon />
                       </IconButton>
-                      <IconButton onClick={() => handleDeleteItem(item.id)} color="error">
+                      <IconButton onClick={() => handleDeleteItem(item.id)} color="error" size="small" sx={{ mx: 0.5 }}>
                         <DeleteIcon />
                       </IconButton>
                     </TableCell>
@@ -336,7 +376,7 @@ function Inventory() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} align="center">
+                  <TableCell colSpan={9} align="center">
                     {loading ? 'טוען נתונים...' : 'לא נמצאו פריטים'}
                   </TableCell>
                 </TableRow>
@@ -348,18 +388,34 @@ function Inventory() {
       
       {/* דיאלוג הוספה/עריכת פריט */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-        <DialogTitle>
+        <DialogTitle sx={{ 
+          borderBottom: '1px solid #eaeaea', 
+          pb: 2, 
+          fontWeight: 'bold',
+          fontSize: '1.2rem',
+          color: '#1E2875'
+        }}>
           {currentItem.id ? 'עריכת פריט' : 'הוספת פריט חדש'}
         </DialogTitle>
         <DialogContent>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3, mt: 1 }}>
             <Tabs 
               value={tabValue} 
               onChange={handleTabChange} 
               aria-label="טאבים לעריכת פריט"
               variant="scrollable"
+              textColor="primary"
+              indicatorColor="primary"
               scrollButtons="auto"
-              sx={{ direction: 'rtl' }}
+              sx={{ 
+                direction: 'rtl',
+                '& .MuiTab-root': {
+                  fontWeight: 600,
+                  fontSize: '0.95rem',
+                  py: 1.5,
+                  mx: 1
+                }
+              }}
             >
               <Tab label="פרטים בסיסיים" />
               <Tab label="הזמנה" />
@@ -597,11 +653,30 @@ function Inventory() {
             </Grid>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog} color="inherit">
+        <DialogActions sx={{ 
+          borderTop: '1px solid #eaeaea', 
+          pt: 2,
+          pb: 2,
+          px: 3
+        }}>
+          <Button 
+            onClick={handleCloseDialog} 
+            color="inherit"
+            sx={{ borderRadius: '8px', px: 3 }}
+          >
             ביטול
           </Button>
-          <Button onClick={handleSaveItem} color="primary" variant="contained">
+          <Button 
+            onClick={handleSaveItem} 
+            color="primary" 
+            variant="contained"
+            sx={{ 
+              borderRadius: '8px', 
+              px: 3,
+              fontWeight: 'bold',
+              boxShadow: 1
+            }}
+          >
             {currentItem.id ? 'עדכן פריט' : 'הוסף פריט'}
           </Button>
         </DialogActions>
