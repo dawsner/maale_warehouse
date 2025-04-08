@@ -28,7 +28,8 @@ export const inventoryAPI = {
   getItems: async () => {
     try {
       console.log('Fetching inventory from API...');
-      const response = await axiosInstance.get('/api/inventory');
+      // שלחי בקשה לשרת ה-Express בפורט 5100
+      const response = await axios.get('http://localhost:5100/api/inventory');
       console.log('Inventory response received:', response.data);
       return response.data;
     } catch (error) {
@@ -39,31 +40,31 @@ export const inventoryAPI = {
 
   // הוספת פריט חדש
   addItem: async (itemData) => {
-    const response = await axiosInstance.post('/api/inventory', itemData);
+    const response = await axios.post('http://localhost:5100/api/inventory', itemData);
     return response.data;
   },
 
   // עדכון פריט קיים
   updateItem: async (itemId, itemData) => {
-    const response = await axiosInstance.put(`/api/inventory/${itemId}`, itemData);
+    const response = await axios.put(`http://localhost:5100/api/inventory/${itemId}`, itemData);
     return response.data;
   },
 
   // מחיקת פריט
   deleteItem: async (itemId) => {
-    await axiosInstance.delete(`/api/inventory/${itemId}`);
+    await axios.delete(`http://localhost:5100/api/inventory/${itemId}`);
     return true;
   },
 
   // שינוי זמינות פריט
   toggleAvailability: async (itemId, isAvailable) => {
-    const response = await axiosInstance.put(`/api/inventory/${itemId}/availability`, { isAvailable });
+    const response = await axios.put(`http://localhost:5100/api/inventory/${itemId}/availability`, { isAvailable });
     return response.data;
   },
 
   // יבוא מקובץ אקסל
   importFromExcel: async (formData) => {
-    const response = await axiosInstance.post('/api/inventory/import', formData, {
+    const response = await axios.post('http://localhost:5100/api/import', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return response.data;
@@ -71,7 +72,7 @@ export const inventoryAPI = {
 
   // יצוא לקובץ אקסל
   exportToExcel: async () => {
-    const response = await axiosInstance.get('/api/inventory/export', { responseType: 'blob' });
+    const response = await axios.get('http://localhost:5100/api/export', { responseType: 'blob' });
     return response.data;
   },
 };
@@ -257,7 +258,7 @@ export const statsAPI = {
 export const importExportAPI = {
   // יבוא נתונים מאקסל
   importData: async (formData) => {
-    const response = await axiosInstance.post('/api/import', formData, {
+    const response = await axios.post('http://localhost:5100/api/import', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return response.data;
@@ -265,7 +266,7 @@ export const importExportAPI = {
 
   // יצוא נתונים לאקסל
   exportData: async () => {
-    const response = await axiosInstance.get('/api/export', { responseType: 'blob' });
+    const response = await axios.get('http://localhost:5100/api/export', { responseType: 'blob' });
     return response.data;
   },
 };

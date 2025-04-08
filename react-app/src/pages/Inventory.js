@@ -153,7 +153,7 @@ function Inventory() {
       
       if (currentItem.id) {
         // עדכון פריט קיים
-        await inventoryAPI.update(currentItem.id, currentItem);
+        await inventoryAPI.updateItem(currentItem.id, currentItem);
         setSnackbar({
           open: true,
           message: 'הפריט עודכן בהצלחה',
@@ -161,7 +161,7 @@ function Inventory() {
         });
       } else {
         // יצירת פריט חדש
-        await inventoryAPI.create(currentItem);
+        await inventoryAPI.addItem(currentItem);
         setSnackbar({
           open: true,
           message: 'הפריט נוסף בהצלחה',
@@ -188,7 +188,7 @@ function Inventory() {
     if (window.confirm('האם אתה בטוח שברצונך למחוק פריט זה?')) {
       try {
         setLoading(true);
-        await inventoryAPI.delete(id);
+        await inventoryAPI.deleteItem(id);
         await fetchItems();
         setSnackbar({
           open: true,
