@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Paper, Grid, FormControl, InputLabel, Select,
   MenuItem, TextField, Button, Alert, CircularProgress, Card,
-  CardContent, Divider, Chip, Tooltip, IconButton, Dialog, DialogTitle,
+  CardContent, Divider, Chip, Dialog, DialogTitle,
   DialogContent, DialogActions, DialogContentText
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { he } from 'date-fns/locale';
+import he from 'date-fns/locale/he';
 import InfoIcon from '@mui/icons-material/Info';
 import WarningIcon from '@mui/icons-material/Warning';
 import { inventoryAPI, reservationsAPI } from '../../api/api';
@@ -21,13 +21,12 @@ function CreateReservation({ userId }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
-    item_id: '',
-    quantity: 1,
     start_date: new Date(),
     end_date: new Date(new Date().setDate(new Date().getDate() + 3)),
     notes: ''
   });
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedItems, setSelectedItems] = useState([]);  // מערך של פריטים נבחרים
+  const [selectedItem, setSelectedItem] = useState(null);  // נשמר לתאימות עם קוד קיים
   const [availabilityInfo, setAvailabilityInfo] = useState(null);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [categories, setCategories] = useState([]);
@@ -68,10 +67,26 @@ function CreateReservation({ userId }) {
     fetchData();
   }, [userId]);
 
+  // פונקציה לעדכון בחירת מספר פריטים
+  const handleMultiItemSelection = (itemIds) => {
+    // מוצאים את כל הפריטים שנבחרו
+    const items = itemIds.map(id => inventory.find(item => item.id === id)).filter(Boolean);
+    setSelectedItems(items);
+    
+    // אם יש פריט אחד לפחות, מעדכנים גם את selectedItem לתאימות עם קוד קיים
+    if (items.length > 0) {
+      setSelectedItem(items[0]);
+    } else {
+      setSelectedItem(null);
+    }
+    
+    setAvailabilityInfo(null); // איפוס מידע על זמינות
+  };
+
   // פונקציה לבדיקת זמינות
   const checkAvailability = async () => {
-    if (!formData.item_id) {
-      setFormError('יש לבחור פריט');
+    if (selectedItems.length === 0) {
+      setFormError('יש לבחור לפחות פריט אחד');
       return;
     }
 
@@ -79,16 +94,38 @@ function CreateReservation({ userId }) {
     setFormError(null);
     
     try {
-      const result = await reservationsAPI.checkItemAvailability(
-        formData.item_id,
-        format(formData.start_date, 'yyyy-MM-dd'),
-        format(formData.end_date, 'yyyy-MM-dd'),
-        formData.quantity
+      // בדיקת זמינות לכל הפריטים שנבחרו
+      const availabilityPromises = selectedItems.map(item => 
+        reservationsAPI.checkItemAvailability(
+          item.id,
+          format(formData.start_date, 'yyyy-MM-dd'),
+          format(formData.end_date, 'yyyy-MM-dd'),
+          1 // כמות בסיסית של פריט אחד מכל סוג
+        )
       );
       
-      setAvailabilityInfo(result);
+      const results = await Promise.all(availabilityPromises);
       
-      if (result.existing_reservations?.length > 0) {
+      // בודקים אם כל הפריטים זמינים
+      const allAvailable = results.every(result => result.is_available);
+      
+      // אוסף הזמנות קיימות מכל הבדיקות
+      const existingReservations = results.flatMap(result => result.existing_reservations || []);
+      
+      // יצירת אובייקט תוצאה משולב
+      const combinedResult = {
+        is_available: allAvailable,
+        existing_reservations: existingReservations,
+        items: results.map((result, index) => ({
+          ...result.item,
+          name: selectedItems[index].name,
+          id: selectedItems[index].id
+        }))
+      };
+      
+      setAvailabilityInfo(combinedResult);
+      
+      if (existingReservations.length > 0) {
         setShowExistingDialog(true);
       }
     } catch (err) {
@@ -103,8 +140,8 @@ function CreateReservation({ userId }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.item_id) {
-      setFormError('יש לבחור פריט');
+    if (selectedItems.length === 0) {
+      setFormError('יש לבחור לפחות פריט אחד');
       return;
     }
     
@@ -117,35 +154,36 @@ function CreateReservation({ userId }) {
     setFormError(null);
     
     try {
-      const selectedInventoryItem = inventory.find(item => item.id.toString() === formData.item_id.toString());
+      // יצירת הזמנות עבור כל פריט שנבחר
+      const reservationPromises = selectedItems.map(item => 
+        reservationsAPI.createReservation({
+          item_id: item.id,
+          quantity: 1, // כל פריט בכמות של אחד
+          start_date: format(formData.start_date, 'yyyy-MM-dd'),
+          end_date: format(formData.end_date, 'yyyy-MM-dd'),
+          notes: formData.notes,
+          student_name: localStorage.getItem('user_fullname') || '',
+          student_id: localStorage.getItem('username') || '',
+          user_id: userId
+        })
+      );
       
-      if (!selectedInventoryItem) {
-        throw new Error('פריט לא נמצא');
-      }
+      const responses = await Promise.all(reservationPromises);
       
-      const response = await reservationsAPI.createReservation({
-        item_id: formData.item_id,
-        quantity: formData.quantity,
-        start_date: format(formData.start_date, 'yyyy-MM-dd'),
-        end_date: format(formData.end_date, 'yyyy-MM-dd'),
-        notes: formData.notes,
-        student_name: userInfo?.full_name || '',
-        student_id: userInfo?.username || '',
-        user_id: userId
-      });
+      // בודקים אם כל ההזמנות נוצרו בהצלחה
+      const allSuccessful = responses.every(response => response.success);
       
-      if (response.success) {
-        setFormSuccess('ההזמנה נוצרה בהצלחה!');
+      if (allSuccessful) {
+        setFormSuccess('ההזמנות נוצרו בהצלחה!');
         
         // איפוס הטופס
         setFormData({
-          item_id: '',
-          quantity: 1,
           start_date: new Date(),
           end_date: new Date(new Date().setDate(new Date().getDate() + 3)),
           notes: ''
         });
         
+        setSelectedItems([]);
         setSelectedItem(null);
         setAvailabilityInfo(null);
         
@@ -154,27 +192,24 @@ function CreateReservation({ userId }) {
           navigate('/my-reservations');
         }, 2000);
       } else {
-        setFormError(response.message || 'שגיאה ביצירת ההזמנה');
+        setFormError('חלק מההזמנות לא נוצרו בהצלחה');
       }
     } catch (err) {
-      console.error('Failed to create reservation:', err);
-      setFormError('שגיאה ביצירת ההזמנה');
+      console.error('Failed to create reservations:', err);
+      setFormError('שגיאה ביצירת ההזמנות');
     } finally {
       setSubmitLoading(false);
     }
   };
-
-  // פונקציה לעדכון בחירת פריט
+  
+  // פונקציה ישנה לתאימות - לא בשימוש יותר
   const handleItemSelection = (itemId) => {
-    setFormData({
-      ...formData,
-      item_id: itemId,
-      quantity: 1 // איפוס כמות בבחירת פריט חדש
-    });
-    
     const item = inventory.find(i => i.id.toString() === itemId.toString());
-    setSelectedItem(item);
-    setAvailabilityInfo(null); // איפוס מידע על זמינות
+    if (item) {
+      setSelectedItems([item]);
+      setSelectedItem(item);
+    }
+    setAvailabilityInfo(null);
   };
 
   // פונקציה לפילטור פריטים לפי קטגוריה
@@ -240,21 +275,32 @@ function CreateReservation({ userId }) {
               </FormControl>
             </Grid>
 
-            {/* בחירת פריט */}
-            <Grid item xs={12} md={6}>
+            {/* בחירת פריטים (תמיכה בבחירה מרובה) */}
+            <Grid item xs={12}>
               <FormControl fullWidth required>
-                <InputLabel>בחר פריט</InputLabel>
+                <InputLabel>בחר פריטים</InputLabel>
                 <Select
-                  value={formData.item_id}
-                  onChange={(e) => handleItemSelection(e.target.value)}
-                  label="בחר פריט"
+                  multiple
+                  value={selectedItems.map(item => item.id)}
+                  onChange={(e) => handleMultiItemSelection(e.target.value)}
+                  label="בחר פריטים"
+                  renderValue={(selected) => (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {selected.map((itemId) => {
+                        const item = inventory.find(i => i.id === itemId);
+                        return (
+                          <Chip key={itemId} label={item ? item.name : 'פריט'} size="small" />
+                        );
+                      })}
+                    </Box>
+                  )}
                 >
-                  <MenuItem value="">
-                    <em>בחר פריט</em>
-                  </MenuItem>
                   {filteredItems.map((item) => (
                     <MenuItem key={item.id} value={item.id}>
-                      {item.name} (כמות כוללת: {item.quantity})
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                        <span>{item.name}</span>
+                        <span style={{ color: 'gray' }}>כמות זמינה: {item.quantity}</span>
+                      </Box>
                     </MenuItem>
                   ))}
                 </Select>
@@ -341,28 +387,25 @@ function CreateReservation({ userId }) {
               </LocalizationProvider>
             </Grid>
 
-            {/* הכמות המבוקשת */}
+            {/* הסבר על הכמות בהזמנה מרובה */}
             <Grid item xs={12} sm={6}>
-              <TextField
-                label="כמות"
-                type="number"
-                value={formData.quantity}
-                onChange={(e) => {
-                  const value = parseInt(e.target.value);
-                  if (isNaN(value) || value < 1) return;
-                  setFormData({
-                    ...formData,
-                    quantity: value
-                  });
-                  setAvailabilityInfo(null); // איפוס מידע על זמינות
+              <Box
+                sx={{ 
+                  p: 2, 
+                  border: '1px solid rgba(0, 0, 0, 0.12)', 
+                  borderRadius: 1,
+                  bgcolor: 'background.paper',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center'
                 }}
-                fullWidth
-                required
-                inputProps={{
-                  min: 1,
-                  max: selectedItem?.quantity || 1
-                }}
-              />
+              >
+                <Typography variant="body2" color="text.secondary">
+                  בהזמנה מרובה של פריטים, יוזמן פריט אחד מכל סוג שנבחר.
+                  <br />
+                  ניתן להזמין מספר פריטים מאותו סוג על ידי יצירת הזמנה נוספת.
+                </Typography>
+              </Box>
             </Grid>
 
             {/* הערות */}
@@ -386,21 +429,51 @@ function CreateReservation({ userId }) {
                 <Button
                   variant="outlined"
                   onClick={checkAvailability}
-                  disabled={!formData.item_id || availabilityLoading}
+                  disabled={selectedItems.length === 0 || availabilityLoading}
                   startIcon={availabilityLoading ? <CircularProgress size={20} /> : null}
                 >
-                  בדוק זמינות
+                  בדוק זמינות פריטים
                 </Button>
 
                 {availabilityInfo && (
                   <Chip
-                    label={availabilityInfo.is_available ? 'זמין להזמנה' : 'לא זמין בתאריכים אלו'}
+                    label={availabilityInfo.is_available ? 'כל הפריטים זמינים להזמנה' : 'חלק מהפריטים אינם זמינים'}
                     color={availabilityInfo.is_available ? 'success' : 'error'}
                     icon={availabilityInfo.is_available ? <InfoIcon /> : <WarningIcon />}
                   />
                 )}
               </Box>
             </Grid>
+            
+            {/* רשימת פריטים נבחרים */}
+            {selectedItems.length > 0 && (
+              <Grid item xs={12}>
+                <Typography variant="h6" component="div" gutterBottom align="right">
+                  פריטים נבחרים ({selectedItems.length})
+                </Typography>
+                <Grid container spacing={2}>
+                  {selectedItems.map((item) => (
+                    <Grid item xs={12} sm={6} md={4} key={item.id}>
+                      <Card variant="outlined">
+                        <CardContent>
+                          <Typography variant="h6" component="div">
+                            {item.name}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            קטגוריה: {item.category}
+                          </Typography>
+                          {item.notes && (
+                            <Typography variant="body2" color="text.secondary">
+                              הערות: {item.notes}
+                            </Typography>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Grid>
+            )}
 
             {/* כפתורי פעולה */}
             <Grid item xs={12}>
@@ -425,15 +498,20 @@ function CreateReservation({ userId }) {
       <Dialog
         open={showExistingDialog}
         onClose={() => setShowExistingDialog(false)}
+        maxWidth="md"
+        fullWidth
       >
         <DialogTitle>הזמנות קיימות בתאריכים אלו</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            קיימות הזמנות אחרות לפריט זה בתאריכים המבוקשים:
+            קיימות הזמנות אחרות לפריטים אלו בתאריכים המבוקשים:
           </DialogContentText>
           <Box sx={{ mt: 2 }}>
             {availabilityInfo?.existing_reservations?.map((res, index) => (
               <Paper key={index} sx={{ p: 2, mb: 1 }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  <strong>פריט: {res.item_name || 'לא צוין'}</strong>
+                </Typography>
                 <Typography variant="body2">
                   מתאריך: {res.start_date}<br />
                   עד תאריך: {res.end_date}<br />
@@ -449,9 +527,25 @@ function CreateReservation({ userId }) {
               </Paper>
             ))}
           </Box>
-          <Typography variant="body1" sx={{ mt: 2 }}>
-            כמות זמינה בתאריכים אלו: {availabilityInfo?.item?.available_quantity || 0}
-          </Typography>
+          
+          {/* סיכום זמינות */}
+          {availabilityInfo?.items && availabilityInfo.items.length > 0 && (
+            <Box sx={{ mt: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+              <Typography variant="h6" gutterBottom>
+                סיכום זמינות פריטים
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+              {availabilityInfo.items.map((item, index) => (
+                <Typography key={index} variant="body1" gutterBottom>
+                  {item.name}: {item.available_quantity > 0 ? (
+                    <Chip size="small" label="זמין" color="success" />
+                  ) : (
+                    <Chip size="small" label="לא זמין" color="error" />
+                  )}
+                </Typography>
+              ))}
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowExistingDialog(false)}>סגור</Button>
