@@ -26,7 +26,8 @@ import {
   Tabs,
   Checkbox,
   FormControlLabel,
-  Divider
+  Divider,
+  Chip
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -297,13 +298,15 @@ function Inventory() {
           <Table sx={{ minWidth: 650 }}>
             <TableHead>
               <TableRow>
-                <TableCell sx={{ fontWeight: 'bold' }}>שם הפריט</TableCell>
                 <TableCell sx={{ fontWeight: 'bold' }}>קטגוריה</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>כמות</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>שם הפריט</TableCell>
                 <TableCell sx={{ fontWeight: 'bold' }}>הזמנה</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>יצא/חזר</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>תפקידים</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>מחיר</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>הערות הזמנה</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>יצא</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>נבדק</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>הערות הוצאה</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>חזר</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>הערות החזרה</TableCell>
                 <TableCell sx={{ fontWeight: 'bold' }}>זמינות</TableCell>
                 <TableCell align="center" sx={{ fontWeight: 'bold' }}>פעולות</TableCell>
               </TableRow>
@@ -312,46 +315,113 @@ function Inventory() {
               {filteredItems.length > 0 ? (
                 filteredItems.map((item) => (
                   <TableRow key={item.id} hover sx={{ '&:hover': { backgroundColor: '#f5f5f5' } }}>
-                    <TableCell>{item.name}</TableCell>
                     <TableCell>{item.category}</TableCell>
-                    <TableCell>{item.quantity}</TableCell>
-                    <TableCell>
+                    <TableCell>{item.name}</TableCell>
+                    <TableCell align="center">
                       {item.ordered ? 
-                        <Typography component="span" sx={{ 
-                          color: 'success.main', 
-                          fontWeight: 'bold',
-                          display: 'flex',
-                          alignItems: 'center'
-                        }}>
-                          <span style={{ marginLeft: '4px' }}>הוזמן</span> 
-                          {item.order_notes && <Typography variant="caption" sx={{ fontSize: '0.7rem', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'inline-block' }}>
-                            ({item.order_notes})
-                          </Typography>}
-                        </Typography>
-                        : 'לא הוזמן'
+                        <Chip 
+                          label="הוזמן" 
+                          color="primary" 
+                          size="small" 
+                          variant="outlined"
+                          sx={{ fontWeight: 'medium' }}
+                        /> : 
+                        <Typography component="span" sx={{ color: 'text.disabled', fontSize: '0.9rem' }}>-</Typography>
                       }
                     </TableCell>
                     <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexDirection: 'column' }}>
-                        {item.checked_out ? 
-                          <Typography component="span" sx={{ color: 'error.main', fontSize: '0.9rem' }}>יצא</Typography> : 
-                          <Typography component="span" sx={{ color: 'text.disabled', fontSize: '0.9rem' }}>לא יצא</Typography>
-                        }
-                        {item.returned ? 
-                          <Typography component="span" sx={{ color: 'success.main', fontSize: '0.9rem' }}>חזר</Typography> : 
-                          (item.checked_out ? <Typography component="span" sx={{ color: 'warning.main', fontSize: '0.9rem' }}>לא חזר</Typography> : null)
-                        }
-                      </Box>
+                      {item.order_notes ? 
+                        <Typography 
+                          sx={{ 
+                            fontSize: '0.85rem', 
+                            maxWidth: '200px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            direction: 'rtl',
+                            color: item.order_notes.includes('מחסן') ? '#d32f2f' : '#1976d2'
+                          }}
+                        >
+                          {item.order_notes}
+                        </Typography> : 
+                        <Typography component="span" sx={{ color: 'text.disabled', fontSize: '0.9rem' }}>-</Typography>
+                      }
+                    </TableCell>
+                    <TableCell align="center">
+                      {item.checked_out ? 
+                        <Chip 
+                          label="יצא" 
+                          color="error" 
+                          size="small"
+                          sx={{ fontWeight: 'medium' }}
+                        /> : 
+                        <Typography component="span" sx={{ color: 'text.disabled', fontSize: '0.9rem' }}>-</Typography>
+                      }
+                    </TableCell>
+                    <TableCell align="center">
+                      {item.checked ? 
+                        <Chip 
+                          label="נבדק" 
+                          color="success" 
+                          size="small"
+                          sx={{ fontWeight: 'medium' }}
+                        /> : 
+                        <Typography component="span" sx={{ color: 'text.disabled', fontSize: '0.9rem' }}>-</Typography>
+                      }
                     </TableCell>
                     <TableCell>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', fontSize: '0.9rem' }}>
-                        {item.director && <span><strong>במאית:</strong> {item.director}</span>}
-                        {item.producer && <span><strong>מפיקה:</strong> {item.producer}</span>}
-                        {item.photographer && <span><strong>צלמת:</strong> {item.photographer}</span>}
-                      </Box>
+                      {item.checkout_notes ? 
+                        <Typography 
+                          sx={{ 
+                            fontSize: '0.85rem', 
+                            maxWidth: '200px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            direction: 'rtl',
+                            color: item.checkout_notes.includes('מחסן') ? '#d32f2f' : '#1976d2'
+                          }}
+                        >
+                          {item.checkout_notes}
+                        </Typography> : 
+                        <Typography component="span" sx={{ color: 'text.disabled', fontSize: '0.9rem' }}>-</Typography>
+                      }
+                    </TableCell>
+                    <TableCell align="center">
+                      {item.returned ? 
+                        <Chip 
+                          label="חזר" 
+                          color="success" 
+                          size="small"
+                          sx={{ fontWeight: 'medium' }}
+                        /> : 
+                        (item.checked_out ? 
+                          <Chip 
+                            label="עדיין בחוץ" 
+                            color="warning" 
+                            size="small"
+                            sx={{ fontWeight: 'medium' }}
+                          /> : 
+                          <Typography component="span" sx={{ color: 'text.disabled', fontSize: '0.9rem' }}>-</Typography>
+                        )
+                      }
                     </TableCell>
                     <TableCell>
-                      {item.price_per_unit > 0 && <span>{item.price_per_unit} ₪</span>}
+                      {item.return_notes ? 
+                        <Typography 
+                          sx={{ 
+                            fontSize: '0.85rem', 
+                            maxWidth: '200px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            direction: 'rtl'
+                          }}
+                        >
+                          {item.return_notes}
+                        </Typography> : 
+                        <Typography component="span" sx={{ color: 'text.disabled', fontSize: '0.9rem' }}>-</Typography>
+                      }
                     </TableCell>
                     <TableCell>
                       <Button
@@ -376,7 +446,7 @@ function Inventory() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={9} align="center">
+                  <TableCell colSpan={11} align="center">
                     {loading ? 'טוען נתונים...' : 'לא נמצאו פריטים'}
                   </TableCell>
                 </TableRow>
