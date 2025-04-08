@@ -16,8 +16,11 @@ from database import get_db_connection
 def main():
     """פונקציה ראשית שמחזירה את כל פריטי המלאי כ-JSON"""
     try:
+        print(f"Debug: Starting database connection...", file=sys.stderr)
         conn = get_db_connection()
+        print(f"Debug: Database connection successful", file=sys.stderr)
         cur = conn.cursor()
+        print(f"Debug: Got cursor", file=sys.stderr)
         
         # שליפת כל פריטי המלאי עם כל העמודות
         cur.execute('''

@@ -1,8 +1,9 @@
 import axios from 'axios';
 
 // קונפיגורציה בסיסית לבקשות Axios
-// כתובת השרת - נשתמש בפורט 5100 ישירות
-const API_URL = 'http://localhost:5100';  // שרת ה-Express
+// מכיוון שהוספנו הגדרת proxy בקובץ package.json, ניתן להשתמש בנתיבים יחסיים
+// ובקשות בפורמט /api/* יועברו אוטומטית לשרת Express
+const API_URL = '';  // נתיב יחסי - נסמוך על הגדרת ה-proxy
 const axiosInstance = axios.create({
   baseURL: API_URL,
   headers: {
