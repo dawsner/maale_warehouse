@@ -69,8 +69,12 @@ function CreateReservation({ userId }) {
 
   // פונקציה לעדכון בחירת מספר פריטים
   const handleMultiItemSelection = (itemIds) => {
-    // מוצאים את כל הפריטים שנבחרו
-    const items = itemIds.map(id => inventory.find(item => item.id === id)).filter(Boolean);
+    console.log("Selected item IDs:", itemIds);
+    
+    // מוצאים את כל הפריטים שנבחרו - המרה ל-string כדי להשוות כראוי
+    const items = itemIds.map(id => inventory.find(item => item.id.toString() === id.toString())).filter(Boolean);
+    console.log("Selected items:", items);
+    
     setSelectedItems(items);
     
     // אם יש פריט אחד לפחות, מעדכנים גם את selectedItem לתאימות עם קוד קיים
@@ -287,7 +291,7 @@ function CreateReservation({ userId }) {
                   renderValue={(selected) => (
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                       {selected.map((itemId) => {
-                        const item = inventory.find(i => i.id === itemId);
+                        const item = inventory.find(i => i.id.toString() === itemId.toString());
                         return (
                           <Chip key={itemId} label={item ? item.name : 'פריט'} size="small" />
                         );
