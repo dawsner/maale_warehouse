@@ -108,7 +108,7 @@ function App() {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <TopNavigation user={user} onLogout={handleLogout} />
-        <Container maxWidth="lg" sx={{ mt: 3, mb: 4 }}>
+        <Container maxWidth={false} sx={{ mt: 3, mb: 4, px: { xs: 2, sm: 4 }, maxWidth: '98%', mx: 'auto' }}>
           <Routes>
             {/* דפים פתוחים לכל */}
             <Route path="/login" element={<Login onLogin={handleLogin} />} />

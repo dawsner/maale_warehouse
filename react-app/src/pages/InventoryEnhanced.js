@@ -1940,14 +1940,19 @@ function InventoryEnhanced() {
 
   // תצוגת טבלה
   const TableView = () => (
-    <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2, width: '100%', overflow: 'auto' }}>
-      <Table sx={{ minWidth: 1600, width: '100%' }}>
+    <TableContainer component={Paper} variant="outlined" sx={{ 
+      borderRadius: 2, 
+      width: '100%', 
+      overflow: 'auto',
+      maxWidth: '100vw',
+    }}>
+      <Table stickyHeader sx={{ minWidth: 1800, width: '100%' }}>
         <TableHead sx={{ bgcolor: '#f5f5f5' }}>
           <TableRow>
             <TableCell 
               sortDirection={orderBy === 'category' ? order : false}
               onClick={() => handleRequestSort('category')}
-              sx={{ fontWeight: 'bold', cursor: 'pointer' }}
+              sx={{ fontWeight: 'bold', cursor: 'pointer', width: '10%' }}
             >
               <TableSortLabel
                 active={orderBy === 'category'}
@@ -1959,7 +1964,7 @@ function InventoryEnhanced() {
             <TableCell 
               sortDirection={orderBy === 'name' ? order : false}
               onClick={() => handleRequestSort('name')}
-              sx={{ fontWeight: 'bold', cursor: 'pointer' }}
+              sx={{ fontWeight: 'bold', cursor: 'pointer', width: '15%' }}
             >
               <TableSortLabel
                 active={orderBy === 'name'}
@@ -1971,7 +1976,7 @@ function InventoryEnhanced() {
             <TableCell 
               sortDirection={orderBy === 'quantity' ? order : false}
               onClick={() => handleRequestSort('quantity')}
-              sx={{ fontWeight: 'bold', cursor: 'pointer', textAlign: 'center' }}
+              sx={{ fontWeight: 'bold', cursor: 'pointer', textAlign: 'center', width: '6%' }}
             >
               <TableSortLabel
                 active={orderBy === 'quantity'}
@@ -1980,15 +1985,15 @@ function InventoryEnhanced() {
                 כמות
               </TableSortLabel>
             </TableCell>
-            <TableCell sx={{ fontWeight: 'bold', textAlign: 'center' }}>הזמנה</TableCell>
-            <TableCell sx={{ fontWeight: 'bold' }}>הערות הזמנה</TableCell>
-            <TableCell sx={{ fontWeight: 'bold', textAlign: 'center' }}>יצא</TableCell>
-            <TableCell sx={{ fontWeight: 'bold', textAlign: 'center' }}>נבדק</TableCell>
-            <TableCell sx={{ fontWeight: 'bold' }}>הערות הוצאה</TableCell>
-            <TableCell sx={{ fontWeight: 'bold', textAlign: 'center' }}>חזר</TableCell>
-            <TableCell sx={{ fontWeight: 'bold' }}>הערות החזרה</TableCell>
-            <TableCell sx={{ fontWeight: 'bold', textAlign: 'center' }}>זמינות</TableCell>
-            <TableCell align="center" sx={{ fontWeight: 'bold' }}>פעולות</TableCell>
+            <TableCell sx={{ fontWeight: 'bold', textAlign: 'center', width: '6%' }}>הזמנה</TableCell>
+            <TableCell sx={{ fontWeight: 'bold', width: '12%' }}>הערות הזמנה</TableCell>
+            <TableCell sx={{ fontWeight: 'bold', textAlign: 'center', width: '6%' }}>יצא</TableCell>
+            <TableCell sx={{ fontWeight: 'bold', textAlign: 'center', width: '6%' }}>נבדק</TableCell>
+            <TableCell sx={{ fontWeight: 'bold', width: '12%' }}>הערות הוצאה</TableCell>
+            <TableCell sx={{ fontWeight: 'bold', textAlign: 'center', width: '6%' }}>חזר</TableCell>
+            <TableCell sx={{ fontWeight: 'bold', width: '12%' }}>הערות החזרה</TableCell>
+            <TableCell sx={{ fontWeight: 'bold', textAlign: 'center', width: '7%' }}>זמינות</TableCell>
+            <TableCell align="center" sx={{ fontWeight: 'bold', width: '7%' }}>פעולות</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -2599,7 +2604,7 @@ function InventoryEnhanced() {
 
   // UI ראשי
   return (
-    <Box sx={{ mt: 4, mb: 4, px: 1, width: '100%' }}>
+    <Box sx={{ mt: 4, mb: 4, width: '100%', overflowX: 'hidden' }}>
       {/* כותרת ודרכי ניווט */}
       <Box sx={{ mb: 4 }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
