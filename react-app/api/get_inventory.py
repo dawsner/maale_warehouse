@@ -28,17 +28,13 @@ def main():
         # שליפת כל פריטי המלאי עם כל העמודות
         cursor.execute('''
             SELECT id, name, category, quantity, notes, 
-                   CASE WHEN pg_typeof(is_available) = 'boolean'::regtype 
-                        THEN is_available 
-                        ELSE TRUE 
-                   END as is_available,
+                   COALESCE(is_available, TRUE) as is_available,
                    category_original, order_notes, ordered, checked_out, 
                    checked, checkout_notes, returned, return_notes, 
                    price_per_unit, total_price, unnnamed_11, 
                    director, producer, photographer
             FROM items 
             ORDER BY category, name
-            LIMIT 100
         ''')
         
         items = cursor.fetchall()
@@ -48,6 +44,7 @@ def main():
             SELECT item_id, SUM(quantity) as loaned_quantity
             FROM loans
             WHERE return_date IS NULL
+            AND item_id IS NOT NULL
             GROUP BY item_id
         ''')
         
@@ -97,10 +94,18 @@ def main():
         print(json.dumps(items_json, ensure_ascii=False))
         
     except Exception as e:
-        # במקרה של שגיאה, החזרת הודעת שגיאה
+        # במקרה של שגיאה, החזרת הודעת שגיאה מפורטת
+        import traceback
+        error_details = traceback.format_exc()
+        
+        # הדפסה לצורך דיבוג
+        print("Error: " + str(e), file=sys.stderr)
+        print(error_details, file=sys.stderr)
+        
         error_response = {
             'error': True,
-            'message': str(e)
+            'message': str(e),
+            'details': error_details
         }
         print(json.dumps(error_response, ensure_ascii=False))
         sys.exit(1)
