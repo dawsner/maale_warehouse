@@ -61,23 +61,23 @@ def import_excel_to_database(file_path, column_mapping):
         category_column = column_mapping.get('category')
         quantity_column = column_mapping.get('quantity')
         
-        # מיפוי לכל השדות האפשריים בקובץ האקסל
+        # מיפוי לכל השדות האפשריים בקובץ האקסל - מותאם במדויק לשמות העמודות מהאקסל
         excel_to_db_mapping = {
-            'פריט': 'name',
-            'Unnamed: 0': 'category_original',
-            'הזמנה': 'ordered',
-            'הערות על הזמנה (מחסן באדום. סטודנט בכחול)': 'order_notes',
-            'יצא': 'checked_out',
-            'בדקתי': 'checked',
-            'הערות על הוצאה (מחסן באדום. סטודנט בכחול)': 'checkout_notes',
-            'חזר': 'returned',
-            'הערות על החזרה': 'return_notes',
-            'מחיר ליחידה': 'price_per_unit',
-            'מחיר כולל': 'total_price',
-            'Unnamed: 11': 'unnnamed_11',
-            'במאית: ': 'director',
-            'מפיקה: ': 'producer',
-            'צלמת: ': 'photographer'
+            'Unnamed: 0': 'category_original',  # זו העמודה שמכילה את הקטגוריות
+            'פריט': 'name',                    # שם הפריט
+            'הזמנה': 'ordered',                # האם הוזמן
+            'הערות על הזמנה (מחסן באדום. סטודנט בכחול)': 'order_notes',  # הערות על ההזמנה
+            'יצא': 'checked_out',              # מתי יצא מהמחסן
+            'בדקתי': 'checked',                # האם נבדק
+            'הערות על הוצאה (מחסן באדום. סטודנט בכחול)': 'checkout_notes',  # הערות על הוצאת הציוד
+            'חזר': 'returned',                 # מתי חזר למחסן
+            'הערות על החזרה': 'return_notes',   # הערות על ההחזרה
+            'מחיר ליחידה': 'price_per_unit',    # מחיר ליחידה
+            'מחיר כולל': 'total_price',         # מחיר כולל
+            'Unnamed: 11': 'unnnamed_11',       # שדה ללא כותרת
+            'במאית: ': 'director',             # במאית
+            'מפיקה: ': 'producer',             # מפיקה
+            'צלמת: ': 'photographer'           # צלמת
         }
         
         # יצירת מיפוי הפוך - מעמודות האקסל לשדות בבסיס הנתונים

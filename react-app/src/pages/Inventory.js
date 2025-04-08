@@ -21,7 +21,12 @@ import {
   Alert,
   Snackbar,
   LinearProgress,
-  InputAdornment
+  InputAdornment,
+  Tab,
+  Tabs,
+  Checkbox,
+  FormControlLabel,
+  Divider
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -35,12 +40,27 @@ function Inventory() {
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
+  const [tabValue, setTabValue] = useState(0);
   const [currentItem, setCurrentItem] = useState({
     id: null,
     name: '',
     category: '',
     quantity: 0,
-    notes: ''
+    notes: '',
+    category_original: '',
+    order_notes: '',
+    ordered: false,
+    checked_out: false,
+    checked: false,
+    checkout_notes: '',
+    returned: false,
+    return_notes: '',
+    price_per_unit: 0,
+    total_price: 0,
+    unnamed_11: '',
+    director: '',
+    producer: '',
+    photographer: ''
   });
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -86,7 +106,21 @@ function Inventory() {
         name: '',
         category: '',
         quantity: 0,
-        notes: ''
+        notes: '',
+        category_original: '',
+        order_notes: '',
+        ordered: false,
+        checked_out: false,
+        checked: false,
+        checkout_notes: '',
+        returned: false,
+        return_notes: '',
+        price_per_unit: 0,
+        total_price: 0,
+        unnamed_11: '',
+        director: '',
+        producer: '',
+        photographer: ''
       });
     }
     setOpenDialog(true);
@@ -97,11 +131,19 @@ function Inventory() {
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setCurrentItem({
       ...currentItem,
-      [name]: name === 'quantity' ? parseInt(value, 10) || 0 : value
+      [name]: type === 'checkbox'
+        ? checked
+        : (type === 'number' || name === 'quantity' || name === 'price_per_unit' || name === 'total_price')
+          ? parseFloat(value) || 0
+          : value
     });
+  };
+  
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
   };
 
   const handleSaveItem = async () => {
@@ -305,59 +347,255 @@ function Inventory() {
       </Paper>
       
       {/* דיאלוג הוספה/עריכת פריט */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
         <DialogTitle>
           {currentItem.id ? 'עריכת פריט' : 'הוספת פריט חדש'}
         </DialogTitle>
         <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12}>
-              <TextField
-                label="שם הפריט"
-                name="name"
-                fullWidth
-                required
-                value={currentItem.name}
-                onChange={handleInputChange}
-                sx={{ direction: 'rtl' }}
-              />
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+            <Tabs 
+              value={tabValue} 
+              onChange={handleTabChange} 
+              aria-label="טאבים לעריכת פריט"
+              variant="scrollable"
+              scrollButtons="auto"
+              sx={{ direction: 'rtl' }}
+            >
+              <Tab label="פרטים בסיסיים" />
+              <Tab label="הזמנה" />
+              <Tab label="הוצאה והחזרה" />
+              <Tab label="מידע נוסף" />
+            </Tabs>
+          </Box>
+          
+          {/* טאב 1: פרטים בסיסיים */}
+          {tabValue === 0 && (
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <TextField
+                  label="שם הפריט"
+                  name="name"
+                  fullWidth
+                  required
+                  value={currentItem.name}
+                  onChange={handleInputChange}
+                  sx={{ direction: 'rtl' }}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  label="קטגוריה"
+                  name="category"
+                  fullWidth
+                  required
+                  value={currentItem.category}
+                  onChange={handleInputChange}
+                  sx={{ direction: 'rtl' }}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  label="קטגוריה מקורית מהאקסל"
+                  name="category_original"
+                  fullWidth
+                  value={currentItem.category_original}
+                  onChange={handleInputChange}
+                  sx={{ direction: 'rtl' }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="כמות"
+                  name="quantity"
+                  type="number"
+                  fullWidth
+                  required
+                  value={currentItem.quantity}
+                  onChange={handleInputChange}
+                  sx={{ direction: 'rtl' }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="הערות"
+                  name="notes"
+                  fullWidth
+                  multiline
+                  rows={2}
+                  value={currentItem.notes}
+                  onChange={handleInputChange}
+                  sx={{ direction: 'rtl' }}
+                />
+              </Grid>
             </Grid>
-            <Grid item xs={12}>
-              <TextField
-                label="קטגוריה"
-                name="category"
-                fullWidth
-                required
-                value={currentItem.category}
-                onChange={handleInputChange}
-                sx={{ direction: 'rtl' }}
-              />
+          )}
+          
+          {/* טאב 2: הזמנה */}
+          {tabValue === 1 && (
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={Boolean(currentItem.ordered)}
+                      onChange={handleInputChange}
+                      name="ordered"
+                    />
+                  }
+                  label="האם הפריט הוזמן?"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="הערות על ההזמנה (מחסן באדום, סטודנט בכחול)"
+                  name="order_notes"
+                  fullWidth
+                  multiline
+                  rows={3}
+                  value={currentItem.order_notes || ''}
+                  onChange={handleInputChange}
+                  sx={{ direction: 'rtl' }}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  label="במאית"
+                  name="director"
+                  fullWidth
+                  value={currentItem.director || ''}
+                  onChange={handleInputChange}
+                  sx={{ direction: 'rtl' }}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  label="מפיקה"
+                  name="producer"
+                  fullWidth
+                  value={currentItem.producer || ''}
+                  onChange={handleInputChange}
+                  sx={{ direction: 'rtl' }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="צלמת"
+                  name="photographer"
+                  fullWidth
+                  value={currentItem.photographer || ''}
+                  onChange={handleInputChange}
+                  sx={{ direction: 'rtl' }}
+                />
+              </Grid>
             </Grid>
-            <Grid item xs={12}>
-              <TextField
-                label="כמות"
-                name="quantity"
-                type="number"
-                fullWidth
-                required
-                value={currentItem.quantity}
-                onChange={handleInputChange}
-                sx={{ direction: 'rtl' }}
-              />
+          )}
+          
+          {/* טאב 3: הוצאה והחזרה */}
+          {tabValue === 2 && (
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={Boolean(currentItem.checked_out)}
+                      onChange={handleInputChange}
+                      name="checked_out"
+                    />
+                  }
+                  label="יצא מהמחסן"
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={Boolean(currentItem.checked)}
+                      onChange={handleInputChange}
+                      name="checked"
+                    />
+                  }
+                  label="נבדק לפני היציאה"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="הערות על ההוצאה (מחסן באדום, סטודנט בכחול)"
+                  name="checkout_notes"
+                  fullWidth
+                  multiline
+                  rows={3}
+                  value={currentItem.checkout_notes || ''}
+                  onChange={handleInputChange}
+                  sx={{ direction: 'rtl' }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2 }} />
+              </Grid>
+              <Grid item xs={12}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={Boolean(currentItem.returned)}
+                      onChange={handleInputChange}
+                      name="returned"
+                    />
+                  }
+                  label="חזר למחסן"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="הערות על ההחזרה"
+                  name="return_notes"
+                  fullWidth
+                  multiline
+                  rows={3}
+                  value={currentItem.return_notes || ''}
+                  onChange={handleInputChange}
+                  sx={{ direction: 'rtl' }}
+                />
+              </Grid>
             </Grid>
-            <Grid item xs={12}>
-              <TextField
-                label="הערות"
-                name="notes"
-                fullWidth
-                multiline
-                rows={3}
-                value={currentItem.notes}
-                onChange={handleInputChange}
-                sx={{ direction: 'rtl' }}
-              />
+          )}
+          
+          {/* טאב 4: מידע נוסף */}
+          {tabValue === 3 && (
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  label="מחיר ליחידה"
+                  name="price_per_unit"
+                  type="number"
+                  fullWidth
+                  value={currentItem.price_per_unit || 0}
+                  onChange={handleInputChange}
+                  sx={{ direction: 'rtl' }}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  label="מחיר כולל"
+                  name="total_price"
+                  type="number"
+                  fullWidth
+                  value={currentItem.total_price || 0}
+                  onChange={handleInputChange}
+                  sx={{ direction: 'rtl' }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="שדה נוסף מהאקסל"
+                  name="unnamed_11"
+                  fullWidth
+                  value={currentItem.unnamed_11 || ''}
+                  onChange={handleInputChange}
+                  sx={{ direction: 'rtl' }}
+                />
+              </Grid>
             </Grid>
-          </Grid>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog} color="inherit">
