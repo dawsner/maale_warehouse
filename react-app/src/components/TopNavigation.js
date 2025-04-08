@@ -7,23 +7,37 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
+import GridViewIcon from '@mui/icons-material/GridView';
+import SettingsIcon from '@mui/icons-material/Settings';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 
 function TopNavigation({ user, onLogout }) {
   const navigate = useNavigate();
-  const [anchorEl, setAnchorEl] = React.useState(null);
-  const open = Boolean(anchorEl);
+  const [userMenuAnchorEl, setUserMenuAnchorEl] = React.useState(null);
+  const [adminMenuAnchorEl, setAdminMenuAnchorEl] = React.useState(null);
+  const userMenuOpen = Boolean(userMenuAnchorEl);
+  const adminMenuOpen = Boolean(adminMenuAnchorEl);
 
-  const handleMenu = (event) => {
-    setAnchorEl(event.currentTarget);
+  const handleUserMenuOpen = (event) => {
+    setUserMenuAnchorEl(event.currentTarget);
   };
 
-  const handleClose = () => {
-    setAnchorEl(null);
+  const handleAdminMenuOpen = (event) => {
+    setAdminMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleUserMenuClose = () => {
+    setUserMenuAnchorEl(null);
+  };
+
+  const handleAdminMenuClose = () => {
+    setAdminMenuAnchorEl(null);
   };
 
   const handleNavigation = (path) => {
     navigate(path);
-    handleClose();
+    handleUserMenuClose();
+    handleAdminMenuClose();
   };
 
   return (
@@ -48,9 +62,9 @@ function TopNavigation({ user, onLogout }) {
                   <Button 
                     color="inherit" 
                     onClick={() => navigate('/inventory')}
-                    startIcon={<InventoryIcon />}
+                    startIcon={<GridViewIcon />}
                   >
-                    מלאי
+                    ניהול מלאי
                   </Button>
                   <Button 
                     color="inherit" 
@@ -66,13 +80,45 @@ function TopNavigation({ user, onLogout }) {
                   >
                     סטטיסטיקות
                   </Button>
-                  <Button 
-                    color="inherit" 
+                  <Button
+                    color="inherit"
                     onClick={() => navigate('/import-excel')}
                     startIcon={<UploadFileIcon />}
                   >
-                    ייבוא אקסל
+                    ייבוא/ייצוא
                   </Button>
+                  <IconButton
+                    onClick={handleAdminMenuOpen}
+                    size="small"
+                    aria-controls={adminMenuOpen ? 'admin-menu' : undefined}
+                    aria-haspopup="true"
+                    aria-expanded={adminMenuOpen ? 'true' : undefined}
+                  >
+                    <MoreVertIcon />
+                  </IconButton>
+                  <Menu
+                    id="admin-menu"
+                    anchorEl={adminMenuAnchorEl}
+                    open={adminMenuOpen}
+                    onClose={handleAdminMenuClose}
+                    anchorOrigin={{
+                      vertical: 'bottom',
+                      horizontal: 'left',
+                    }}
+                    transformOrigin={{
+                      vertical: 'top',
+                      horizontal: 'left',
+                    }}
+                  >
+                    <MenuItem onClick={() => handleNavigation('/inventory-legacy')}>
+                      <InventoryIcon fontSize="small" sx={{ mr: 1 }} />
+                      מלאי (גרסה ישנה)
+                    </MenuItem>
+                    <MenuItem onClick={() => handleNavigation('/settings')}>
+                      <SettingsIcon fontSize="small" sx={{ mr: 1 }} />
+                      הגדרות מערכת
+                    </MenuItem>
+                  </Menu>
                 </>
               )}
               {user.role === 'student' && (
@@ -102,11 +148,12 @@ function TopNavigation({ user, onLogout }) {
               )}
               
               <IconButton
-                onClick={handleMenu}
+                onClick={handleUserMenuOpen}
                 size="small"
-                aria-controls={open ? 'account-menu' : undefined}
+                aria-controls={userMenuOpen ? 'account-menu' : undefined}
                 aria-haspopup="true"
-                aria-expanded={open ? 'true' : undefined}
+                aria-expanded={userMenuOpen ? 'true' : undefined}
+                sx={{ ml: 1 }}
               >
                 <Avatar sx={{ bgcolor: '#1E2875', width: 32, height: 32 }}>
                   <AccountCircleIcon />
@@ -114,9 +161,9 @@ function TopNavigation({ user, onLogout }) {
               </IconButton>
               <Menu
                 id="account-menu"
-                anchorEl={anchorEl}
-                open={open}
-                onClose={handleClose}
+                anchorEl={userMenuAnchorEl}
+                open={userMenuOpen}
+                onClose={handleUserMenuClose}
                 anchorOrigin={{
                   vertical: 'bottom',
                   horizontal: 'right',
@@ -126,7 +173,7 @@ function TopNavigation({ user, onLogout }) {
                   horizontal: 'right',
                 }}
               >
-                <MenuItem onClick={() => navigate('/profile')}>
+                <MenuItem onClick={() => handleNavigation('/profile')}>
                   פרופיל
                 </MenuItem>
                 <MenuItem onClick={onLogout}>

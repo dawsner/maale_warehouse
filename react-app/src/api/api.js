@@ -269,4 +269,35 @@ export const importExportAPI = {
     const response = await axiosInstance.get('/api/export', { responseType: 'blob' });
     return response.data;
   },
+  
+  // תצוגה מקדימה של ייבוא מאקסל
+  previewImport: async (formData) => {
+    const response = await axiosInstance.post('/api/import/preview', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+  
+  // ייבוא מאקסל עם מיפוי עמודות
+  importWithMapping: async (formData, mapping) => {
+    formData.append('mapping', JSON.stringify(mapping));
+    const response = await axiosInstance.post('/api/import/with-mapping', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+  
+  // קבלת תבנית ייצוא אקסל
+  getExportTemplate: async () => {
+    const response = await axiosInstance.get('/api/export/template', { responseType: 'blob' });
+    return response.data;
+  },
+  
+  // ייצוא לאקסל עם פילטרים
+  exportWithFilters: async (filters) => {
+    const response = await axiosInstance.post('/api/export/filtered', filters, { 
+      responseType: 'blob' 
+    });
+    return response.data;
+  }
 };

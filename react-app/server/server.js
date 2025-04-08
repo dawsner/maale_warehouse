@@ -383,7 +383,7 @@ app.post('/api/import', upload.single('file'), async (req, res) => {
     console.log('File received:', req.file);
     console.log('Form data:', req.body);
 
-    const action = req.body.action || 'preview';
+    const action = req.body.action || 'import';
     const mapping = req.body.mapping ? JSON.parse(req.body.mapping) : {};
 
     const result = await runPythonScript(
@@ -403,14 +403,156 @@ app.post('/api/import', upload.single('file'), async (req, res) => {
   }
 });
 
+// תצוגה מקדימה של יבוא אקסל
+app.post('/api/import/preview', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'לא נשלח קובץ' });
+    }
+
+    console.log('Preview file received:', req.file);
+
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/excel_preview.py'),
+      [],
+      {
+        action: 'preview',
+        file_path: req.file.path
+      }
+    );
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error processing import preview:', error);
+    res.status(400).json({ message: 'שגיאה בהצגת תצוגה מקדימה: ' + error.message });
+  }
+});
+
+// יבוא אקסל עם מיפוי עמודות
+app.post('/api/import/with-mapping', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'לא נשלח קובץ' });
+    }
+
+    console.log('Import with mapping file received:', req.file);
+    
+    const mapping = req.body.mapping ? JSON.parse(req.body.mapping) : {};
+    
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/excel_preview.py'),
+      [],
+      {
+        action: 'import',
+        file_path: req.file.path,
+        mapping
+      }
+    );
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error processing import with mapping:', error);
+    res.status(400).json({ message: 'שגיאה ביבוא נתונים: ' + error.message });
+  }
+});
+
+// יצוא כל המלאי לאקסל
 app.get('/api/export', async (req, res) => {
   try {
+    // יצירת קובץ הייצוא
     const result = await runPythonScript(
       path.join(__dirname, '../api/export_excel.py')
     );
-    res.json(result);
+    
+    // בדיקה האם התקבל נתיב לקובץ
+    if (!result || !result.file_path) {
+      return res.status(500).json({ message: 'שגיאה ביצירת קובץ ייצוא' });
+    }
+    
+    // שליחת הקובץ
+    res.download(result.file_path, 'inventory_export.xlsx', (err) => {
+      if (err) {
+        console.error('Error sending export file:', err);
+      }
+      
+      // מחיקת הקובץ הזמני אחרי שליחתו
+      try {
+        fs.unlinkSync(result.file_path);
+      } catch (unlinkErr) {
+        console.error('Error deleting temporary export file:', unlinkErr);
+      }
+    });
   } catch (error) {
+    console.error('Error exporting data:', error);
     res.status(500).json({ message: 'שגיאה ביצוא נתונים: ' + error.message });
+  }
+});
+
+// יצוא אקסל עם פילטרים
+app.post('/api/export/filtered', async (req, res) => {
+  try {
+    // יצירת קובץ הייצוא עם פילטרים
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/export_excel.py'),
+      [],
+      { filters: req.body }
+    );
+    
+    // בדיקה האם התקבל נתיב לקובץ
+    if (!result || !result.file_path) {
+      return res.status(500).json({ message: 'שגיאה ביצירת קובץ ייצוא' });
+    }
+    
+    // שליחת הקובץ
+    res.download(result.file_path, 'filtered_inventory_export.xlsx', (err) => {
+      if (err) {
+        console.error('Error sending filtered export file:', err);
+      }
+      
+      // מחיקת הקובץ הזמני אחרי שליחתו
+      try {
+        fs.unlinkSync(result.file_path);
+      } catch (unlinkErr) {
+        console.error('Error deleting temporary export file:', unlinkErr);
+      }
+    });
+  } catch (error) {
+    console.error('Error exporting filtered data:', error);
+    res.status(500).json({ message: 'שגיאה ביצוא נתונים: ' + error.message });
+  }
+});
+
+// קבלת תבנית ייצוא אקסל
+app.get('/api/export/template', async (req, res) => {
+  try {
+    // יצירת קובץ תבנית
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/export_excel.py'),
+      [],
+      { template: true }
+    );
+    
+    // בדיקה האם התקבל נתיב לקובץ
+    if (!result || !result.file_path) {
+      return res.status(500).json({ message: 'שגיאה ביצירת קובץ תבנית' });
+    }
+    
+    // שליחת הקובץ
+    res.download(result.file_path, 'inventory_template.xlsx', (err) => {
+      if (err) {
+        console.error('Error sending template file:', err);
+      }
+      
+      // מחיקת הקובץ הזמני אחרי שליחתו
+      try {
+        fs.unlinkSync(result.file_path);
+      } catch (unlinkErr) {
+        console.error('Error deleting temporary template file:', unlinkErr);
+      }
+    });
+  } catch (error) {
+    console.error('Error generating template:', error);
+    res.status(500).json({ message: 'שגיאה ביצירת תבנית: ' + error.message });
   }
 });
 

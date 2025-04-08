@@ -16,9 +16,11 @@ import TopNavigation from './components/TopNavigation';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Inventory from './pages/Inventory';
+import InventoryEnhanced from './pages/InventoryEnhanced';
 import Loans from './pages/Loans';
 import Statistics from './pages/Statistics';
 import ExcelImport from './pages/ExcelImport';
+import Settings from './pages/Settings';
 import AvailableItems from './pages/student/AvailableItems';
 import BookEquipment from './pages/student/BookEquipment';
 import MyEquipment from './pages/student/MyEquipment';
@@ -114,6 +116,9 @@ function App() {
             
             {/* דפים למנהלים בלבד */}
             <Route path="/inventory" element={
+              <AdminRoute><InventoryEnhanced /></AdminRoute>
+            } />
+            <Route path="/inventory-legacy" element={
               <AdminRoute><Inventory /></AdminRoute>
             } />
             <Route path="/loans" element={
@@ -124,6 +129,9 @@ function App() {
             } />
             <Route path="/import-excel" element={
               <AdminRoute><ExcelImport /></AdminRoute>
+            } />
+            <Route path="/settings" element={
+              <AdminRoute><Settings /></AdminRoute>
             } />
             
             {/* דפים לסטודנטים */}
