@@ -25,8 +25,7 @@ import {
   Tabs,
   InputAdornment,
   Chip,
-  MenuItem,
-  Divider
+  MenuItem
 } from '@mui/material';
 // Temporarily removed date picker due to compatibility issues
 import AddIcon from '@mui/icons-material/Add';
@@ -87,8 +86,10 @@ function Loans() {
   const fetchLoans = async () => {
     try {
       setLoading(true);
-      const response = await loansAPI.getAll();
-      setLoans(response.data);
+      console.log('Fetching loans...');
+      const response = await loansAPI.getLoans();
+      console.log('Loans response:', response);
+      setLoans(response.data || []);
       setError('');
     } catch (err) {
       console.error('Error fetching loans:', err);
@@ -100,8 +101,10 @@ function Loans() {
 
   const fetchInventory = async () => {
     try {
-      const response = await inventoryAPI.getAll();
-      setInventory(response.data);
+      console.log('Fetching inventory...');
+      const response = await inventoryAPI.getItems();
+      console.log('Inventory response:', response);
+      setInventory(response || []);
     } catch (err) {
       console.error('Error fetching inventory:', err);
     }
@@ -197,7 +200,26 @@ function Loans() {
 
     try {
       setLoading(true);
-      await loansAPI.create(newLoan);
+      console.log('Creating new loan with data:', newLoan);
+      
+      // הכנת האובייקט לשליחה לשרת
+      const loanData = {
+        item_id: newLoan.itemId,
+        student_name: newLoan.studentName,
+        student_id: newLoan.studentId,
+        quantity: newLoan.quantity,
+        due_date: newLoan.dueDate instanceof Date ? newLoan.dueDate.toISOString() : newLoan.dueDate,
+        loan_notes: newLoan.notes,
+        director: newLoan.director,
+        producer: newLoan.producer,
+        photographer: newLoan.photographer,
+        price_per_unit: newLoan.pricePerUnit,
+        total_price: newLoan.totalPrice
+      };
+      
+      const response = await loansAPI.createLoan(loanData);
+      console.log('Create loan response:', response);
+      
       setSnackbar({
         open: true,
         message: 'ההשאלה נוצרה בהצלחה',
@@ -235,7 +257,10 @@ function Loans() {
     
     try {
       setLoading(true);
-      await loansAPI.return(currentLoan.id, returnNotes);
+      console.log('Returning loan:', currentLoan.id, 'with notes:', returnNotes);
+      
+      await loansAPI.returnLoan(currentLoan.id, returnNotes);
+      
       setSnackbar({
         open: true,
         message: 'הציוד הוחזר בהצלחה',
@@ -247,7 +272,7 @@ function Loans() {
       console.error('Error returning loan:', err);
       setSnackbar({
         open: true,
-        message: 'שגיאה בהחזרת הציוד',
+        message: err.response?.data?.message || 'שגיאה בהחזרת הציוד',
         severity: 'error'
       });
     } finally {
@@ -413,216 +438,442 @@ function Loans() {
       
       {/* דיאלוג יצירת השאלה חדשה */}
       <Dialog open={openDialog} onClose={handleDialogClose} maxWidth="md" fullWidth>
-        <DialogTitle>
-          השאלת ציוד חדשה
+        <DialogTitle sx={{ bgcolor: '#f8f8f8', borderBottom: '1px solid #eaeaea' }}>
+          <Typography variant="h6" component="div" sx={{ color: '#373B5C', fontWeight: 'bold' }}>
+            השאלת ציוד חדשה
+          </Typography>
         </DialogTitle>
         <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                select
-                label="בחירת פריט"
-                name="itemId"
-                fullWidth
-                required
-                value={newLoan.itemId}
-                onChange={handleNewLoanChange}
-                sx={{ direction: 'rtl' }}
-              >
-                {inventory
-                  .filter(item => item.is_available && item.quantity > 0)
-                  .map(item => (
-                    <MenuItem key={item.id} value={item.id}>
-                      {item.name} (כמות זמינה: {item.quantity})
-                    </MenuItem>
-                  ))
-                }
-              </TextField>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="כמות"
-                name="quantity"
-                type="number"
-                fullWidth
-                required
-                value={newLoan.quantity}
-                onChange={handleNewLoanChange}
-                inputProps={{ min: 1 }}
-                sx={{ direction: 'rtl' }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="שם הסטודנט"
-                name="studentName"
-                fullWidth
-                required
-                value={newLoan.studentName}
-                onChange={handleNewLoanChange}
-                sx={{ direction: 'rtl' }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="ת.ז סטודנט"
-                name="studentId"
-                fullWidth
-                required
-                value={newLoan.studentId}
-                onChange={handleNewLoanChange}
-                sx={{ direction: 'rtl' }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="תאריך החזרה"
-                name="dueDate"
-                type="date"
-                fullWidth
-                required
-                value={newLoan.dueDate instanceof Date ? newLoan.dueDate.toISOString().split('T')[0] : ''}
-                onChange={e => {
-                  const newDate = new Date(e.target.value);
-                  handleDateChange(newDate);
-                }}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-                sx={{ direction: 'rtl' }}
-              />
-            </Grid>
-            
-            {/* שדות נוספים */}
-            <Grid item xs={12}>
-              <Typography variant="h6" sx={{ mt: 2, mb: 1, color: '#373B5C', fontWeight: 'bold' }}>
-                פרטי הפקה
+          <Box sx={{ py: 2 }}>
+            <Box sx={{ mb: 3, p: 2, bgcolor: '#FAFBFF', borderRadius: 2, border: '1px solid #E5E8F5' }}>
+              <Typography variant="body2" color="primary">
+                השאלת ציוד לסטודנט. יש למלא את כל פרטי החובה המסומנים בכוכבית.
+                הציוד הזמין מוצג ברשימה עם הכמות הזמינה במחסן.
               </Typography>
-              <Divider sx={{ mb: 2 }} />
+            </Box>
+          
+            <Grid container spacing={3}>
+              {/* מידע בסיסי */}
+              <Grid item xs={12}>
+                <Paper sx={{ p: 2, borderRadius: 2, border: '1px solid #CECECE' }}>
+                  <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold', color: '#373B5C' }}>
+                    פרטי ציוד ותלמיד
+                  </Typography>
+                  
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        select
+                        label="בחירת פריט *"
+                        name="itemId"
+                        fullWidth
+                        required
+                        value={newLoan.itemId}
+                        onChange={handleNewLoanChange}
+                        sx={{ direction: 'rtl' }}
+                        error={!newLoan.itemId}
+                        helperText={!newLoan.itemId ? "חובה לבחור פריט" : ""}
+                      >
+                        <MenuItem value="" disabled>
+                          <em>בחר פריט</em>
+                        </MenuItem>
+                        {inventory
+                          .filter(item => item.is_available && item.available_quantity > 0)
+                          .sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name))
+                          .map(item => (
+                            <MenuItem key={item.id} value={item.id}>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                                <span>
+                                  <strong>{item.category}</strong> - {item.name}
+                                </span>
+                                <span style={{ color: '#666' }}>
+                                  (כמות זמינה: {item.available_quantity})
+                                </span>
+                              </Box>
+                            </MenuItem>
+                          ))
+                        }
+                      </TextField>
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        label="כמות *"
+                        name="quantity"
+                        type="number"
+                        fullWidth
+                        required
+                        value={newLoan.quantity}
+                        onChange={handleNewLoanChange}
+                        inputProps={{ 
+                          min: 1,
+                          max: newLoan.itemId ? 
+                            inventory.find(item => item.id === newLoan.itemId)?.available_quantity || 1 : 1 
+                        }}
+                        sx={{ direction: 'rtl' }}
+                        error={newLoan.quantity < 1}
+                        helperText={newLoan.quantity < 1 ? "הכמות חייבת להיות 1 לפחות" : ""}
+                      />
+                    </Grid>
+                    
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        label="שם הסטודנט *"
+                        name="studentName"
+                        fullWidth
+                        required
+                        value={newLoan.studentName}
+                        onChange={handleNewLoanChange}
+                        sx={{ direction: 'rtl' }}
+                        error={!newLoan.studentName}
+                        helperText={!newLoan.studentName ? "חובה למלא שם סטודנט" : ""}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        label="ת.ז סטודנט *"
+                        name="studentId"
+                        fullWidth
+                        required
+                        value={newLoan.studentId}
+                        onChange={handleNewLoanChange}
+                        sx={{ direction: 'rtl' }}
+                        error={!newLoan.studentId}
+                        helperText={!newLoan.studentId ? "חובה למלא ת.ז" : ""}
+                      />
+                    </Grid>
+                    
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        label="תאריך החזרה מתוכנן *"
+                        name="dueDate"
+                        type="date"
+                        fullWidth
+                        required
+                        value={newLoan.dueDate instanceof Date ? newLoan.dueDate.toISOString().split('T')[0] : ''}
+                        onChange={e => {
+                          const newDate = new Date(e.target.value);
+                          handleDateChange(newDate);
+                        }}
+                        InputLabelProps={{ shrink: true }}
+                        sx={{ direction: 'rtl' }}
+                        error={!newLoan.dueDate}
+                        helperText={!newLoan.dueDate ? "חובה לבחור תאריך החזרה" : ""}
+                      />
+                    </Grid>
+
+                    {newLoan.itemId && (
+                      <Grid item xs={12}>
+                        {/* הצגת פרטי הפריט הנבחר */}
+                        <Box sx={{ 
+                          mt: 2, 
+                          p: 2, 
+                          bgcolor: '#F5F8FF', 
+                          borderRadius: 1,
+                          border: '1px solid #E0E7FF'
+                        }}>
+                          {(() => {
+                            const selectedItem = inventory.find(item => item.id === newLoan.itemId);
+                            return selectedItem ? (
+                              <>
+                                <Typography variant="subtitle2" sx={{ mb: 1, color: '#1E2875' }}>
+                                  פרטי הפריט הנבחר
+                                </Typography>
+                                <Grid container spacing={1}>
+                                  <Grid item xs={12} md={4}>
+                                    <Typography variant="body2" color="textSecondary">שם:</Typography>
+                                    <Typography variant="body1">{selectedItem.name}</Typography>
+                                  </Grid>
+                                  <Grid item xs={12} md={4}>
+                                    <Typography variant="body2" color="textSecondary">קטגוריה:</Typography>
+                                    <Typography variant="body1">{selectedItem.category}</Typography>
+                                  </Grid>
+                                  <Grid item xs={12} md={4}>
+                                    <Typography variant="body2" color="textSecondary">במלאי:</Typography>
+                                    <Typography variant="body1">{selectedItem.available_quantity} / {selectedItem.quantity}</Typography>
+                                  </Grid>
+                                  {selectedItem.notes && (
+                                    <Grid item xs={12}>
+                                      <Typography variant="body2" color="textSecondary">הערות על הפריט:</Typography>
+                                      <Typography variant="body1">{selectedItem.notes}</Typography>
+                                    </Grid>
+                                  )}
+                                </Grid>
+                              </>
+                            ) : null;
+                          })()}
+                        </Box>
+                      </Grid>
+                    )}
+                  </Grid>
+                </Paper>
+              </Grid>
+              
+              {/* פרטי הפקה */}
+              <Grid item xs={12}>
+                <Paper sx={{ p: 2, borderRadius: 2, border: '1px solid #CECECE' }}>
+                  <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold', color: '#373B5C' }}>
+                    פרטי הפקה
+                  </Typography>
+                  
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} md={4}>
+                      <TextField
+                        label="במאי"
+                        name="director"
+                        fullWidth
+                        value={newLoan.director}
+                        onChange={handleNewLoanChange}
+                        sx={{ direction: 'rtl' }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <TextField
+                        label="מפיק"
+                        name="producer"
+                        fullWidth
+                        value={newLoan.producer}
+                        onChange={handleNewLoanChange}
+                        sx={{ direction: 'rtl' }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <TextField
+                        label="צלם"
+                        name="photographer"
+                        fullWidth
+                        value={newLoan.photographer}
+                        onChange={handleNewLoanChange}
+                        sx={{ direction: 'rtl' }}
+                      />
+                    </Grid>
+                  </Grid>
+                </Paper>
+              </Grid>
+              
+              {/* מחירים והערות */}
+              <Grid item xs={12}>
+                <Paper sx={{ p: 2, borderRadius: 2, border: '1px solid #CECECE' }}>
+                  <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold', color: '#373B5C' }}>
+                    מחירים והערות
+                  </Typography>
+                  
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        label="מחיר ליחידה"
+                        name="pricePerUnit"
+                        type="number"
+                        fullWidth
+                        value={newLoan.pricePerUnit}
+                        onChange={handleNewLoanChange}
+                        InputProps={{
+                          readOnly: true,
+                          startAdornment: <InputAdornment position="start">₪</InputAdornment>,
+                        }}
+                        sx={{ direction: 'rtl' }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        label="מחיר כולל"
+                        name="totalPrice"
+                        type="number"
+                        fullWidth
+                        value={newLoan.totalPrice}
+                        InputProps={{
+                          readOnly: true,
+                          startAdornment: <InputAdornment position="start">₪</InputAdornment>,
+                        }}
+                        sx={{ direction: 'rtl' }}
+                      />
+                    </Grid>
+                    
+                    <Grid item xs={12}>
+                      <TextField
+                        label="הערות להשאלה"
+                        name="notes"
+                        fullWidth
+                        multiline
+                        rows={3}
+                        value={newLoan.notes}
+                        onChange={handleNewLoanChange}
+                        sx={{ direction: 'rtl' }}
+                        placeholder="הערות להשאלה, פרטים נוספים, או הוראות מיוחדות"
+                      />
+                    </Grid>
+                  </Grid>
+                </Paper>
+              </Grid>
             </Grid>
-            
-            <Grid item xs={12} sm={4}>
-              <TextField
-                label="במאי"
-                name="director"
-                fullWidth
-                value={newLoan.director}
-                onChange={handleNewLoanChange}
-                sx={{ direction: 'rtl' }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <TextField
-                label="מפיק"
-                name="producer"
-                fullWidth
-                value={newLoan.producer}
-                onChange={handleNewLoanChange}
-                sx={{ direction: 'rtl' }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <TextField
-                label="צלם"
-                name="photographer"
-                fullWidth
-                value={newLoan.photographer}
-                onChange={handleNewLoanChange}
-                sx={{ direction: 'rtl' }}
-              />
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="מחיר ליחידה"
-                name="pricePerUnit"
-                type="number"
-                fullWidth
-                value={newLoan.pricePerUnit}
-                onChange={handleNewLoanChange}
-                InputProps={{
-                  readOnly: true,
-                  startAdornment: <InputAdornment position="start">₪</InputAdornment>,
-                }}
-                sx={{ direction: 'rtl' }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="מחיר כולל"
-                name="totalPrice"
-                type="number"
-                fullWidth
-                value={newLoan.totalPrice}
-                InputProps={{
-                  readOnly: true,
-                  startAdornment: <InputAdornment position="start">₪</InputAdornment>,
-                }}
-                sx={{ direction: 'rtl' }}
-              />
-            </Grid>
-            
-            <Grid item xs={12}>
-              <TextField
-                label="הערות"
-                name="notes"
-                fullWidth
-                multiline
-                rows={3}
-                value={newLoan.notes}
-                onChange={handleNewLoanChange}
-                sx={{ direction: 'rtl' }}
-              />
-            </Grid>
-          </Grid>
+          </Box>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ borderTop: '1px solid #eaeaea', p: 2 }}>
           <Button onClick={handleDialogClose} color="inherit">
             ביטול
           </Button>
-          <Button onClick={handleCreateLoan} color="primary" variant="contained">
+          <Button 
+            onClick={handleCreateLoan} 
+            color="primary" 
+            variant="contained"
+            disabled={!newLoan.itemId || !newLoan.studentName || !newLoan.studentId || newLoan.quantity < 1 || !newLoan.dueDate}
+            sx={{ borderRadius: '8px', px: 3 }}
+            startIcon={<AddIcon />}
+          >
             יצירת השאלה
           </Button>
         </DialogActions>
       </Dialog>
       
       {/* דיאלוג החזרת ציוד */}
-      <Dialog open={openReturnDialog} onClose={handleReturnDialogClose} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          החזרת ציוד
+      <Dialog open={openReturnDialog} onClose={handleReturnDialogClose} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ bgcolor: '#f8f8f8', borderBottom: '1px solid #eaeaea' }}>
+          <Typography variant="h6" component="div" sx={{ color: '#373B5C', fontWeight: 'bold' }}>
+            החזרת ציוד
+          </Typography>
         </DialogTitle>
         <DialogContent>
           {currentLoan && (
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
-                פרטי השאלה:
-              </Typography>
-              <Typography variant="body1">
-                סטודנט: {currentLoan.student_name}
-              </Typography>
-              <Typography variant="body1">
-                פריט: {currentLoan.item_name}
-              </Typography>
-              <Typography variant="body1">
-                כמות: {currentLoan.quantity}
-              </Typography>
-              <Typography variant="body1">
-                תאריך השאלה: {formatDate(currentLoan.loan_date)}
-              </Typography>
-              
-              <TextField
-                label="הערות החזרה"
-                fullWidth
-                multiline
-                rows={4}
-                value={returnNotes}
-                onChange={(e) => setReturnNotes(e.target.value)}
-                sx={{ mt: 3, direction: 'rtl' }}
-              />
+            <Box sx={{ mt: 3, p: 1 }}>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Paper sx={{ p: 2, borderRadius: 2, border: '1px solid #CECECE', height: '100%' }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2, color: '#373B5C' }}>
+                      פרטי השאלה
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="body2" sx={{ color: '#666', minWidth: '120px' }}>שם הסטודנט:</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 'medium' }}>{currentLoan.student_name}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="body2" sx={{ color: '#666', minWidth: '120px' }}>ת.ז. סטודנט:</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 'medium' }}>{currentLoan.student_id}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="body2" sx={{ color: '#666', minWidth: '120px' }}>פריט:</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 'medium' }}>{currentLoan.item_name}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="body2" sx={{ color: '#666', minWidth: '120px' }}>קטגוריה:</Typography>
+                        <Typography variant="body1">{currentLoan.category}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="body2" sx={{ color: '#666', minWidth: '120px' }}>כמות:</Typography>
+                        <Typography variant="body1">{currentLoan.quantity}</Typography>
+                      </Box>
+                    </Box>
+                  </Paper>
+                </Grid>
+                
+                <Grid item xs={12} md={6}>
+                  <Paper sx={{ p: 2, borderRadius: 2, border: '1px solid #CECECE', height: '100%' }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2, color: '#373B5C' }}>
+                      פרטי זמנים
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="body2" sx={{ color: '#666', minWidth: '120px' }}>תאריך השאלה:</Typography>
+                        <Typography variant="body1">{formatDate(currentLoan.checkout_date)}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="body2" sx={{ color: '#666', minWidth: '120px' }}>תאריך החזרה מתוכנן:</Typography>
+                        <Typography variant="body1">{formatDate(currentLoan.due_date)}</Typography>
+                      </Box>
+                      
+                      {/* בדיקה האם יש איחור */}
+                      {currentLoan.due_date && new Date(currentLoan.due_date) < new Date() && (
+                        <Box sx={{ 
+                          bgcolor: '#FFF4F4', 
+                          p: 1, 
+                          borderRadius: 1, 
+                          border: '1px solid #FFCDD2',
+                          mt: 1 
+                        }}>
+                          <Typography variant="body2" color="error">
+                            שים לב: ההשאלה באיחור של {Math.ceil((new Date() - new Date(currentLoan.due_date)) / (1000 * 60 * 60 * 24))} ימים
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  </Paper>
+                </Grid>
+                
+                {/* הערות השאלה ופקה אם ישנן */}
+                {(currentLoan.loan_notes || currentLoan.director || currentLoan.producer || currentLoan.photographer) && (
+                  <Grid item xs={12}>
+                    <Paper sx={{ p: 2, borderRadius: 2, border: '1px solid #CECECE' }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2, color: '#373B5C' }}>
+                        פרטים נוספים
+                      </Typography>
+                      
+                      <Grid container spacing={2}>
+                        {currentLoan.director && (
+                          <Grid item xs={12} sm={4}>
+                            <Typography variant="body2" sx={{ color: '#666' }}>במאי:</Typography>
+                            <Typography variant="body1">{currentLoan.director}</Typography>
+                          </Grid>
+                        )}
+                        
+                        {currentLoan.producer && (
+                          <Grid item xs={12} sm={4}>
+                            <Typography variant="body2" sx={{ color: '#666' }}>מפיק:</Typography>
+                            <Typography variant="body1">{currentLoan.producer}</Typography>
+                          </Grid>
+                        )}
+                        
+                        {currentLoan.photographer && (
+                          <Grid item xs={12} sm={4}>
+                            <Typography variant="body2" sx={{ color: '#666' }}>צלם:</Typography>
+                            <Typography variant="body1">{currentLoan.photographer}</Typography>
+                          </Grid>
+                        )}
+                        
+                        {currentLoan.loan_notes && (
+                          <Grid item xs={12}>
+                            <Typography variant="body2" sx={{ color: '#666' }}>הערות השאלה:</Typography>
+                            <Typography 
+                              variant="body1" 
+                              sx={{ 
+                                mt: 0.5, 
+                                p: 1.5, 
+                                bgcolor: '#f5f5f5', 
+                                borderRadius: 1,
+                                whiteSpace: 'pre-line'
+                              }}
+                            >
+                              {currentLoan.loan_notes}
+                            </Typography>
+                          </Grid>
+                        )}
+                      </Grid>
+                    </Paper>
+                  </Grid>
+                )}
+                
+                {/* פורם החזרה */}
+                <Grid item xs={12}>
+                  <Paper sx={{ p: 2, borderRadius: 2, border: '1px solid #CECECE', mt: 1 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2, color: '#373B5C' }}>
+                      פרטי החזרה
+                    </Typography>
+                    
+                    <TextField
+                      label="הערות החזרה"
+                      fullWidth
+                      multiline
+                      rows={4}
+                      value={returnNotes}
+                      onChange={(e) => setReturnNotes(e.target.value)}
+                      sx={{ direction: 'rtl' }}
+                      placeholder="תיאור מצב הציוד בעת החזרה, נזקים אם ישנם, או הערות אחרות"
+                    />
+                  </Paper>
+                </Grid>
+              </Grid>
             </Box>
           )}
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ borderTop: '1px solid #eaeaea', p: 2 }}>
           <Button onClick={handleReturnDialogClose} color="inherit">
             ביטול
           </Button>
@@ -631,6 +882,7 @@ function Loans() {
             color="success" 
             variant="contained"
             startIcon={<AssignmentReturnIcon />}
+            sx={{ borderRadius: '8px', px: 3 }}
           >
             אישור החזרה
           </Button>
