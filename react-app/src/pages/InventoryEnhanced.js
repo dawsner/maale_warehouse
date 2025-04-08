@@ -1946,7 +1946,7 @@ function InventoryEnhanced() {
       overflow: 'auto',
       maxWidth: '100vw',
     }}>
-      <Table stickyHeader sx={{ minWidth: 1800, width: '100%' }}>
+      <Table stickyHeader size="small" sx={{ width: '100%' }}>
         <TableHead sx={{ bgcolor: '#f5f5f5' }}>
           <TableRow>
             <TableCell 
@@ -2061,8 +2061,8 @@ function InventoryEnhanced() {
                     <Tooltip title={item.order_notes}>
                       <Typography 
                         sx={{ 
-                          fontSize: '0.85rem', 
-                          maxWidth: '350px',
+                          fontSize: '0.75rem', 
+                          maxWidth: '140px',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
@@ -2108,8 +2108,8 @@ function InventoryEnhanced() {
                     <Tooltip title={item.checkout_notes}>
                       <Typography 
                         sx={{ 
-                          fontSize: '0.85rem', 
-                          maxWidth: '350px',
+                          fontSize: '0.75rem', 
+                          maxWidth: '140px',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
@@ -2152,8 +2152,8 @@ function InventoryEnhanced() {
                     <Tooltip title={item.return_notes}>
                       <Typography 
                         sx={{ 
-                          fontSize: '0.85rem', 
-                          maxWidth: '350px',
+                          fontSize: '0.75rem', 
+                          maxWidth: '140px',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
