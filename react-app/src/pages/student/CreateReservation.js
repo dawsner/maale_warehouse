@@ -1,64 +1,98 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {
-  Box, Typography, Paper, Grid, FormControl, InputLabel, Select,
-  MenuItem, TextField, Button, Alert, CircularProgress, Card,
-  CardContent, Divider, Chip, Dialog, DialogTitle,
-  DialogContent, DialogActions, DialogContentText
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { 
+  Box, 
+  Typography, 
+  FormControl, 
+  InputLabel, 
+  Select, 
+  MenuItem, 
+  TextField, 
+  Button, 
+  Grid, 
+  Paper, 
+  CircularProgress, 
+  Alert,
+  Chip,
+  Card,
+  CardContent,
+  Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Autocomplete,
+  Checkbox,
+  ListItemText,
+  Stack,
+  useTheme
 } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import he from 'date-fns/locale/he';
 import InfoIcon from '@mui/icons-material/Info';
 import WarningIcon from '@mui/icons-material/Warning';
-import { inventoryAPI, reservationsAPI } from '../../api/api';
+import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
+import CheckBoxIcon from '@mui/icons-material/CheckBox';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { reservationsAPI, inventoryAPI } from '../../api/api';
 import { format } from 'date-fns';
+import he from 'date-fns/locale/he';
+
+// אייקונים לתיבת סימון
+const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
+const checkedIcon = <CheckBoxIcon fontSize="small" />;
 
 function CreateReservation({ userId }) {
   const navigate = useNavigate();
-  const [inventory, setInventory] = useState([]);
+  const theme = useTheme();
+  
   const [loading, setLoading] = useState(true);
+  const [inventory, setInventory] = useState([]);
   const [error, setError] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedItems, setSelectedItems] = useState([]);
   const [formData, setFormData] = useState({
     start_date: new Date(),
     end_date: new Date(new Date().setDate(new Date().getDate() + 3)),
     notes: ''
   });
-  const [selectedItems, setSelectedItems] = useState([]);  // מערך של פריטים נבחרים
-  const [selectedItem, setSelectedItem] = useState(null);  // נשמר לתאימות עם קוד קיים
   const [availabilityInfo, setAvailabilityInfo] = useState(null);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
-  const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [showExistingDialog, setShowExistingDialog] = useState(false);
-  const [submitLoading, setSubmitLoading] = useState(false);
   const [formError, setFormError] = useState(null);
   const [formSuccess, setFormSuccess] = useState(null);
-  const [userInfo, setUserInfo] = useState(null);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [showExistingDialog, setShowExistingDialog] = useState(false);
 
-  // טעינת פרטי משתמש וציוד זמין
+  // פילטור פריטים לפי קטגוריה
+  const filteredItems = useMemo(() => {
+    return selectedCategory 
+      ? inventory.filter(item => item.category === selectedCategory)
+      : inventory;
+  }, [inventory, selectedCategory]);
+
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
       try {
-        // תפיסת פרטי מידע על המשתמש מהרכיב ההורה, או מה-localStorage
-        const userToken = localStorage.getItem('token');
-        if (!userToken) throw new Error('לא נמצא טוקן משתמש');
-        
-        // טעינת פריטי מלאי זמינים
-        const inventoryData = await inventoryAPI.getItems();
-        const availableItems = inventoryData.filter(item => item.is_available);
-        
-        // חילוץ רשימת קטגוריות ייחודיות מהמלאי
-        const uniqueCategories = [...new Set(availableItems.map(item => item.category))];
-        
-        setInventory(availableItems);
-        setCategories(uniqueCategories);
-        setError(null);
+        setLoading(true);
+        console.log("Trying to fetch inventory items...");
+        console.log("Fetching inventory from API...");
+        const response = await inventoryAPI.getInventory();
+        console.log("Inventory response received:", response);
+
+        if (response && Array.isArray(response)) {
+          console.log("Inventory data received:", response);
+          setInventory(response);
+          
+          // קטגוריות יחודיות
+          const uniqueCategories = [...new Set(response.map(item => item.category))].filter(Boolean).sort();
+          setCategories(uniqueCategories);
+        }
       } catch (err) {
-        console.error('Failed to fetch initial data:', err);
-        setError('שגיאה בטעינת נתונים');
+        console.error("Failed to fetch data:", err);
+        setError('אירעה שגיאה בטעינת הנתונים');
       } finally {
         setLoading(false);
       }
@@ -66,26 +100,6 @@ function CreateReservation({ userId }) {
 
     fetchData();
   }, [userId]);
-
-  // פונקציה לעדכון בחירת מספר פריטים
-  const handleMultiItemSelection = (itemIds) => {
-    console.log("Selected item IDs:", itemIds);
-    
-    // מוצאים את כל הפריטים שנבחרו - המרה ל-string כדי להשוות כראוי
-    const items = itemIds.map(id => inventory.find(item => item.id.toString() === id.toString())).filter(Boolean);
-    console.log("Selected items:", items);
-    
-    setSelectedItems(items);
-    
-    // אם יש פריט אחד לפחות, מעדכנים גם את selectedItem לתאימות עם קוד קיים
-    if (items.length > 0) {
-      setSelectedItem(items[0]);
-    } else {
-      setSelectedItem(null);
-    }
-    
-    setAvailabilityInfo(null); // איפוס מידע על זמינות
-  };
 
   // פונקציה לבדיקת זמינות
   const checkAvailability = async () => {
@@ -205,21 +219,6 @@ function CreateReservation({ userId }) {
       setSubmitLoading(false);
     }
   };
-  
-  // פונקציה ישנה לתאימות - לא בשימוש יותר
-  const handleItemSelection = (itemId) => {
-    const item = inventory.find(i => i.id.toString() === itemId.toString());
-    if (item) {
-      setSelectedItems([item]);
-      setSelectedItem(item);
-    }
-    setAvailabilityInfo(null);
-  };
-
-  // פונקציה לפילטור פריטים לפי קטגוריה
-  const filteredItems = selectedCategory 
-    ? inventory.filter(item => item.category === selectedCategory)
-    : inventory;
 
   if (loading) {
     return (
@@ -238,31 +237,48 @@ function CreateReservation({ userId }) {
   }
 
   return (
-    <Box sx={{ width: '100%' }}>
-      <Typography variant="h4" component="h1" gutterBottom align="right">
-        הזמנת ציוד מראש
-      </Typography>
+    <Box sx={{ width: '100%', mb: 4 }}>
+      <Paper elevation={0} sx={{ 
+        p: 0,
+        mb: 3, 
+        bgcolor: '#f8f9fa',
+        borderRadius: '8px',
+        overflow: 'hidden'
+      }}>
+        <Box sx={{ 
+          p: 2, 
+          bgcolor: '#1E2875', 
+          color: 'white',
+          borderBottom: '1px solid #e0e0e0'
+        }}>
+          <Typography variant="h5" component="h1" gutterBottom align="right" sx={{ fontWeight: 'bold' }}>
+            הזמנת ציוד מראש
+          </Typography>
+          <Typography variant="body2" align="right">
+            בחר את הפריטים הדרושים לך ותאריכי השאלה
+          </Typography>
+        </Box>
 
-      {formSuccess && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          {formSuccess}
-        </Alert>
-      )}
+        {formSuccess && (
+          <Alert severity="success" sx={{ m: 2 }}>
+            {formSuccess}
+          </Alert>
+        )}
 
-      {formError && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {formError}
-        </Alert>
-      )}
+        {formError && (
+          <Alert severity="error" sx={{ m: 2 }}>
+            {formError}
+          </Alert>
+        )}
 
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Box component="form" onSubmit={handleSubmit}>
+        <Box component="form" onSubmit={handleSubmit} sx={{ p: 3 }}>
           <Grid container spacing={3}>
             {/* בחירת קטגוריה */}
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>קטגוריה</InputLabel>
+              <FormControl fullWidth variant="outlined">
+                <InputLabel id="category-label">קטגוריה</InputLabel>
                 <Select
+                  labelId="category-label"
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
                   label="קטגוריה"
@@ -279,137 +295,157 @@ function CreateReservation({ userId }) {
               </FormControl>
             </Grid>
 
-            {/* בחירת פריטים (תמיכה בבחירה מרובה) */}
+            {/* בחירת פריטים - כאן אנחנו משתמשים ב-Autocomplete במקום Select למראה מודרני ופונקציונלי יותר */}
             <Grid item xs={12}>
-              <FormControl fullWidth required>
-                <InputLabel>בחר פריטים</InputLabel>
-                <Select
-                  multiple
-                  value={selectedItems.map(item => item.id)}
-                  onChange={(e) => handleMultiItemSelection(e.target.value)}
-                  label="בחר פריטים"
-                  renderValue={(selected) => (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {selected.map((itemId) => {
-                        const item = inventory.find(i => i.id.toString() === itemId.toString());
-                        return (
-                          <Chip key={itemId} label={item ? item.name : 'פריט'} size="small" />
-                        );
-                      })}
+              <Autocomplete
+                multiple
+                id="equipment-select"
+                options={filteredItems}
+                getOptionLabel={(option) => option.name}
+                value={selectedItems}
+                onChange={(event, newValue) => {
+                  console.log("Selected items:", newValue);
+                  setSelectedItems(newValue);
+                  if (newValue.length > 0) {
+                    setSelectedItem(newValue[0]);
+                  } else {
+                    setSelectedItem(null);
+                  }
+                  setAvailabilityInfo(null);
+                }}
+                renderOption={(props, option, { selected }) => (
+                  <li {...props}>
+                    <Checkbox
+                      icon={icon}
+                      checkedIcon={checkedIcon}
+                      style={{ marginRight: 8 }}
+                      checked={selected}
+                    />
+                    <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                      <Typography variant="body1">{option.name}</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        קטגוריה: {option.category} | כמות זמינה: {option.quantity}
+                      </Typography>
                     </Box>
-                  )}
-                >
-                  {filteredItems.map((item) => (
-                    <MenuItem key={item.id} value={item.id}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                        <span>{item.name}</span>
-                        <span style={{ color: 'gray' }}>כמות זמינה: {item.quantity}</span>
-                      </Box>
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+                  </li>
+                )}
+                renderTags={(tagValue, getTagProps) =>
+                  tagValue.map((option, index) => (
+                    <Chip
+                      {...getTagProps({ index })}
+                      key={option.id}
+                      label={option.name}
+                      sx={{ 
+                        bgcolor: '#e3f2fd',
+                        fontWeight: 500,
+                        '& .MuiChip-deleteIcon': {
+                          color: '#1e88e5'
+                        }
+                      }}
+                    />
+                  ))
+                }
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="בחר פריטים"
+                    placeholder={selectedItems.length === 0 ? "חפש פריטים..." : ""}
+                    required
+                    fullWidth
+                  />
+                )}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                disableCloseOnSelect
+              />
             </Grid>
-
-            {/* פרטי פריט נבחר */}
-            {selectedItem && (
-              <Grid item xs={12}>
-                <Card variant="outlined" sx={{ mb: 2 }}>
-                  <CardContent>
-                    <Typography variant="h6" component="div" gutterBottom>
-                      {selectedItem.name}
-                    </Typography>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} sm={6}>
-                        <Typography variant="body2" color="text.secondary" gutterBottom>
-                          קטגוריה: {selectedItem.category}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          כמות כוללת: {selectedItem.quantity}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        {selectedItem.notes && (
-                          <Typography variant="body2" color="text.secondary">
-                            הערות: {selectedItem.notes}
-                          </Typography>
-                        )}
-                      </Grid>
-                    </Grid>
-                  </CardContent>
-                </Card>
-              </Grid>
-            )}
 
             {/* תאריכי הזמנה */}
             <Grid item xs={12} sm={6}>
-              <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={he}>
-                <DatePicker
-                  label="מתאריך"
-                  value={formData.start_date}
-                  onChange={(date) => {
-                    setFormData({
-                      ...formData,
-                      start_date: date,
-                      // אם תאריך סיום קודם לתאריך התחלה, עדכן אותו
-                      end_date: formData.end_date < date ? date : formData.end_date
-                    });
-                    setAvailabilityInfo(null); // איפוס מידע על זמינות
-                  }}
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      required: true,
-                    }
-                  }}
-                  disablePast
-                />
-              </LocalizationProvider>
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={he}>
-                <DatePicker
-                  label="עד תאריך"
-                  value={formData.end_date}
-                  onChange={(date) => {
-                    setFormData({
-                      ...formData,
-                      end_date: date
-                    });
-                    setAvailabilityInfo(null); // איפוס מידע על זמינות
-                  }}
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      required: true,
-                    }
-                  }}
-                  disablePast
-                  minDate={formData.start_date}
-                />
-              </LocalizationProvider>
+              <Card variant="outlined" sx={{ 
+                bgcolor: 'white', 
+                borderColor: '#e0e0e0',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column'
+              }}>
+                <CardContent>
+                  <Typography variant="h6" component="div" gutterBottom sx={{ fontWeight: 500 }}>
+                    תאריכי השאלה
+                  </Typography>
+                  <Box sx={{ mt: 2 }}>
+                    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={he}>
+                      <Stack spacing={3}>
+                        <DatePicker
+                          label="מתאריך"
+                          value={formData.start_date}
+                          onChange={(date) => {
+                            setFormData({
+                              ...formData,
+                              start_date: date,
+                              end_date: formData.end_date < date ? date : formData.end_date
+                            });
+                            setAvailabilityInfo(null);
+                          }}
+                          slotProps={{
+                            textField: {
+                              fullWidth: true,
+                              required: true,
+                              variant: 'outlined'
+                            }
+                          }}
+                          disablePast
+                        />
+                        <DatePicker
+                          label="עד תאריך"
+                          value={formData.end_date}
+                          onChange={(date) => {
+                            setFormData({
+                              ...formData,
+                              end_date: date
+                            });
+                            setAvailabilityInfo(null);
+                          }}
+                          slotProps={{
+                            textField: {
+                              fullWidth: true,
+                              required: true,
+                              variant: 'outlined'
+                            }
+                          }}
+                          disablePast
+                          minDate={formData.start_date}
+                        />
+                      </Stack>
+                    </LocalizationProvider>
+                  </Box>
+                </CardContent>
+              </Card>
             </Grid>
 
             {/* הסבר על הכמות בהזמנה מרובה */}
             <Grid item xs={12} sm={6}>
-              <Box
-                sx={{ 
-                  p: 2, 
-                  border: '1px solid rgba(0, 0, 0, 0.12)', 
-                  borderRadius: 1,
-                  bgcolor: 'background.paper',
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}
-              >
-                <Typography variant="body2" color="text.secondary">
-                  בהזמנה מרובה של פריטים, יוזמן פריט אחד מכל סוג שנבחר.
-                  <br />
-                  ניתן להזמין מספר פריטים מאותו סוג על ידי יצירת הזמנה נוספת.
-                </Typography>
-              </Box>
+              <Card variant="outlined" sx={{ 
+                bgcolor: 'white', 
+                borderColor: '#e0e0e0',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column'
+              }}>
+                <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                  <Typography variant="h6" component="div" gutterBottom sx={{ fontWeight: 500 }}>
+                    מידע על הזמנת פריטים מרובים
+                  </Typography>
+                  <Box sx={{ mt: 2, flexGrow: 1, display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      בהזמנה מרובה של פריטים, יוזמן פריט אחד מכל סוג שנבחר.
+                      <br /><br />
+                      ניתן להזמין מספר פריטים מאותו סוג על ידי יצירת הזמנה נוספת.
+                      <br /><br />
+                      פריטים שאינם זמינים בתאריכים המבוקשים יסומנו בהתאם.
+                    </Typography>
+                  </Box>
+                </CardContent>
+              </Card>
             </Grid>
 
             {/* הערות */}
@@ -424,17 +460,72 @@ function CreateReservation({ userId }) {
                   notes: e.target.value
                 })}
                 fullWidth
+                variant="outlined"
+                sx={{ bgcolor: 'white' }}
               />
             </Grid>
 
+            {/* רשימת פריטים נבחרים */}
+            {selectedItems.length > 0 && (
+              <Grid item xs={12}>
+                <Typography variant="h6" component="div" gutterBottom align="right" sx={{ fontWeight: 500, mt: 2 }}>
+                  פריטים נבחרים ({selectedItems.length})
+                </Typography>
+                <Box sx={{ 
+                  p: 2, 
+                  bgcolor: 'white', 
+                  borderRadius: '8px',
+                  border: '1px solid #e0e0e0'
+                }}>
+                  <Grid container spacing={2}>
+                    {selectedItems.map((item) => (
+                      <Grid item xs={12} sm={6} md={4} key={item.id}>
+                        <Card elevation={0} sx={{ 
+                          p: 1, 
+                          bgcolor: '#f3f6f9',
+                          border: '1px solid #e0e0e0',
+                          transition: 'all 0.2s',
+                          '&:hover': { boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }
+                        }}>
+                          <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
+                            <Typography variant="subtitle1" component="div" sx={{ fontWeight: 500 }}>
+                              {item.name}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              קטגוריה: {item.category}
+                            </Typography>
+                            {item.notes && (
+                              <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+                                הערות: {item.notes}
+                              </Typography>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Box>
+              </Grid>
+            )}
+
             {/* בדיקת זמינות */}
             <Grid item xs={12}>
+              <Divider sx={{ my: 2 }} />
               <Box display="flex" justifyContent="space-between" alignItems="center">
                 <Button
                   variant="outlined"
                   onClick={checkAvailability}
                   disabled={selectedItems.length === 0 || availabilityLoading}
-                  startIcon={availabilityLoading ? <CircularProgress size={20} /> : null}
+                  sx={{ 
+                    bgcolor: 'white',
+                    border: '1px solid #1E2875',
+                    color: '#1E2875',
+                    '&:hover': {
+                      bgcolor: '#f0f4ff',
+                      borderColor: '#1E2875',
+                    }
+                  }}
+                  startIcon={availabilityLoading ? <CircularProgress size={20} /> : <InfoIcon />}
                 >
                   בדוק זמינות פריטים
                 </Button>
@@ -444,40 +535,11 @@ function CreateReservation({ userId }) {
                     label={availabilityInfo.is_available ? 'כל הפריטים זמינים להזמנה' : 'חלק מהפריטים אינם זמינים'}
                     color={availabilityInfo.is_available ? 'success' : 'error'}
                     icon={availabilityInfo.is_available ? <InfoIcon /> : <WarningIcon />}
+                    sx={{ fontWeight: 500 }}
                   />
                 )}
               </Box>
             </Grid>
-            
-            {/* רשימת פריטים נבחרים */}
-            {selectedItems.length > 0 && (
-              <Grid item xs={12}>
-                <Typography variant="h6" component="div" gutterBottom align="right">
-                  פריטים נבחרים ({selectedItems.length})
-                </Typography>
-                <Grid container spacing={2}>
-                  {selectedItems.map((item) => (
-                    <Grid item xs={12} sm={6} md={4} key={item.id}>
-                      <Card variant="outlined">
-                        <CardContent>
-                          <Typography variant="h6" component="div">
-                            {item.name}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            קטגוריה: {item.category}
-                          </Typography>
-                          {item.notes && (
-                            <Typography variant="body2" color="text.secondary">
-                              הערות: {item.notes}
-                            </Typography>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  ))}
-                </Grid>
-              </Grid>
-            )}
 
             {/* כפתורי פעולה */}
             <Grid item xs={12}>
@@ -489,6 +551,12 @@ function CreateReservation({ userId }) {
                   color="primary"
                   disabled={!availabilityInfo?.is_available || submitLoading}
                   startIcon={submitLoading ? <CircularProgress size={20} /> : null}
+                  sx={{ 
+                    bgcolor: '#1E2875',
+                    '&:hover': {
+                      bgcolor: '#161d52',
+                    }
+                  }}
                 >
                   שלח בקשת הזמנה
                 </Button>
@@ -504,55 +572,104 @@ function CreateReservation({ userId }) {
         onClose={() => setShowExistingDialog(false)}
         maxWidth="md"
         fullWidth
+        PaperProps={{
+          elevation: 3,
+          sx: { borderRadius: '8px' }
+        }}
       >
-        <DialogTitle>הזמנות קיימות בתאריכים אלו</DialogTitle>
-        <DialogContent>
+        <DialogTitle sx={{ bgcolor: '#f5f5f5', borderBottom: '1px solid #e0e0e0' }}>
+          הזמנות קיימות בתאריכים אלו
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
           <DialogContentText>
             קיימות הזמנות אחרות לפריטים אלו בתאריכים המבוקשים:
           </DialogContentText>
           <Box sx={{ mt: 2 }}>
             {availabilityInfo?.existing_reservations?.map((res, index) => (
-              <Paper key={index} sx={{ p: 2, mb: 1 }}>
-                <Typography variant="subtitle1" gutterBottom>
-                  <strong>פריט: {res.item_name || 'לא צוין'}</strong>
+              <Paper key={index} sx={{ p: 2, mb: 2, border: '1px solid #e0e0e0', borderRadius: '8px' }}>
+                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 500 }}>
+                  פריט: {res.item_name || 'לא צוין'}
                 </Typography>
-                <Typography variant="body2">
-                  מתאריך: {res.start_date}<br />
-                  עד תאריך: {res.end_date}<br />
-                  כמות: {res.quantity}<br />
-                  סטודנט: {res.student_name}<br />
-                  סטטוס: <Chip 
-                    size="small" 
-                    label={res.status === 'approved' ? 'מאושר' : 'ממתין לאישור'} 
-                    color={res.status === 'approved' ? 'success' : 'warning'}
-                    sx={{ ml: 1 }} 
-                  />
-                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2">
+                      מתאריך: {res.start_date}<br />
+                      עד תאריך: {res.end_date}<br />
+                      כמות: {res.quantity}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2">
+                      סטודנט: {res.student_name}<br />
+                      סטטוס: <Chip 
+                        size="small" 
+                        label={res.status === 'approved' ? 'מאושר' : 'ממתין לאישור'} 
+                        color={res.status === 'approved' ? 'success' : 'warning'}
+                        sx={{ ml: 1 }} 
+                      />
+                    </Typography>
+                  </Grid>
+                </Grid>
               </Paper>
             ))}
           </Box>
           
           {/* סיכום זמינות */}
           {availabilityInfo?.items && availabilityInfo.items.length > 0 && (
-            <Box sx={{ mt: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
-              <Typography variant="h6" gutterBottom>
+            <Box sx={{ mt: 3, p: 3, bgcolor: '#f8f9fa', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
                 סיכום זמינות פריטים
               </Typography>
               <Divider sx={{ mb: 2 }} />
-              {availabilityInfo.items.map((item, index) => (
-                <Typography key={index} variant="body1" gutterBottom>
-                  {item.name}: {item.available_quantity > 0 ? (
-                    <Chip size="small" label="זמין" color="success" />
-                  ) : (
-                    <Chip size="small" label="לא זמין" color="error" />
-                  )}
-                </Typography>
-              ))}
+              <Grid container spacing={2}>
+                {availabilityInfo.items.map((item, index) => (
+                  <Grid item xs={12} sm={6} md={4} key={index}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center',
+                      p: 1,
+                      borderRadius: '4px',
+                      border: '1px solid',
+                      borderColor: item.available_quantity > 0 ? '#c8e6c9' : '#ffcdd2',
+                      bgcolor: item.available_quantity > 0 ? '#f1f8e9' : '#ffebee',
+                    }}>
+                      <Typography variant="body2" sx={{ flex: 1 }}>
+                        {item.name}
+                      </Typography>
+                      <Chip 
+                        size="small" 
+                        label={item.available_quantity > 0 ? 'זמין' : 'לא זמין'} 
+                        color={item.available_quantity > 0 ? 'success' : 'error'}
+                        sx={{ ml: 1 }} 
+                      />
+                    </Box>
+                  </Grid>
+                ))}
+              </Grid>
             </Box>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowExistingDialog(false)}>סגור</Button>
+        <DialogActions sx={{ p: 2, borderTop: '1px solid #e0e0e0' }}>
+          <Button 
+            onClick={() => setShowExistingDialog(false)}
+            variant="outlined"
+            sx={{ mr: 1 }}
+          >
+            סגור
+          </Button>
+          <Button 
+            onClick={() => setShowExistingDialog(false)}
+            variant="contained"
+            color="primary"
+            sx={{ 
+              bgcolor: '#1E2875',
+              '&:hover': {
+                bgcolor: '#161d52',
+              }
+            }}
+          >
+            הבנתי
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>
