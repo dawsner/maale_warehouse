@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 // קונפיגורציה בסיסית לבקשות Axios
-// כתובת השרת
-const API_URL = 'https://5100-91d245b0-607c-440f-ac35-1c784e2fea9f.sisko.replit.dev'; // מצביע לשרת Express
+// כתובת השרת - נשתמש בפורט 5100 ישירות
+const API_URL = 'http://localhost:5100';  // שרת ה-Express
 const axiosInstance = axios.create({
   baseURL: API_URL,
   headers: {
