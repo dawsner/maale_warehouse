@@ -1,9 +1,9 @@
 import axios from 'axios';
 
 // קונפיגורציה בסיסית לבקשות Axios
-// בסביבת Replit אנחנו צריכים לכוון ישירות לכתובת השרת
-// שימוש בכתובת יחסית בחיבור בין הקליינט לשרת
-const API_URL = 'http://0.0.0.0:5100';
+// בסביבת Replit עדיף להשתמש בנתיב יחסי, שיטפל אוטומטית במציאת הכתובת הנכונה
+// בכל סביבה באמצעות הוספת /api/ לתחילת הנתיב
+const API_URL = '';
 const axiosInstance = axios.create({
   baseURL: API_URL,
   headers: {
