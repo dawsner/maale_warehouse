@@ -37,6 +37,19 @@ export const inventoryAPI = {
       throw error;
     }
   },
+  
+  // קבלת כל פריטי המלאי - שם חלופי לאותה פונקציה לתאימות
+  getInventory: async () => {
+    try {
+      console.log('Fetching inventory from API via getInventory...');
+      const response = await axiosInstance.get('/api/inventory');
+      console.log('Inventory response received:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching inventory:', error);
+      throw error;
+    }
+  },
 
   // הוספת פריט חדש
   addItem: async (itemData) => {
