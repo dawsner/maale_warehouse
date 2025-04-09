@@ -175,33 +175,13 @@ function InventoryEnhanced() {
     try {
       setLoading(true);
       console.log('Trying to fetch inventory items...');
-      // נסה קודם לקרוא בעזרת getItems
-      let data;
-      try {
-        data = await inventoryAPI.getItems();
-        console.log('Inventory data received from getItems:', data);
-      } catch (itemsErr) {
-        console.warn('Failed to fetch with getItems, trying getInventory:', itemsErr);
-        data = await inventoryAPI.getInventory();
-        console.log('Inventory data received from getInventory:', data);
-      }
-      
-      // בדיקה שהנתונים תקינים
-      if (Array.isArray(data)) {
-        // אם התקבל מערך, אפשר להציגו
-        setItems(data);
-        setError('');
-        console.log(`Loaded ${data.length} inventory items successfully`);
-      } else {
-        // אם לא התקבל מערך, יתכן שחזרה שגיאה במבנה אחר
-        console.error('Invalid data format received:', data);
-        setError('פורמט הנתונים שהתקבל אינו תקין');
-        setItems([]);
-      }
+      const data = await inventoryAPI.getItems();
+      console.log('Inventory data received:', data);
+      setItems(data || []);
+      setError('');
     } catch (err) {
       console.error('Error fetching inventory:', err);
       setError('שגיאה בטעינת נתוני המלאי');
-      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -1116,46 +1096,23 @@ function InventoryEnhanced() {
 
   // דיאלוג הוספה/עריכת פריט
   const ItemDialog = () => (
-    <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth PaperProps={{
-        sx: {
-          borderRadius: '12px',
-          boxShadow: '0px 8px 24px rgba(55, 59, 92, 0.15)',
-          overflow: 'hidden'
-        }
-      }}>
+    <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
       <DialogTitle sx={{ 
-        borderBottom: '1px solid #e0e0e0', 
+        borderBottom: '1px solid #eaeaea', 
         pb: 2, 
-        pt: 3,
-        bgcolor: '#FFFFFF',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
+        bgcolor: '#f8f8f8',
       }}>
-        <Box>
-          <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', color: '#1E2875', fontSize: '1.25rem' }}>
-            {currentItem.id ? 'עריכת פריט' : 'הוספת פריט חדש'}
+        <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', color: '#1E2875' }}>
+          {currentItem.id ? 'עריכת פריט' : 'הוספת פריט חדש'}
+        </Typography>
+        {currentItem.id && (
+          <Typography variant="caption" display="block" sx={{ color: '#666' }}>
+            מזהה פריט: {currentItem.id}
           </Typography>
-          {currentItem.id && (
-            <Typography variant="caption" display="block" sx={{ color: '#666', mt: 0.5 }}>
-              <Chip 
-                label={`מזהה פריט: ${currentItem.id}`} 
-                size="small" 
-                variant="outlined" 
-                sx={{ borderRadius: '4px', height: '20px' }} 
-              />
-            </Typography>
-          )}
-        </Box>
-        <IconButton onClick={handleCloseDialog} size="small" sx={{ color: '#999' }}>
-          <CloseIcon fontSize="small" />
-        </IconButton>
+        )}
       </DialogTitle>
-      <DialogContent sx={{ p: 0, bgcolor: '#FFFFFF' }}>
-        <Box sx={{ 
-          borderBottom: '1px solid #e0e0e0',
-          bgcolor: '#F9FAFC'
-        }}>
+      <DialogContent sx={{ p: 0 }}>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs 
             value={tabValue} 
             onChange={handleTabChange} 
@@ -1169,51 +1126,18 @@ function InventoryEnhanced() {
               '& .MuiTab-root': {
                 fontWeight: 600,
                 fontSize: '0.9rem',
-                minHeight: '56px',
-                color: '#555',
-                '&.Mui-selected': {
-                  color: '#1E2875',
-                }
-              },
-              '& .MuiTabs-indicator': {
-                height: '3px',
-                borderRadius: '3px 3px 0 0'
               }
             }}
           >
-            <Tab 
-              label="פרטים בסיסיים" 
-              icon={<InfoIcon />} 
-              iconPosition="start" 
-              {...a11yProps(0)} 
-              sx={{ py: 2 }}
-            />
-            <Tab 
-              label="מידע על הזמנה" 
-              icon={<ShoppingCartIcon />} 
-              iconPosition="start" 
-              {...a11yProps(1)} 
-              sx={{ py: 2 }}
-            />
-            <Tab 
-              label="הוצאה והחזרה" 
-              icon={<AssignmentReturnIcon />} 
-              iconPosition="start" 
-              {...a11yProps(2)} 
-              sx={{ py: 2 }}
-            />
-            <Tab 
-              label="מידע נוסף" 
-              icon={<HistoryIcon />} 
-              iconPosition="start" 
-              {...a11yProps(3)} 
-              sx={{ py: 2 }}
-            />
+            <Tab label="פרטים בסיסיים" icon={<InfoIcon />} iconPosition="start" {...a11yProps(0)} />
+            <Tab label="מידע על הזמנה" icon={<ShoppingCartIcon />} iconPosition="start" {...a11yProps(1)} />
+            <Tab label="הוצאה והחזרה" icon={<AssignmentReturnIcon />} iconPosition="start" {...a11yProps(2)} />
+            <Tab label="מידע נוסף" icon={<HistoryIcon />} iconPosition="start" {...a11yProps(3)} />
           </Tabs>
         </Box>
         
         <TabPanel value={tabValue} index={0}>
-          <Grid container spacing={3}>
+          <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
               <TextField
                 label="שם הפריט *"
@@ -1224,18 +1148,7 @@ function InventoryEnhanced() {
                 required
                 error={!currentItem.name}
                 helperText={!currentItem.name ? "שדה חובה" : ""}
-                sx={{ 
-                  direction: 'rtl',
-                  '& .MuiInputBase-root': {
-                    borderRadius: '8px',
-                  },
-                  '& .MuiOutlinedInput-input': {
-                    fontWeight: 500
-                  }
-                }}
-                InputProps={{
-                  startAdornment: <InputAdornment position="start" sx={{ mr: 1, color: '#999' }}><InventoryIcon /></InputAdornment>,
-                }}
+                sx={{ direction: 'rtl' }}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -1244,12 +1157,6 @@ function InventoryEnhanced() {
                 options={categories}
                 inputValue={currentItem.category || ''}
                 onInputChange={handleCategoryChange}
-                disableClearable
-                sx={{
-                  '& .MuiInputBase-root': {
-                    borderRadius: '8px',
-                  }
-                }}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -1259,17 +1166,6 @@ function InventoryEnhanced() {
                     error={!currentItem.category}
                     helperText={!currentItem.category ? "שדה חובה" : ""}
                     sx={{ direction: 'rtl' }}
-                    InputProps={{
-                      ...params.InputProps,
-                      startAdornment: (
-                        <>
-                          <InputAdornment position="start" sx={{ mr: 1, color: '#999' }}>
-                            <CategoryIcon />
-                          </InputAdornment>
-                          {params.InputProps.startAdornment}
-                        </>
-                      ),
-                    }}
                   />
                 )}
               />
@@ -1283,44 +1179,23 @@ function InventoryEnhanced() {
                 onChange={handleInputChange}
                 fullWidth
                 required
-                InputProps={{ 
-                  inputProps: { min: 0 },
-                  startAdornment: <InputAdornment position="start" sx={{ mr: 1, color: '#999' }}>#</InputAdornment>,
-                }}
-                sx={{ 
-                  direction: 'rtl',
-                  '& .MuiInputBase-root': {
-                    borderRadius: '8px'
-                  }
-                }}
+                InputProps={{ inputProps: { min: 0 } }}
+                sx={{ direction: 'rtl' }}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 2,
-                  borderRadius: '8px',
-                  border: '1px solid #e0e0e0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  minHeight: '56px',
-                  bgcolor: currentItem.is_available ? '#ecf3fe' : '#f9f9f9'
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <VisibilityIcon color={currentItem.is_available ? "primary" : "disabled"} />
-                  <Typography fontWeight={500}>זמין במערכת</Typography>
-                </Box>
-                <Switch
-                  checked={currentItem.is_available || false}
-                  onChange={(e) => setCurrentItem({...currentItem, is_available: e.target.checked})}
-                  name="is_available"
-                  color="primary"
-                  edge="end"
-                />
-              </Paper>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={currentItem.is_available || false}
+                    onChange={(e) => setCurrentItem({...currentItem, is_available: e.target.checked})}
+                    name="is_available"
+                    color="success"
+                  />
+                }
+                label="זמין במערכת"
+                sx={{ direction: 'rtl' }}
+              />
             </Grid>
             <Grid item xs={12}>
               <TextField
@@ -1331,87 +1206,43 @@ function InventoryEnhanced() {
                 fullWidth
                 multiline
                 rows={3}
-                sx={{ 
-                  direction: 'rtl',
-                  '& .MuiInputBase-root': {
-                    borderRadius: '8px'
-                  }
-                }}
-                placeholder="הוסף הערות כלליות לגבי הפריט"
+                sx={{ direction: 'rtl' }}
               />
             </Grid>
           </Grid>
         </TabPanel>
         
         <TabPanel value={tabValue} index={1}>
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 2.5,
-                  borderRadius: '8px',
-                  border: '1px solid #e0e0e0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  bgcolor: currentItem.ordered ? '#fff8e1' : '#f9f9f9'
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <ShoppingCartIcon color={currentItem.ordered ? "warning" : "disabled"} />
-                  <Box>
-                    <Typography fontWeight={500}>סטטוס הזמנה</Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                      {currentItem.ordered ? 'פריט הוזמן' : 'פריט לא הוזמן'}
-                    </Typography>
-                  </Box>
-                </Box>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={currentItem.ordered || false}
-                      onChange={handleInputChange}
-                      name="ordered"
-                      color="warning"
-                      sx={{
-                        '&.Mui-checked': {
-                          color: '#f59e0b',
-                        }
-                      }}
-                    />
-                  }
-                  label=""
-                  sx={{ m: 0 }}
-                />
-              </Paper>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={currentItem.ordered || false}
+                    onChange={handleInputChange}
+                    name="ordered"
+                    color="primary"
+                  />
+                }
+                label="הוזמן"
+                sx={{ direction: 'rtl' }}
+              />
             </Grid>
             
             <Grid item xs={12}>
               <TextField
-                label="הערות על ההזמנה"
+                label="הערות על ההזמנה (מחסן באדום. סטודנט בכחול)"
                 name="order_notes"
                 value={currentItem.order_notes || ''}
                 onChange={handleInputChange}
                 fullWidth
                 multiline
                 rows={3}
-                sx={{ 
-                  direction: 'rtl',
-                  '& .MuiInputBase-root': {
-                    borderRadius: '8px'
-                  }
-                }}
+                sx={{ direction: 'rtl' }}
                 placeholder="הערות המחסן באדום, הערות סטודנט בכחול"
-                helperText={
-                  <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                    <InfoIcon fontSize="small" sx={{ color: '#777', fontSize: '1rem' }} />
-                    <Typography variant="caption">הערות שמתחילות עם 'מחסן:' יוצגו באדום, הערות שמתחילות עם 'סטודנט:' יוצגו בכחול</Typography>
-                  </Box>
-                }
+                helperText="הערות שמתחילות עם 'מחסן' יוצגו באדום, הערות שמתחילות עם 'סטודנט' יוצגו בכחול"
               />
             </Grid>
-            
             <Grid item xs={12} sm={6}>
               <TextField
                 label="מחיר ליחידה"
@@ -1423,12 +1254,7 @@ function InventoryEnhanced() {
                 InputProps={{
                   startAdornment: <InputAdornment position="start">₪</InputAdornment>,
                 }}
-                sx={{ 
-                  direction: 'rtl',
-                  '& .MuiInputBase-root': {
-                    borderRadius: '8px'
-                  }
-                }}
+                sx={{ direction: 'rtl' }}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -1443,19 +1269,8 @@ function InventoryEnhanced() {
                   startAdornment: <InputAdornment position="start">₪</InputAdornment>,
                   readOnly: true
                 }}
-                sx={{ 
-                  direction: 'rtl',
-                  '& .MuiInputBase-root': {
-                    borderRadius: '8px',
-                    bgcolor: '#f9f9f9'
-                  }
-                }}
-                helperText={
-                  <Typography variant="caption" display="flex" alignItems="center" gap={0.5}>
-                    <InfoIcon fontSize="small" sx={{ color: '#777', fontSize: '1rem' }} />
-                    מחושב אוטומטית (מחיר ליחידה × כמות)
-                  </Typography>
-                }
+                sx={{ direction: 'rtl' }}
+                helperText="מחושב אוטומטית (מחיר ליחידה × כמות)"
               />
             </Grid>
           </Grid>
@@ -1464,18 +1279,8 @@ function InventoryEnhanced() {
         <TabPanel value={tabValue} index={2}>
           <Grid container spacing={3}>
             <Grid item xs={12}>
-              <Box sx={{ 
-                mb: 2, 
-                p: 2, 
-                bgcolor: '#f7f9fc', 
-                border: '1px solid #e5e9f2', 
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1.5
-              }}>
-                <InfoIcon color="info" sx={{ fontSize: '1.25rem' }} />
-                <Typography variant="body2" color="text.secondary" fontWeight={500}>
+              <Box sx={{ mb: 2, p: 2, bgcolor: '#f9f9f9', border: '1px solid #eee', borderRadius: 1 }}>
+                <Typography variant="body2" color="text.secondary">
                   פרטי מצב הפריט - מעקב אחר תהליך ההשאלה וההחזרה
                 </Typography>
               </Box>
@@ -1485,50 +1290,29 @@ function InventoryEnhanced() {
               <Paper 
                 elevation={0} 
                 sx={{ 
-                  p: 2.5, 
+                  p: 2, 
                   textAlign: 'center', 
-                  borderRadius: '8px',
-                  border: '1px solid',
-                  borderColor: currentItem.checked_out ? '#ffcdd2' : '#e0e0e0',
-                  bgcolor: currentItem.checked_out ? '#fff5f5' : '#fafafa',
-                  transition: 'all 0.2s ease',
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 1,
-                  cursor: 'pointer',
-                  '&:hover': {
-                    bgcolor: currentItem.checked_out ? '#ffebee' : '#f5f5f5',
-                  }
+                  borderRadius: 2,
+                  border: '1px solid #e0e0e0',
+                  bgcolor: currentItem.checked_out ? '#ffebee' : '#fafafa'
                 }}
-                onClick={() => setCurrentItem({...currentItem, checked_out: !currentItem.checked_out})}
               >
-                <Box 
-                  sx={{ 
-                    width: 48, 
-                    height: 48, 
-                    borderRadius: '50%', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    bgcolor: currentItem.checked_out ? '#ffebee' : '#f0f0f0',
-                    color: currentItem.checked_out ? '#d32f2f' : '#bdbdbd',
-                    mb: 1
-                  }}
-                >
-                  <LocalShippingIcon fontSize="medium" />
-                </Box>
-                <Typography fontWeight={600} color={currentItem.checked_out ? '#d32f2f' : 'text.secondary'}>
-                  יצא מהמחסן
-                </Typography>
-                <Checkbox
-                  checked={currentItem.checked_out || false}
-                  onChange={handleInputChange}
-                  name="checked_out"
-                  color="error"
-                  sx={{ p: 0.5, mt: 1 }}
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={currentItem.checked_out || false}
+                      onChange={handleInputChange}
+                      name="checked_out"
+                      color="error"
+                    />
+                  }
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <LocalShippingIcon color={currentItem.checked_out ? "error" : "disabled"} />
+                      <Typography fontWeight={currentItem.checked_out ? 'bold' : 'normal'}>יצא</Typography>
+                    </Box>
+                  }
+                  sx={{ direction: 'rtl' }}
                 />
               </Paper>
             </Grid>
@@ -1537,50 +1321,29 @@ function InventoryEnhanced() {
               <Paper 
                 elevation={0} 
                 sx={{ 
-                  p: 2.5, 
+                  p: 2, 
                   textAlign: 'center', 
-                  borderRadius: '8px',
-                  border: '1px solid',
-                  borderColor: currentItem.checked ? '#c8e6c9' : '#e0e0e0',
-                  bgcolor: currentItem.checked ? '#f5fbf5' : '#fafafa',
-                  transition: 'all 0.2s ease',
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 1,
-                  cursor: 'pointer',
-                  '&:hover': {
-                    bgcolor: currentItem.checked ? '#edf7ed' : '#f5f5f5',
-                  }
+                  borderRadius: 2,
+                  border: '1px solid #e0e0e0',
+                  bgcolor: currentItem.checked ? '#e8f5e9' : '#fafafa'
                 }}
-                onClick={() => setCurrentItem({...currentItem, checked: !currentItem.checked})}
               >
-                <Box 
-                  sx={{ 
-                    width: 48, 
-                    height: 48, 
-                    borderRadius: '50%', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    bgcolor: currentItem.checked ? '#e8f5e9' : '#f0f0f0',
-                    color: currentItem.checked ? '#2e7d32' : '#bdbdbd',
-                    mb: 1
-                  }}
-                >
-                  <CheckBoxIcon fontSize="medium" />
-                </Box>
-                <Typography fontWeight={600} color={currentItem.checked ? '#2e7d32' : 'text.secondary'}>
-                  נבדק
-                </Typography>
-                <Checkbox
-                  checked={currentItem.checked || false}
-                  onChange={handleInputChange}
-                  name="checked"
-                  color="success"
-                  sx={{ p: 0.5, mt: 1 }}
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={currentItem.checked || false}
+                      onChange={handleInputChange}
+                      name="checked"
+                      color="success"
+                    />
+                  }
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CheckBoxIcon color={currentItem.checked ? "success" : "disabled"} />
+                      <Typography fontWeight={currentItem.checked ? 'bold' : 'normal'}>נבדק</Typography>
+                    </Box>
+                  }
+                  sx={{ direction: 'rtl' }}
                 />
               </Paper>
             </Grid>
@@ -1589,50 +1352,29 @@ function InventoryEnhanced() {
               <Paper 
                 elevation={0} 
                 sx={{ 
-                  p: 2.5, 
+                  p: 2, 
                   textAlign: 'center', 
-                  borderRadius: '8px',
-                  border: '1px solid',
-                  borderColor: currentItem.returned ? '#bbdefb' : '#e0e0e0',
-                  bgcolor: currentItem.returned ? '#f5f9ff' : '#fafafa',
-                  transition: 'all 0.2s ease',
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 1,
-                  cursor: 'pointer',
-                  '&:hover': {
-                    bgcolor: currentItem.returned ? '#e3f2fd' : '#f5f5f5',
-                  }
+                  borderRadius: 2,
+                  border: '1px solid #e0e0e0',
+                  bgcolor: currentItem.returned ? '#e3f2fd' : '#fafafa'
                 }}
-                onClick={() => setCurrentItem({...currentItem, returned: !currentItem.returned})}
               >
-                <Box 
-                  sx={{ 
-                    width: 48, 
-                    height: 48, 
-                    borderRadius: '50%', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    bgcolor: currentItem.returned ? '#e3f2fd' : '#f0f0f0',
-                    color: currentItem.returned ? '#1565c0' : '#bdbdbd',
-                    mb: 1
-                  }}
-                >
-                  <AssignmentReturnIcon fontSize="medium" />
-                </Box>
-                <Typography fontWeight={600} color={currentItem.returned ? '#1565c0' : 'text.secondary'}>
-                  חזר למחסן
-                </Typography>
-                <Checkbox
-                  checked={currentItem.returned || false}
-                  onChange={handleInputChange}
-                  name="returned"
-                  color="primary"
-                  sx={{ p: 0.5, mt: 1 }}
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={currentItem.returned || false}
+                      onChange={handleInputChange}
+                      name="returned"
+                      color="primary"
+                    />
+                  }
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <AssignmentReturnIcon color={currentItem.returned ? "primary" : "disabled"} />
+                      <Typography fontWeight={currentItem.returned ? 'bold' : 'normal'}>חזר</Typography>
+                    </Box>
+                  }
+                  sx={{ direction: 'rtl' }}
                 />
               </Paper>
             </Grid>
@@ -1646,36 +1388,7 @@ function InventoryEnhanced() {
                 fullWidth
                 multiline
                 rows={3}
-                sx={{ 
-                  direction: 'rtl',
-                  '& .MuiInputBase-root': {
-                    borderRadius: '8px',
-                    borderColor: currentItem.checked_out ? '#ffcdd2' : undefined,
-                    '&.Mui-focused': {
-                      borderColor: currentItem.checked_out ? '#ef5350' : undefined,
-                    }
-                  },
-                  ...(currentItem.checked_out && {
-                    '& .MuiOutlinedInput-root': {
-                      '& fieldset': {
-                        borderColor: '#ffcdd2',
-                      },
-                      '&:hover fieldset': {
-                        borderColor: '#ef9a9a',
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#ef5350',
-                      },
-                    }
-                  })
-                }}
-                InputProps={{
-                  startAdornment: currentItem.checked_out ? (
-                    <InputAdornment position="start">
-                      <LocalShippingIcon color="error" sx={{ mr: 1 }} />
-                    </InputAdornment>
-                  ) : undefined
-                }}
+                sx={{ direction: 'rtl' }}
               />
             </Grid>
             <Grid item xs={12}>
@@ -1687,63 +1400,19 @@ function InventoryEnhanced() {
                 fullWidth
                 multiline
                 rows={3}
-                sx={{ 
-                  direction: 'rtl',
-                  '& .MuiInputBase-root': {
-                    borderRadius: '8px',
-                    borderColor: currentItem.returned ? '#bbdefb' : undefined,
-                    '&.Mui-focused': {
-                      borderColor: currentItem.returned ? '#42a5f5' : undefined,
-                    }
-                  },
-                  ...(currentItem.returned && {
-                    '& .MuiOutlinedInput-root': {
-                      '& fieldset': {
-                        borderColor: '#bbdefb',
-                      },
-                      '&:hover fieldset': {
-                        borderColor: '#90caf9',
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#42a5f5',
-                      },
-                    }
-                  })
-                }}
-                InputProps={{
-                  startAdornment: currentItem.returned ? (
-                    <InputAdornment position="start">
-                      <AssignmentReturnIcon color="primary" sx={{ mr: 1 }} />
-                    </InputAdornment>
-                  ) : undefined
-                }}
+                sx={{ direction: 'rtl' }}
               />
             </Grid>
           </Grid>
         </TabPanel>
         
         <TabPanel value={tabValue} index={3}>
-          <Grid container spacing={3}>
+          <Grid container spacing={2}>
             <Grid item xs={12}>
-              <Box sx={{ 
-                mb: 3, 
-                p: 2.5,
-                bgcolor: '#f8f9fa', 
-                border: '1px solid #e0e0e0', 
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 2
-              }}>
-                <DashboardIcon color="action" sx={{ fontSize: '2rem' }} />
-                <Box>
-                  <Typography variant="subtitle1" fontWeight={600} color="#373B5C">
-                    פרטי צוות הפקה
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    מידע נוסף שמתועד עבור הציוד והשימוש בו
-                  </Typography>
-                </Box>
+              <Box sx={{ mb: 2, p: 2, bgcolor: '#f9f9f9', border: '1px solid #eee', borderRadius: 1 }}>
+                <Typography variant="body2" color="text.secondary">
+                  פרטי צוות הפקה ומידע נוסף שמתועד עבור הציוד
+                </Typography>
               </Box>
             </Grid>
             
@@ -1754,13 +1423,7 @@ function InventoryEnhanced() {
                 value={currentItem.director || ''}
                 onChange={handleInputChange}
                 fullWidth
-                sx={{ 
-                  direction: 'rtl',
-                  '& .MuiInputBase-root': {
-                    borderRadius: '8px'
-                  }
-                }}
-                placeholder="שם הבמאית"
+                sx={{ direction: 'rtl' }}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -1770,13 +1433,7 @@ function InventoryEnhanced() {
                 value={currentItem.producer || ''}
                 onChange={handleInputChange}
                 fullWidth
-                sx={{ 
-                  direction: 'rtl',
-                  '& .MuiInputBase-root': {
-                    borderRadius: '8px'
-                  }
-                }}
-                placeholder="שם המפיקה"
+                sx={{ direction: 'rtl' }}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -1786,13 +1443,7 @@ function InventoryEnhanced() {
                 value={currentItem.photographer || ''}
                 onChange={handleInputChange}
                 fullWidth
-                sx={{ 
-                  direction: 'rtl',
-                  '& .MuiInputBase-root': {
-                    borderRadius: '8px'
-                  }
-                }}
-                placeholder="שם הצלמת"
+                sx={{ direction: 'rtl' }}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -1802,59 +1453,25 @@ function InventoryEnhanced() {
                 value={currentItem.unnnamed_11 || ''}
                 onChange={handleInputChange}
                 fullWidth
-                sx={{ 
-                  direction: 'rtl',
-                  '& .MuiInputBase-root': {
-                    borderRadius: '8px'
-                  }
-                }}
+                sx={{ direction: 'rtl' }}
               />
             </Grid>
-            
             <Grid item xs={12}>
-              <Divider sx={{ my: 1 }} />
-            </Grid>
-            
-            <Grid item xs={12}>
-              <Paper 
-                elevation={0} 
-                sx={{ 
-                  p: 2, 
-                  borderRadius: '8px',
-                  border: '1px dashed #cfd8dc',
-                  bgcolor: '#f5f7f9'
-                }}
-              >
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  קטגוריה מקורית (מהאקסל)
-                </Typography>
-                <Typography variant="body2" fontWeight={500} color="text.primary">
-                  {currentItem.category_original || 'לא צוינה קטגוריה מקורית'}
-                </Typography>
-              </Paper>
+              <TextField
+                label="קטגוריה מקורית (מהאקסל)"
+                name="category_original"
+                value={currentItem.category_original || ''}
+                onChange={handleInputChange}
+                fullWidth
+                disabled
+                sx={{ direction: 'rtl' }}
+              />
             </Grid>
           </Grid>
         </TabPanel>
       </DialogContent>
-      <DialogActions sx={{ 
-        px: 3, 
-        py: 2.5, 
-        borderTop: '1px solid #eaeaea', 
-        bgcolor: '#f8f9fa',
-        justifyContent: 'space-between'
-      }}>
-        <Button 
-          onClick={handleCloseDialog} 
-          variant="outlined"
-          color="inherit"
-          startIcon={<CloseIcon />}
-          sx={{
-            borderRadius: '8px',
-            fontWeight: 600,
-            textTransform: 'none',
-            px: 3
-          }}
-        >
+      <DialogActions sx={{ px: 3, py: 2, borderTop: '1px solid #eaeaea', bgcolor: '#f8f8f8' }}>
+        <Button onClick={handleCloseDialog} color="inherit">
           ביטול
         </Button>
         <Button 
@@ -1863,17 +1480,6 @@ function InventoryEnhanced() {
           color="primary"
           startIcon={<SaveIcon />}
           disabled={!currentItem.name || !currentItem.category}
-          sx={{
-            borderRadius: '8px',
-            boxShadow: '0 3px 10px rgba(30, 40, 117, 0.15)',
-            fontWeight: 600,
-            textTransform: 'none',
-            px: 4,
-            py: 1.25,
-            '&:hover': {
-              boxShadow: '0 6px 15px rgba(30, 40, 117, 0.2)',
-            }
-          }}
         >
           {currentItem.id ? 'עדכון פריט' : 'הוספת פריט'}
         </Button>

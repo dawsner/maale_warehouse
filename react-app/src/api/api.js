@@ -1,18 +1,14 @@
 import axios from 'axios';
 
 // קונפיגורציה בסיסית לבקשות Axios
-// בסביבת Replit עדיף להשתמש בנתיב יחסי, שיטפל אוטומטית במציאת הכתובת הנכונה
-// בכל סביבה באמצעות הוספת /api/ לתחילת הנתיב
-const API_URL = '';
+// מכיוון שהוספנו הגדרת proxy בקובץ package.json, ניתן להשתמש בנתיבים יחסיים
+// ובקשות בפורמט /api/* יועברו אוטומטית לשרת Express
+const API_URL = '';  // נתיב יחסי - נסמוך על הגדרת ה-proxy
 const axiosInstance = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  // אפשר לקבל תשובות בעבריד עם תווים מיוחדים
-  responseEncoding: 'utf8',
-  // הגדלת זמן המתנה לשרת
-  timeout: 10000,
 });
 
 // הוספת טוקן אוטומטית לכל הבקשות אם קיים

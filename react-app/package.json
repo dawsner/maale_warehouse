@@ -24,11 +24,10 @@
     "start": "PORT=5000 BROWSER=none HOST=0.0.0.0 WDS_SOCKET_HOST=0.0.0.0 react-scripts start",
     "build": "react-scripts build",
     "server": "node server/server.js",
-    "server-only": "node server/server.js",
-    "dev": "npm run server-only",
+    "dev": "concurrently \"npm run server\" \"npm run start\"",
     "eject": "react-scripts eject"
   },
-  "proxy": "http://127.0.0.1:5100",
+  "proxy": "http://localhost:5100",
   "eslintConfig": {
     "extends": [
       "react-app"
