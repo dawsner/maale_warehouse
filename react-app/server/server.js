@@ -47,44 +47,98 @@ function runPythonScript(scriptPath, args = [], inputData = null) {
     let dataString = '';
     let errorString = '';
 
+    // הגבלת זמן ריצה
+    const timeoutMs = 30000; // 30 שניות
+    const timeoutId = setTimeout(() => {
+      console.error(`Python script timeout after ${timeoutMs/1000} seconds: ${scriptPath}`);
+      pythonProcess.kill();
+      reject(new Error(`Script execution timed out after ${timeoutMs/1000} seconds`));
+    }, timeoutMs);
+
     // אם יש נתוני קלט, נשלח אותם לסקריפט
     if (inputData) {
-      pythonProcess.stdin.write(JSON.stringify(inputData));
-      pythonProcess.stdin.end();
+      try {
+        pythonProcess.stdin.write(JSON.stringify(inputData));
+        pythonProcess.stdin.end();
+      } catch (inputError) {
+        clearTimeout(timeoutId);
+        console.error(`Error sending input to Python script: ${inputError}`);
+        return reject(new Error(`Failed to send input to script: ${inputError.message}`));
+      }
     }
 
     pythonProcess.stdout.on('data', (data) => {
-      dataString += data.toString();
-      console.log(`Python stdout: ${data.toString().substring(0, 150)}${data.toString().length > 150 ? '...' : ''}`);
+      try {
+        const chunk = data.toString('utf8');
+        dataString += chunk;
+        console.log(`Python stdout: ${chunk.substring(0, 150)}${chunk.length > 150 ? '...' : ''}`);
+      } catch (stdoutError) {
+        console.error(`Error processing stdout: ${stdoutError}`);
+      }
     });
 
     pythonProcess.stderr.on('data', (data) => {
-      errorString += data.toString();
-      console.error(`Python stderr: ${data.toString()}`);
+      try {
+        const chunk = data.toString('utf8');
+        errorString += chunk;
+        console.error(`Python stderr: ${chunk}`);
+      } catch (stderrError) {
+        console.error(`Error processing stderr: ${stderrError}`);
+      }
     });
 
     pythonProcess.on('close', (code) => {
+      clearTimeout(timeoutId);
       console.log(`Python script exited with code ${code}`);
+      
       if (code !== 0) {
         console.error(`Python script error (${code}): ${errorString}`);
         return reject(new Error(errorString || 'Python script error'));
       }
 
+      // אם אין תוכן פלט, מחזירים מערך ריק
+      if (!dataString || !dataString.trim()) {
+        console.log('No output from Python script, returning empty array');
+        return resolve([]);
+      }
+
       try {
-        console.log(`Trying to parse JSON: ${dataString.substring(0, 150)}${dataString.length > 150 ? '...' : ''}`);
+        // בדיקה אם הפלט נראה כמו מערך
+        if (dataString.trim().startsWith('[') && dataString.trim().endsWith(']')) {
+          console.log(`Trying to parse as array: ${dataString.substring(0, 150)}${dataString.length > 150 ? '...' : ''}`);
+          const result = JSON.parse(dataString);
+          console.log(`Successfully parsed array with ${result.length} items`);
+          return resolve(result);
+        }
+        
+        // בדיקה אם הפלט נראה כמו אובייקט JSON
+        if (dataString.trim().startsWith('{') && dataString.trim().endsWith('}')) {
+          console.log(`Trying to parse as object: ${dataString.substring(0, 150)}${dataString.length > 150 ? '...' : ''}`);
+          const result = JSON.parse(dataString);
+          console.log(`Successfully parsed object with keys: ${Object.keys(result).join(', ')}`);
+          return resolve(result);
+        }
+        
+        // ניסיון אחרון לפענח את כל התוכן כ-JSON
+        console.log(`Trying to parse entire content: ${dataString.substring(0, 150)}${dataString.length > 150 ? '...' : ''}`);
         const result = JSON.parse(dataString);
         console.log(`Successfully parsed JSON. Type: ${Array.isArray(result) ? 'Array' : typeof result}`);
         resolve(result);
-      } catch (e) {
-        console.error(`Error parsing JSON: ${e.message}`);
-        if (dataString.trim()) {
-          console.log(`Returning raw string (${dataString.length} chars)`);
-          resolve(dataString.trim());
-        } else {
-          console.log('Returning success object');
-          resolve({ success: true });
-        }
+      } catch (jsonError) {
+        console.error(`Error parsing JSON: ${jsonError.message}`);
+        
+        // אם לא הצלחנו לפענח את התוכן כ-JSON, מחזירים מערך עם בודד עם המחרוזת
+        // זה ימנע שבירת האפליקציה
+        console.log(`Returning empty array to prevent UI crash`);
+        resolve([]);
       }
+    });
+
+    // טיפול בשגיאות בהפעלת התהליך
+    pythonProcess.on('error', (err) => {
+      clearTimeout(timeoutId);
+      console.error(`Error running Python process: ${err}`);
+      reject(new Error(`Failed to run script: ${err.message}`));
     });
   });
 }
@@ -142,11 +196,56 @@ app.get('/api/auth/me', async (req, res) => {
 app.get('/api/inventory', async (req, res) => {
   try {
     console.log('Received request for inventory data');
-    const result = await runPythonScript(
-      path.join(__dirname, '../api/get_inventory.py')
-    );
-    console.log('Inventory API result:', typeof result === 'string' ? 'Text response' : (Array.isArray(result) ? `Array with ${result.length} items` : typeof result));
-    res.json(result);
+    try {
+      const result = await runPythonScript(
+        path.join(__dirname, '../api/get_inventory.py')
+      );
+      
+      // בדיקה שהתוצאה היא מערך
+      if (Array.isArray(result)) {
+        // אם התוצאה היא מערך, מחזירים אותה כ-JSON
+        console.log(`Inventory API result: Array with ${result.length} items`);
+        return res.json(result);
+      } else if (typeof result === 'object' && result !== null) {
+        // אם התוצאה היא אובייקט אחר, בודקים אם זו שגיאה
+        if (result.error) {
+          console.error('Error from inventory API:', result.message);
+          return res.status(500).json({ 
+            message: 'שגיאה בקבלת נתוני מלאי: ' + result.message,
+            error: true 
+          });
+        }
+        // אחרת מחזירים את האובייקט
+        console.log('Inventory API result: Object response');
+        return res.json(result);
+      } else if (typeof result === 'string') {
+        // אם התוצאה היא מחרוזת, מנסים לפענח אותה כ-JSON
+        console.log('Inventory API result: String response, trying to parse as JSON');
+        try {
+          const parsedResult = JSON.parse(result);
+          return res.json(parsedResult);
+        } catch (parseError) {
+          console.error('Failed to parse inventory result as JSON:', parseError);
+          return res.status(500).json({ 
+            message: 'שגיאה בפענוח תשובת API המלאי', 
+            error: true 
+          });
+        }
+      }
+      
+      // אם הגענו לכאן, התוצאה היא בפורמט לא צפוי
+      console.error('Unexpected inventory API result format:', typeof result);
+      return res.status(500).json({ 
+        message: 'פורמט לא צפוי מ-API המלאי', 
+        error: true 
+      });
+    } catch (error) {
+      console.error('Error processing inventory request:', error);
+      res.status(500).json({ 
+        message: 'שגיאה בקבלת נתוני מלאי: ' + error.message,
+        error: true 
+      });
+    }
   } catch (error) {
     console.error('Error fetching inventory:', error);
     res.status(500).json({ message: 'שגיאה בקבלת נתוני מלאי: ' + error.message });
