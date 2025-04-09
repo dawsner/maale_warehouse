@@ -175,13 +175,33 @@ function InventoryEnhanced() {
     try {
       setLoading(true);
       console.log('Trying to fetch inventory items...');
-      const data = await inventoryAPI.getItems();
-      console.log('Inventory data received:', data);
-      setItems(data || []);
-      setError('');
+      // נסה קודם לקרוא בעזרת getItems
+      let data;
+      try {
+        data = await inventoryAPI.getItems();
+        console.log('Inventory data received from getItems:', data);
+      } catch (itemsErr) {
+        console.warn('Failed to fetch with getItems, trying getInventory:', itemsErr);
+        data = await inventoryAPI.getInventory();
+        console.log('Inventory data received from getInventory:', data);
+      }
+      
+      // בדיקה שהנתונים תקינים
+      if (Array.isArray(data)) {
+        // אם התקבל מערך, אפשר להציגו
+        setItems(data);
+        setError('');
+        console.log(`Loaded ${data.length} inventory items successfully`);
+      } else {
+        // אם לא התקבל מערך, יתכן שחזרה שגיאה במבנה אחר
+        console.error('Invalid data format received:', data);
+        setError('פורמט הנתונים שהתקבל אינו תקין');
+        setItems([]);
+      }
     } catch (err) {
       console.error('Error fetching inventory:', err);
       setError('שגיאה בטעינת נתוני המלאי');
+      setItems([]);
     } finally {
       setLoading(false);
     }

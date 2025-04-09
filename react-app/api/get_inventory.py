@@ -27,12 +27,28 @@ def main():
         
         # שליפת כל פריטי המלאי עם כל העמודות
         cursor.execute('''
-            SELECT id, name, category, quantity, available, notes, 
-                   COALESCE(is_available, TRUE) as is_available,
-                   category_original, order_notes, ordered, checked_out, 
-                   checked, checkout_notes, returned, return_notes, 
-                   price_per_unit, total_price, unnnamed_11, 
-                   director, producer, photographer
+            SELECT 
+                id, 
+                name, 
+                category, 
+                quantity, 
+                COALESCE(available, quantity) as available, 
+                notes, 
+                COALESCE(is_available, TRUE) as is_available,
+                category_original, 
+                COALESCE(order_notes, '') as order_notes, 
+                COALESCE(ordered, FALSE) as ordered, 
+                COALESCE(checked_out, FALSE) as checked_out, 
+                COALESCE(checked, FALSE) as checked, 
+                COALESCE(checkout_notes, '') as checkout_notes, 
+                COALESCE(returned, FALSE) as returned, 
+                COALESCE(return_notes, '') as return_notes, 
+                COALESCE(price_per_unit, 0) as price_per_unit, 
+                COALESCE(total_price, 0) as total_price, 
+                COALESCE(unnnamed_11, '') as unnnamed_11, 
+                COALESCE(director, '') as director, 
+                COALESCE(producer, '') as producer, 
+                COALESCE(photographer, '') as photographer
             FROM items 
             ORDER BY category, name
         ''')
