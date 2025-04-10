@@ -27,13 +27,13 @@ def main():
         
         # שליפת כל פריטי המלאי עם כל העמודות
         cursor.execute('''
-            SELECT id, name, category, quantity, available_quantity, notes, 
+            SELECT id, name, category, quantity, available, notes, 
                    COALESCE(is_available, TRUE) as is_available,
-                   category, order_notes, ordered, checked_out, 
+                   category_original, order_notes, ordered, checked_out, 
                    checked, checkout_notes, returned, return_notes, 
                    price_per_unit, total_price, unnnamed_11, 
                    director, producer, photographer
-            FROM inventory 
+            FROM items 
             ORDER BY category, name
         ''')
         

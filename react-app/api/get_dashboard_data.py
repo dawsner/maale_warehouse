@@ -24,7 +24,7 @@ def get_inventory_summary():
         SELECT COUNT(*) AS total_items,
                SUM(quantity) AS total_quantity,
                COUNT(DISTINCT category) AS category_count
-        FROM inventory
+        FROM items
     """)
     overview = cursor.fetchone()
     if overview is None:
@@ -35,7 +35,7 @@ def get_inventory_summary():
         SELECT 
             SUM(CASE WHEN is_available = TRUE THEN quantity ELSE 0 END) AS available_items,
             SUM(CASE WHEN is_available = FALSE THEN quantity ELSE 0 END) AS unavailable_items
-        FROM inventory
+        FROM items
     """)
     availability = cursor.fetchone()
     if availability is None:
@@ -47,7 +47,7 @@ def get_inventory_summary():
                COUNT(*) AS item_count, 
                SUM(quantity) AS total_quantity,
                SUM(CASE WHEN is_available = TRUE THEN quantity ELSE 0 END) AS available_quantity
-        FROM inventory
+        FROM items
         GROUP BY category
         ORDER BY total_quantity DESC
     """)
@@ -101,7 +101,7 @@ def get_active_loans():
     cursor.execute("""
         SELECT l.id, i.name, i.category, l.student_name, l.quantity, l.loan_date, l.due_date
         FROM loans l
-        JOIN inventory i ON l.item_id = i.id
+        JOIN items i ON l.item_id = i.id
         WHERE l.return_date IS NULL
         ORDER BY l.due_date ASC
         LIMIT 10
@@ -135,7 +135,7 @@ def get_upcoming_reservations():
     cursor.execute("""
         SELECT r.id, i.name, i.category, r.student_name, r.quantity, r.start_date, r.end_date, r.status
         FROM reservations r
-        JOIN inventory i ON r.item_id = i.id
+        JOIN items i ON r.item_id = i.id
         WHERE r.start_date >= %s AND r.status IN ('pending', 'approved')
         ORDER BY r.start_date ASC
         LIMIT 10
