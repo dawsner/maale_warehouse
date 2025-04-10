@@ -171,7 +171,7 @@ def get_overdue_loans():
         SELECT l.id, i.name, i.category, l.student_name, l.quantity, l.loan_date, l.due_date,
                (CURRENT_DATE - l.due_date) AS days_overdue
         FROM loans l
-        JOIN inventory i ON l.item_id = i.id
+        JOIN items i ON l.item_id = i.id
         WHERE l.return_date IS NULL AND l.due_date < %s
         ORDER BY l.due_date ASC
     """, (current_date,))
@@ -202,7 +202,7 @@ def get_popular_items():
     
     cursor.execute("""
         SELECT i.id, i.name, i.category, COUNT(l.id) AS loan_count
-        FROM inventory i
+        FROM items i
         JOIN loans l ON i.id = l.item_id
         GROUP BY i.id, i.name, i.category
         ORDER BY loan_count DESC
@@ -236,7 +236,7 @@ def get_low_stock_items():
                    WHEN quantity > 0 THEN ROUND((available_quantity::float / quantity) * 100)
                    ELSE 0 
                END AS percent_available
-        FROM inventory
+        FROM items
         WHERE quantity > 0 
               AND (available_quantity::float / quantity) < 0.2
               AND is_available = TRUE
