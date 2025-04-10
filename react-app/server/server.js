@@ -334,6 +334,18 @@ app.post('/api/reservations/check-availability', async (req, res) => {
   }
 });
 
+// דשבורד
+app.get('/api/dashboard', async (req, res) => {
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/get_dashboard_data.py')
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: 'שגיאה בקבלת נתוני דשבורד: ' + error.message });
+  }
+});
+
 // סטטיסטיקות
 app.get('/api/stats/equipment-usage', async (req, res) => {
   try {

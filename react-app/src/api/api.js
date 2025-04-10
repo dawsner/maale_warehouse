@@ -275,6 +275,22 @@ export const authAPI = {
   },
 };
 
+// API לדשבורד
+export const dashboardAPI = {
+  // קבלת נתוני דשבורד
+  getDashboardData: async () => {
+    try {
+      console.log('Fetching dashboard data...');
+      const response = await axiosInstance.get('/api/dashboard');
+      console.log('Dashboard data received:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      throw error;
+    }
+  },
+};
+
 // API לסטטיסטיקות
 export const statsAPI = {
   // קבלת נתוני שימוש בציוד
