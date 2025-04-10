@@ -94,16 +94,16 @@ def import_excel_to_db(file_path):
             'צלמת: ': 'photographer'
         }
 
-        # מנקה את בסיס הנתונים לפני הייבוא
+        # מתחבר לבסיס הנתונים
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("DELETE FROM reservations")
-        cur.execute("DELETE FROM loans")
-        cur.execute("DELETE FROM items")
-        conn.commit()
         
-        # סופר את הפריטים שנוספו
+        # לא מוחקים יותר טבלאות לפני הייבוא, אלא רק נעדכן או נוסיף פריטים
+        
+        # סופר את הפריטים שנוספו או עודכנו
         items_added = 0
+        items_updated = 0
+        items_new = 0
         
         # מעבד את הנתונים
         current_category = None
@@ -180,29 +180,61 @@ def import_excel_to_db(file_path):
                     values.append(value)
                     placeholders.append("%s")
                 
-                # מוסיף את הפריט לבסיס הנתונים
+                # בודק אם הפריט כבר קיים בבסיס הנתונים (לפי השם והקטגוריה)
                 try:
-                    field_str = ", ".join(fields)
-                    placeholder_str = ", ".join(placeholders)
-                    
                     cur.execute(
-                        f"INSERT INTO items ({field_str}) VALUES ({placeholder_str})",
-                        values
+                        "SELECT id FROM items WHERE name = %s AND category = %s",
+                        (item_name, final_category)
                     )
+                    existing_item = cur.fetchone()
                     
-                    items_added += 1
-                    print(f"Added item #{items_added}: {item_name} in category: {final_category}")
+                    if existing_item:
+                        # הפריט קיים - מעדכן אותו
+                        item_id = existing_item[0]
+                        updates = []
+                        update_values = []
+                        
+                        for field, value in item_data.items():
+                            updates.append(f"{field} = %s")
+                            update_values.append(value)
+                        
+                        # מוסיף את ה-ID לסוף הרשימה
+                        update_values.append(item_id)
+                        
+                        update_str = ", ".join(updates)
+                        cur.execute(
+                            f"UPDATE items SET {update_str} WHERE id = %s",
+                            update_values
+                        )
+                        
+                        items_updated += 1
+                        items_added += 1
+                        print(f"Updated item #{item_id}: {item_name} in category: {final_category}")
+                    else:
+                        # הפריט חדש - מוסיף אותו
+                        field_str = ", ".join(fields)
+                        placeholder_str = ", ".join(placeholders)
+                        
+                        cur.execute(
+                            f"INSERT INTO items ({field_str}) VALUES ({placeholder_str}) RETURNING id",
+                            values
+                        )
+                        
+                        new_id = cur.fetchone()[0]
+                        items_new += 1
+                        items_added += 1
+                        print(f"Added new item #{new_id}: {item_name} in category: {final_category}")
                 except Exception as e:
-                    print(f"Error adding item {item_name}: {str(e)}")
+                    print(f"Error processing item {item_name}: {str(e)}")
         
-        print(f"\nFinished importing excel file. Added {items_added} items to database.")
+        print(f"\nFinished processing excel file. Total items: {items_added} (Updated: {items_updated}, New: {items_new}).")
         conn.commit()
         
         # סוגר את החיבור
         cur.close()
         conn.close()
         
-        return items_added
+        return {'total': items_added, 'updated': items_updated, 'new': items_new}
         
     except Exception as e:
         print(f"Error importing Excel file: {str(e)}")
@@ -229,5 +261,8 @@ if __name__ == "__main__":
         
         # מייבא את הנתונים לבסיס הנתונים
         print("\n\n=== ייבוא נתונים לבסיס הנתונים ===")
-        items_added = import_excel_to_db(file_path)
-        print(f"\nSummary: Added {items_added} items to the database.")
+        result = import_excel_to_db(file_path)
+        if isinstance(result, dict):
+            print(f"\nSummary: Processed {result['total']} items (Updated: {result['updated']}, New: {result['new']}).")
+        else:
+            print(f"\nSummary: Processed {result} items.")
