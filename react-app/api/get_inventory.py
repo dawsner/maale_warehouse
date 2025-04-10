@@ -20,6 +20,9 @@ def main():
     items = []
     loaned_quantities = {}
     
+    # Print debug info
+    print("DEBUG: DATABASE_URL from environment:", os.environ.get("DATABASE_URL", "Not found"), file=sys.stderr)
+    
     try:
         # יצירת חיבור לבסיס הנתונים
         conn = get_db_connection()

@@ -1,10 +1,13 @@
 import os
+import sys
 from psycopg2.extras import RealDictCursor
 import psycopg2
 from datetime import datetime
 
 def get_db_connection():
-    return psycopg2.connect(os.getenv('DATABASE_URL'))
+    db_url = os.getenv('DATABASE_URL')
+    print(f"DEBUG: Connecting to database with URL: {db_url}", file=sys.stderr)
+    return psycopg2.connect(db_url)
 
 def init_db():
     with get_db_connection() as conn:
