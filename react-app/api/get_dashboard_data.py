@@ -46,7 +46,7 @@ def get_inventory_summary():
         SELECT category, 
                COUNT(*) AS item_count, 
                SUM(quantity) AS total_quantity,
-               SUM(CASE WHEN is_available = TRUE THEN quantity ELSE 0 END) AS available_quantity
+               SUM(available) AS available_quantity
         FROM items
         GROUP BY category
         ORDER BY total_quantity DESC
@@ -231,14 +231,14 @@ def get_low_stock_items():
     
     # פריטים עם פחות מ-20% מהכמות המקורית
     cursor.execute("""
-        SELECT id, name, category, quantity, available_quantity,
+        SELECT id, name, category, quantity, available,
                CASE 
-                   WHEN quantity > 0 THEN ROUND((available_quantity::float / quantity) * 100)
+                   WHEN quantity > 0 THEN ROUND((available::float / quantity) * 100)
                    ELSE 0 
                END AS percent_available
         FROM items
         WHERE quantity > 0 
-              AND (available_quantity::float / quantity) < 0.2
+              AND (available::float / quantity) < 0.2
               AND is_available = TRUE
         ORDER BY percent_available ASC
         LIMIT 10
