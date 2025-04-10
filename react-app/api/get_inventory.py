@@ -11,7 +11,7 @@ import psycopg2.extras
 
 def get_direct_db_connection():
     """יוצר חיבור ישיר למסד הנתונים"""
-    db_url = os.environ.get('DATABASE_URL')
+    db_url = os.getenv('DATABASE_URL')
     print(f"DEBUG: Connecting directly to database with URL: {db_url}", file=sys.stderr)
     return psycopg2.connect(db_url)
 
