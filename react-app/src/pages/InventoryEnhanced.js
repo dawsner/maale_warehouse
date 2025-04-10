@@ -2167,15 +2167,22 @@ function InventoryEnhanced() {
                   }
                 </TableCell>
                 <TableCell align="center">
-                  <Button
-                    variant={item.is_available ? "contained" : "outlined"}
+                  <Chip 
+                    label={item.is_available ? "זמין" : "לא זמין"}
                     color={item.is_available ? "success" : "error"}
                     size="small"
                     onClick={() => handleToggleAvailability(item.id, item.is_available)}
-                    sx={{ minWidth: '80px', fontSize: '0.75rem' }}
-                  >
-                    {item.is_available ? "זמין" : "לא זמין"}
-                  </Button>
+                    variant={item.is_available ? "filled" : "outlined"}
+                    sx={{ 
+                      fontWeight: 'bold',
+                      minWidth: 70,
+                      cursor: 'pointer',
+                      '&:hover': {
+                        opacity: 0.9,
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                      }
+                    }}
+                  />
                 </TableCell>
                 <TableCell align="center">
                   <Tooltip title="ערוך פריט">
@@ -2277,15 +2284,23 @@ function InventoryEnhanced() {
               </Box>
               
               <Box sx={{ mt: 'auto', pt: 2, display: 'flex', justifyContent: 'center' }}>
-                <Button
-                  variant={item.is_available ? "contained" : "outlined"}
+                <Chip 
+                  label={item.is_available ? "זמין במערכת" : "לא זמין"}
                   color={item.is_available ? "success" : "error"}
-                  size="small"
+                  variant={item.is_available ? "filled" : "outlined"}
                   onClick={() => handleToggleAvailability(item.id, item.is_available)}
-                  fullWidth
-                >
-                  {item.is_available ? "זמין במערכת" : "לא זמין"}
-                </Button>
+                  sx={{ 
+                    fontSize: '0.9rem',
+                    fontWeight: 'bold',
+                    width: '100%',
+                    py: 1.5,
+                    cursor: 'pointer',
+                    '&:hover': {
+                      opacity: 0.9,
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    }
+                  }}
+                />
               </Box>
             </Paper>
           </Grid>
