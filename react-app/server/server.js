@@ -33,6 +33,7 @@ app.use(express.static(path.join(__dirname, '../build')));
  * @returns {Promise} - הבטחה עם תוצאות הסקריפט
  */
 function runPythonScript(scriptPath, args = [], inputData = null) {
+  console.log("Running Python script:", scriptPath);
   return new Promise((resolve, reject) => {
     // נבדוק אם הקובץ קיים
     try {
