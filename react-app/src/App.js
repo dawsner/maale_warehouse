@@ -22,6 +22,7 @@ import Statistics from './pages/Statistics';
 import ExcelImport from './pages/ExcelImport';
 import Settings from './pages/Settings';
 import Reservations from './pages/Reservations';
+import Dashboard from './pages/Dashboard';
 import AvailableItems from './pages/student/AvailableItems';
 import BookEquipment from './pages/student/BookEquipment';
 import MyEquipment from './pages/student/MyEquipment';
@@ -118,6 +119,9 @@ function App() {
             <Route path="/register" element={<Register onLogin={handleLogin} />} />
             
             {/* דפים למנהלים בלבד */}
+            <Route path="/dashboard" element={
+              <AdminRoute><Dashboard /></AdminRoute>
+            } />
             <Route path="/inventory" element={
               <AdminRoute><InventoryEnhanced /></AdminRoute>
             } />

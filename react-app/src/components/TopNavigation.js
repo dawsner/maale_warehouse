@@ -12,6 +12,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EventNoteIcon from '@mui/icons-material/EventNote';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import DashboardIcon from '@mui/icons-material/Dashboard';
 
 function TopNavigation({ user, onLogout }) {
   const navigate = useNavigate();
@@ -61,6 +62,13 @@ function TopNavigation({ user, onLogout }) {
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               {(user.role === 'admin' || user.role === 'warehouse_staff') && (
                 <>
+                  <Button 
+                    color="inherit" 
+                    onClick={() => navigate('/dashboard')}
+                    startIcon={<DashboardIcon />}
+                  >
+                    דשבורד
+                  </Button>
                   <Button 
                     color="inherit" 
                     onClick={() => navigate('/inventory')}
