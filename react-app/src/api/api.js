@@ -9,6 +9,8 @@ const axiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // הוספת timeout ארוך יותר לבקשות
+  timeout: 10000,
 });
 
 // הוספת טוקן אוטומטית לכל הבקשות אם קיים
@@ -21,6 +23,27 @@ axiosInstance.interceptors.request.use(
     return config;
   },
   (error) => Promise.reject(error)
+);
+
+// תפיסת שגיאות תשובה (response) והתייחסות מיוחדת לטוקן פג תוקף
+axiosInstance.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    // אם קיבלנו שגיאת 401 (לא מאושר) או תשובה עם הודעה מהשרת על טוקן פג תוקף
+    if (error.response && 
+        (error.response.status === 401 || 
+         (error.response.data && error.response.data.message && error.response.data.message.includes("טוקן פג תוקף")))) {
+      console.log('טוקן פג תוקף, מנקה מידע משתמש ומציג מסך התחברות...');
+      // ניקוי הטוקן מהאחסון המקומי
+      localStorage.removeItem('token');
+      
+      // הפניה לעמוד ההתחברות (ידנית כאן, או באמצעות event מיוחד)
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
 );
 
 // API לניהול מלאי
