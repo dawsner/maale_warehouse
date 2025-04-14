@@ -17,11 +17,23 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { authAPI } from '../api/api';
 
 function Login({ onLogin }) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('admin');
+  const [password, setPassword] = useState('admin123');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  
+  // טיפול בשגיאות טוקן - ניקוי טוקן פג תוקף אם הועברנו לכאן אוטומטית
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get('error');
+    if (error === 'token_expired') {
+      // אם יש שגיאת טוקן פג תוקף, מציגים הודעה מתאימה
+      setError('פג תוקף החיבור למערכת, אנא התחבר מחדש');
+      // מנקים את הטוקן מהאחסון המקומי
+      localStorage.removeItem('token');
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

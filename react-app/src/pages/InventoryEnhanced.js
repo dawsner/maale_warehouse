@@ -175,13 +175,46 @@ function InventoryEnhanced() {
     try {
       setLoading(true);
       console.log('Trying to fetch inventory items...');
+      
+      // בדיקה אם המשתמש מחובר (יש טוקן תקף)
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No token found - user not logged in');
+        setError('אנא התחבר למערכת כדי לראות את המלאי');
+        setLoading(false);
+        return;
+      }
+      
+      // ניסיון לשלוף את נתוני המלאי
       const data = await inventoryAPI.getItems();
-      console.log('Inventory data received:', data);
-      setItems(data || []);
-      setError('');
+      
+      // בדיקה אם התקבלו נתונים
+      if (!data || !Array.isArray(data)) {
+        console.error('Invalid data received:', data);
+        setError('התקבלו נתונים לא תקינים מהשרת');
+        setItems([]);
+      } else {
+        console.log(`Inventory data received: ${data.length} items`);
+        setItems(data);
+        setError('');
+      }
     } catch (err) {
       console.error('Error fetching inventory:', err);
-      setError('שגיאה בטעינת נתוני המלאי');
+      
+      // טיפול בשגיאות ספציפיות
+      if (err.message === 'Network Error') {
+        setError('בעיית תקשורת עם השרת. אנא בדוק את החיבור לאינטרנט או נסה שוב מאוחר יותר.');
+      } else if (err.response && err.response.status === 401) {
+        setError('הטוקן פג תוקף. אנא התחבר מחדש למערכת.');
+        // ניקוי הטוקן ורענון הדף
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      } else {
+        setError('שגיאה בטעינת נתוני המלאי: ' + (err.message || 'שגיאה לא ידועה'));
+      }
+      
+      // במקרה של שגיאה, מנקה את רשימת הפריטים
+      setItems([]);
     } finally {
       setLoading(false);
     }
