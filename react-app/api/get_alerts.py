@@ -34,10 +34,9 @@ def get_overdue_loans(days_threshold=1):
     try:
         # 1. השאלות באיחור
         cursor.execute("""
-            SELECT l.*, i.name as item_name, i.category, u.email
+            SELECT l.*, i.name as item_name, i.category
             FROM loans l
             JOIN items i ON l.item_id = i.id
-            LEFT JOIN users u ON l.student_id = u.id
             WHERE l.return_date IS NULL AND l.due_date < %s
             ORDER BY l.due_date ASC
         """, (today,))
@@ -58,10 +57,9 @@ def get_overdue_loans(days_threshold=1):
         
         # 2. השאלות שמועד החזרתן קרב
         cursor.execute("""
-            SELECT l.*, i.name as item_name, i.category, u.email
+            SELECT l.*, i.name as item_name, i.category
             FROM loans l
             JOIN items i ON l.item_id = i.id
-            LEFT JOIN users u ON l.student_id = u.id
             WHERE l.return_date IS NULL 
               AND l.due_date >= %s 
               AND l.due_date <= %s

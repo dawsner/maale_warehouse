@@ -31,17 +31,29 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   (error) => {
-    // אם קיבלנו שגיאת 401 (לא מאושר) או תשובה עם הודעה מהשרת על טוקן פג תוקף
-    if (error.response && 
-        (error.response.status === 401 || 
-         (error.response.data && error.response.data.message && error.response.data.message.includes("טוקן פג תוקף")))) {
+    console.error('API Error:', error);
+    
+    // בדיקה אם הטוקן פג תוקף
+    const isTokenExpired = 
+      (error.response && error.response.status === 401) || 
+      (error.response && error.response.data && error.response.data.message && 
+       (error.response.data.message.includes("token expired") || 
+        error.response.data.message.includes("טוקן פג תוקף") || 
+        error.response.data.message.includes("invalid token")));
+    
+    if (isTokenExpired) {
       console.log('טוקן פג תוקף, מנקה מידע משתמש ומציג מסך התחברות...');
       // ניקוי הטוקן מהאחסון המקומי
       localStorage.removeItem('token');
       
-      // הפניה לעמוד ההתחברות (ידנית כאן, או באמצעות event מיוחד)
-      window.location.href = '/login';
+      // הפניה לעמוד ההתחברות עם פרמטר שגיאה
+      window.location.href = '/login?error=token_expired';
+      
+      // מונע המשך טיפול בשגיאה אחרי הניתוב
+      return new Promise(() => {});
     }
+    
+    // כל שגיאה אחרת מוחזרת כרגיל
     return Promise.reject(error);
   }
 );
