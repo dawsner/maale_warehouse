@@ -291,6 +291,62 @@ export const dashboardAPI = {
   },
 };
 
+// API להתראות
+export const alertsAPI = {
+  // קבלת כל ההתראות
+  getAlerts: async (daysThreshold = 3, stockThreshold = 20) => {
+    try {
+      console.log('Fetching alerts data...');
+      const response = await axiosInstance.post('/api/alerts', {
+        days_threshold: daysThreshold,
+        stock_threshold: stockThreshold
+      });
+      console.log('Alerts data received:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching alerts:', error);
+      throw error;
+    }
+  },
+  
+  // שליחת התראת אימייל
+  sendEmailAlert: async (alertType, data, email) => {
+    try {
+      const response = await axiosInstance.post('/api/send-email-alert', {
+        alert_type: alertType,  // 'overdue', 'upcoming', 'low_stock'
+        data: data,
+        email: email
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error sending email alert:', error);
+      throw error;
+    }
+  },
+  
+  // סימון התראה כנצפתה
+  markAlertAsRead: async (alertId) => {
+    try {
+      const response = await axiosInstance.put(`/api/alerts/${alertId}/read`);
+      return response.data;
+    } catch (error) {
+      console.error('Error marking alert as read:', error);
+      throw error;
+    }
+  },
+  
+  // סינון והגדרות התראות
+  updateAlertSettings: async (settings) => {
+    try {
+      const response = await axiosInstance.put('/api/alerts/settings', settings);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating alert settings:', error);
+      throw error;
+    }
+  }
+};
+
 // API לסטטיסטיקות
 export const statsAPI = {
   // קבלת נתוני שימוש בציוד

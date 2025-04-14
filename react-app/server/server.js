@@ -589,6 +589,51 @@ app.get('*', (req, res) => {
 });
 
 // הפעלת השרת
+/* נתיבי API למערכת ההתראות */
+
+// נתיב להחזרת כל ההתראות
+app.post('/api/alerts', async (req, res) => {
+  try {
+    const { days_threshold, stock_threshold } = req.body;
+    const inputData = JSON.stringify({ 
+      days_threshold: days_threshold || 3, 
+      stock_threshold: stock_threshold || 20
+    });
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/get_alerts.py'),
+      [inputData]
+    );
+    res.json(result);
+  } catch (error) {
+    console.error('Error getting alerts:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// נתיב לשליחת התראת אימייל
+app.post('/api/send-email-alert', async (req, res) => {
+  try {
+    const { alert_type, data, email } = req.body;
+    
+    if (!alert_type || !data || !email) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: alert_type, data, email',
+        success: false 
+      });
+    }
+    
+    const inputData = JSON.stringify({ alert_type, data, email });
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/send_email_notification.py'),
+      [inputData]
+    );
+    res.json(result);
+  } catch (error) {
+    console.error('Error sending email alert:', error);
+    res.status(500).json({ error: error.message, success: false });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
