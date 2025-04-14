@@ -3,210 +3,202 @@
 1. התראות על השאלות שמועד החזרתן קרב או שחלף
 2. התראות על פריטים שכמותם במלאי נמוכה
 """
+
 import sys
-import os
 import json
-from datetime import datetime, timedelta
+import datetime
+import os
+import psycopg2
+from psycopg2.extras import RealDictCursor
 import pytz
-from database import get_db_connection
+
+# חיבור למסד הנתונים
+def get_db_connection():
+    """יוצר חיבור למסד הנתונים"""
+    conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
+    conn.autocommit = True
+    return conn
 
 def get_israel_time():
     """מחזיר את השעה הנוכחית בישראל"""
     israel_tz = pytz.timezone('Asia/Jerusalem')
-    return datetime.now(israel_tz)
+    return datetime.datetime.now(israel_tz)
 
 def get_overdue_loans(days_threshold=1):
     """מחזיר השאלות באיחור או שמועד החזרתן קרב"""
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        
-        # השאלות שחלף תאריך ההחזרה שלהן
-        cursor.execute("""
-            SELECT 
-                l.id,
-                i.name as item_name,
-                l.student_name,
-                l.student_id,
-                l.quantity,
-                l.loan_date,
-                l.due_date,
-                l.loan_notes,
-                l.checkout_notes,
-                l.user_id,
-                EXTRACT(DAY FROM (CURRENT_TIMESTAMP - l.due_date)) as days_overdue,
-                u.email,
-                u.full_name as user_full_name,
-                'overdue' as alert_type
-            FROM loans l
-            JOIN items i ON l.item_id = i.id
-            LEFT JOIN users u ON l.user_id = u.id
-            WHERE l.status = 'active' 
-            AND l.due_date < CURRENT_TIMESTAMP
-            ORDER BY days_overdue DESC
-        """)
-        overdue_loans = cursor.fetchall()
-        
-        # השאלות שקרובות למועד ההחזרה
-        cursor.execute("""
-            SELECT 
-                l.id,
-                i.name as item_name,
-                l.student_name,
-                l.student_id,
-                l.quantity,
-                l.loan_date,
-                l.due_date,
-                l.loan_notes,
-                l.checkout_notes,
-                l.user_id,
-                EXTRACT(DAY FROM (l.due_date - CURRENT_TIMESTAMP)) as days_remaining,
-                u.email,
-                u.full_name as user_full_name,
-                'upcoming' as alert_type
-            FROM loans l
-            JOIN items i ON l.item_id = i.id
-            LEFT JOIN users u ON l.user_id = u.id
-            WHERE l.status = 'active' 
-            AND l.due_date > CURRENT_TIMESTAMP
-            AND l.due_date <= CURRENT_TIMESTAMP + INTERVAL '%s days'
-            ORDER BY days_remaining ASC
-        """ % days_threshold)
-        upcoming_returns = cursor.fetchall()
-
-        # מעבד את התוצאות לפורמט JSON
-        results = []
-        column_names = ['id', 'item_name', 'student_name', 'student_id', 'quantity', 
-                       'loan_date', 'due_date', 'loan_notes', 'checkout_notes', 'user_id',
-                       'days_metric', 'email', 'user_full_name', 'alert_type']
-        
-        for loan in overdue_loans:
-            loan_dict = dict(zip(column_names, loan))
-            loan_dict['days_overdue'] = int(loan_dict.pop('days_metric'))
-            loan_dict['severity'] = get_severity_level(loan_dict['days_overdue'], 'overdue')
-            # המרת תאריכים למחרוזות
-            loan_dict['loan_date'] = loan_dict['loan_date'].strftime('%Y-%m-%d %H:%M:%S')
-            loan_dict['due_date'] = loan_dict['due_date'].strftime('%Y-%m-%d %H:%M:%S')
-            results.append(loan_dict)
-            
-        for loan in upcoming_returns:
-            loan_dict = dict(zip(column_names, loan))
-            loan_dict['days_remaining'] = int(loan_dict.pop('days_metric'))
-            loan_dict['severity'] = get_severity_level(loan_dict['days_remaining'], 'upcoming')
-            # המרת תאריכים למחרוזות
-            loan_dict['loan_date'] = loan_dict['loan_date'].strftime('%Y-%m-%d %H:%M:%S')
-            loan_dict['due_date'] = loan_dict['due_date'].strftime('%Y-%m-%d %H:%M:%S')
-            results.append(loan_dict)
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
     
-    return results
-
+    today = get_israel_time().date()
+    
+    try:
+        # 1. השאלות באיחור
+        cursor.execute("""
+            SELECT l.*, i.name as item_name, i.category, u.email
+            FROM loans l
+            JOIN items i ON l.item_id = i.id
+            LEFT JOIN users u ON l.student_id = u.id
+            WHERE l.return_date IS NULL AND l.due_date < %s
+            ORDER BY l.due_date ASC
+        """, (today,))
+        
+        overdue_loans = []
+        for loan in cursor.fetchall():
+            # חישוב מספר הימים באיחור
+            due_date = loan['due_date']
+            days_overdue = (today - due_date).days
+            
+            # קביעת רמת חומרה
+            severity = get_severity_level(days_overdue, 'overdue')
+            
+            loan_data = dict(loan)
+            loan_data['days_overdue'] = days_overdue
+            loan_data['severity'] = severity
+            overdue_loans.append(loan_data)
+        
+        # 2. השאלות שמועד החזרתן קרב
+        cursor.execute("""
+            SELECT l.*, i.name as item_name, i.category, u.email
+            FROM loans l
+            JOIN items i ON l.item_id = i.id
+            LEFT JOIN users u ON l.student_id = u.id
+            WHERE l.return_date IS NULL 
+              AND l.due_date >= %s 
+              AND l.due_date <= %s
+            ORDER BY l.due_date ASC
+        """, (today, today + datetime.timedelta(days=days_threshold)))
+        
+        upcoming_returns = []
+        for loan in cursor.fetchall():
+            # חישוב מספר הימים שנותרו
+            due_date = loan['due_date']
+            days_remaining = (due_date - today).days
+            
+            # קביעת רמת חומרה (הפוך מהאיחור - ככל שנשאר פחות זמן, יותר חמור)
+            severity = get_severity_level(days_threshold - days_remaining, 'upcoming')
+            
+            loan_data = dict(loan)
+            loan_data['days_remaining'] = days_remaining
+            loan_data['severity'] = severity
+            upcoming_returns.append(loan_data)
+            
+        return {
+            "overdue_loans": overdue_loans,
+            "upcoming_returns": upcoming_returns
+        }
+    
+    finally:
+        cursor.close()
+        conn.close()
 
 def get_low_stock_items(threshold_percent=20):
     """מחזיר פריטים שכמותם במלאי נמוכה מאחוז מסוים"""
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        
-        cursor.execute("""
-            SELECT 
-                id,
-                name,
-                category,
-                quantity,
-                available_quantity,
-                CASE 
-                    WHEN quantity > 0 THEN (available_quantity::float / quantity::float * 100)
-                    ELSE 0
-                END as stock_percent
-            FROM items
-            WHERE is_available = true
-            AND quantity > 0
-            AND (available_quantity::float / quantity::float * 100) <= %s
-            ORDER BY stock_percent ASC
-        """, (threshold_percent,))
-        
-        low_stock = cursor.fetchall()
-        
-        results = []
-        column_names = ['id', 'name', 'category', 'quantity', 'available_quantity', 'stock_percent']
-        
-        for item in low_stock:
-            item_dict = dict(zip(column_names, item))
-            item_dict['stock_percent'] = round(float(item_dict['stock_percent']), 1)
-            item_dict['alert_type'] = 'low_stock'
-            
-            # קביעת רמת חומרה בהתאם לאחוז המלאי
-            if item_dict['stock_percent'] <= 5:
-                item_dict['severity'] = 'high'  # קריטי
-            elif item_dict['stock_percent'] <= 10:
-                item_dict['severity'] = 'medium'  # בינוני
-            else:
-                item_dict['severity'] = 'low'  # נמוך
-                
-            results.append(item_dict)
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
     
-    return results
-
+    try:
+        # שליפת פריטים עם כמות זמינה נמוכה
+        cursor.execute("""
+            SELECT i.*, 
+                   (SELECT COUNT(*) FROM loans l WHERE l.item_id = i.id AND l.return_date IS NULL) AS loaned_count
+            FROM items i
+            WHERE i.is_available = TRUE
+            ORDER BY i.category, i.name
+        """)
+        
+        low_stock_items = []
+        for item in cursor.fetchall():
+            total_quantity = item['quantity']
+            loaned_count = item['loaned_count']
+            
+            if total_quantity > 0:  # מניעת חלוקה באפס
+                available_quantity = total_quantity - loaned_count
+                stock_percent = (available_quantity / total_quantity) * 100
+                
+                if stock_percent <= threshold_percent:
+                    # קביעת רמת חומרה
+                    if stock_percent <= 5:
+                        severity = 'high'
+                    elif stock_percent <= 10:
+                        severity = 'medium'
+                    else:
+                        severity = 'low'
+                    
+                    item_data = dict(item)
+                    item_data['available_quantity'] = available_quantity
+                    item_data['stock_percent'] = round(stock_percent)
+                    item_data['severity'] = severity
+                    low_stock_items.append(item_data)
+        
+        return low_stock_items
+    
+    finally:
+        cursor.close()
+        conn.close()
 
 def get_severity_level(days, alert_type):
     """קובע את רמת חומרת ההתראה בהתבסס על ימים"""
     if alert_type == 'overdue':
-        if days > 14:
-            return 'high'  # קריטי
-        elif days > 7:
-            return 'medium'  # בינוני
+        if days >= 7:
+            return 'high'
+        elif days >= 3:
+            return 'medium'
         else:
-            return 'low'  # נמוך
+            return 'low'
     else:  # upcoming
-        if days < 1:
-            return 'high'  # קריטי
-        elif days < 2:
-            return 'medium'  # בינוני
+        if days == 0:
+            return 'high'
+        elif days == 1:
+            return 'medium'
         else:
-            return 'low'  # נמוך
-
+            return 'low'
 
 def get_all_alerts(days_threshold=3, stock_threshold=20):
     """מחזיר את כל סוגי ההתראות"""
-    overdue_alerts = get_overdue_loans(days_threshold)
-    low_stock_alerts = get_low_stock_items(stock_threshold)
+    loan_alerts = get_overdue_loans(days_threshold)
+    low_stock = get_low_stock_items(stock_threshold)
     
-    all_alerts = {
-        'overdue_loans': [a for a in overdue_alerts if a['alert_type'] == 'overdue'],
-        'upcoming_returns': [a for a in overdue_alerts if a['alert_type'] == 'upcoming'],
-        'low_stock': low_stock_alerts,
-        'summary': {
-            'total_alerts': len(overdue_alerts) + len(low_stock_alerts),
-            'overdue_count': len([a for a in overdue_alerts if a['alert_type'] == 'overdue']),
-            'upcoming_count': len([a for a in overdue_alerts if a['alert_type'] == 'upcoming']),
-            'low_stock_count': len(low_stock_alerts),
-            'high_severity_count': len([a for a in overdue_alerts + low_stock_alerts if a.get('severity') == 'high']),
-            'last_updated': get_israel_time().strftime('%Y-%m-%d %H:%M:%S')
+    overdue_loans = loan_alerts.get('overdue_loans', [])
+    upcoming_returns = loan_alerts.get('upcoming_returns', [])
+    
+    # חישוב התראות לסיכום
+    total_alerts = len(overdue_loans) + len(upcoming_returns) + len(low_stock)
+    high_severity_count = sum(1 for alert in overdue_loans if alert.get('severity') == 'high')
+    high_severity_count += sum(1 for alert in upcoming_returns if alert.get('severity') == 'high')
+    high_severity_count += sum(1 for alert in low_stock if alert.get('severity') == 'high')
+    
+    return {
+        "overdue_loans": overdue_loans,
+        "upcoming_returns": upcoming_returns,
+        "low_stock": low_stock,
+        "summary": {
+            "total_alerts": total_alerts,
+            "overdue_count": len(overdue_loans),
+            "upcoming_count": len(upcoming_returns),
+            "low_stock_count": len(low_stock),
+            "high_severity_count": high_severity_count,
+            "last_updated": get_israel_time().isoformat()
         }
     }
-    
-    return all_alerts
-
 
 def main():
     """פונקציה ראשית"""
     try:
-        # מקבל פרמטרים מבקשת HTTP
+        # בדיקה אם התקבלו נתונים בקלט
         if len(sys.argv) > 1:
-            params = json.loads(sys.argv[1])
-            days_threshold = params.get('days_threshold', 3)
-            stock_threshold = params.get('stock_threshold', 20)
+            input_data = json.loads(sys.argv[1])
+            days_threshold = input_data.get('days_threshold', 3)
+            stock_threshold = input_data.get('stock_threshold', 20)
         else:
+            # ברירת מחדל
             days_threshold = 3
             stock_threshold = 20
         
         alerts = get_all_alerts(days_threshold, stock_threshold)
         print(json.dumps(alerts))
-        
+    
     except Exception as e:
-        print(json.dumps({
-            'error': str(e),
-            'success': False
-        }))
-
+        print(json.dumps({"error": str(e)}))
 
 if __name__ == "__main__":
     main()
