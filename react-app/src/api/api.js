@@ -9,8 +9,8 @@ const axiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  // הוספת timeout ארוך יותר לבקשות
-  timeout: 10000,
+  // הגדלת ה-timeout לטיפול בבקשות הדורשות זמן עיבוד ארוך יותר
+  timeout: 30000, // 30 שניות במקום 10 שניות
 });
 
 // הוספת טוקן אוטומטית לכל הבקשות אם קיים
