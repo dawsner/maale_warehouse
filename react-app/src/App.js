@@ -30,6 +30,11 @@ import CreateReservation from './pages/student/CreateReservation';
 import MyReservations from './pages/student/MyReservations';
 import NotFound from './pages/NotFound';
 
+// Maintenance Pages
+import MaintenanceDashboard from './components/maintenance/MaintenanceDashboard';
+import ItemMaintenance from './components/maintenance/ItemMaintenance';
+import SchedulesPage from './components/maintenance/SchedulesPage';
+
 // Services
 import { authAPI } from './api/api';
 
@@ -165,6 +170,17 @@ function App() {
             } />
             <Route path="/settings" element={
               <AdminRoute><Settings /></AdminRoute>
+            } />
+            
+            {/* דפי ניהול תחזוקה */}
+            <Route path="/maintenance" element={
+              <AdminRoute><MaintenanceDashboard /></AdminRoute>
+            } />
+            <Route path="/maintenance/item/:itemId" element={
+              <AdminRoute><ItemMaintenance /></AdminRoute>
+            } />
+            <Route path="/maintenance/schedules" element={
+              <AdminRoute><SchedulesPage /></AdminRoute>
             } />
             
             {/* דפים לסטודנטים */}
