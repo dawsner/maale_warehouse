@@ -14,6 +14,7 @@ import EventNoteIcon from '@mui/icons-material/EventNote';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import NotificationsIcon from '@mui/icons-material/Notifications';
+import BuildIcon from '@mui/icons-material/Build';
 
 import AlertsCenter from './AlertsCenter';
 import { alertsAPI } from '../api/api';
@@ -182,6 +183,10 @@ function TopNavigation({ user, onLogout }) {
                         horizontal: 'left',
                       }}
                     >
+                      <MenuItem onClick={() => handleNavigation('/maintenance')}>
+                        <BuildIcon fontSize="small" sx={{ mr: 1 }} />
+                        ניהול תחזוקה
+                      </MenuItem>
                       <MenuItem onClick={() => handleNavigation('/inventory-legacy')}>
                         <InventoryIcon fontSize="small" sx={{ mr: 1 }} />
                         מלאי (גרסה ישנה)
