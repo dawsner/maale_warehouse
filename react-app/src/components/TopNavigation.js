@@ -147,6 +147,13 @@ function TopNavigation({ user, onLogout }) {
                     >
                       ייבוא/ייצוא
                     </Button>
+                    <Button
+                      color="inherit"
+                      onClick={() => navigate('/maintenance')}
+                      startIcon={<BuildIcon />}
+                    >
+                      ניהול תחזוקה
+                    </Button>
                     
                     {/* כפתור התראות */}
                     <IconButton
