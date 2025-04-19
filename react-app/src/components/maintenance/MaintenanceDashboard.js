@@ -247,13 +247,13 @@ const MaintenanceDashboard = () => {
       )}
       
       {/* תזכורות תחזוקה קרובות */}
-      {upcomingMaintenance?.length > 0 && (
+      {upcomingMaintenance && Array.isArray(upcomingMaintenance) && upcomingMaintenance.length > 0 && (
         <Box mb={4}>
           <Typography variant="h5" gutterBottom align="right">
             תזכורות תחזוקה קרובות
           </Typography>
           <Grid container spacing={2} dir="rtl">
-            {upcomingMaintenance.slice(0, 6).map((schedule) => (
+            {Array.isArray(upcomingMaintenance) && upcomingMaintenance.slice(0, 6).map((schedule) => (
               <Grid item xs={12} md={6} lg={4} key={schedule.id}>
                 <Card>
                   <CardContent>
@@ -290,7 +290,7 @@ const MaintenanceDashboard = () => {
               </Grid>
             ))}
           </Grid>
-          {upcomingMaintenance.length > 6 && (
+          {Array.isArray(upcomingMaintenance) && upcomingMaintenance.length > 6 && (
             <Box sx={{ textAlign: 'center', mt: 2 }}>
               <Button 
                 variant="outlined" 
