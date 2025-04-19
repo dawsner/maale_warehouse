@@ -447,6 +447,16 @@ function InventoryEnhanced() {
         severity: 'success'
       });
       
+      // שאלה אם לעבור לעמוד התחזוקה
+      const navigateToMaintenance = window.confirm(
+        `האם ברצונך לעבור לעמוד ניהול התחזוקה של הפריט "${item.name}"?`
+      );
+      
+      if (navigateToMaintenance) {
+        // ניווט לעמוד התחזוקה של הפריט הספציפי
+        window.location.href = `/maintenance/item/${item.id}`;
+      }
+      
     } catch (error) {
       console.error('Error setting item to maintenance:', error);
       setSnackbar({
