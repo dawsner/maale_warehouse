@@ -14,10 +14,10 @@ import maintenance
 
 # עוזר להמיר אובייקטי תאריך לייצוג מחרוזת ב-JSON
 class DateTimeEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, (datetime, date)):
-            return obj.isoformat()
-        return super().default(obj)
+    def default(self, o):
+        if isinstance(o, (datetime, date)):
+            return o.isoformat()
+        return super().default(o)
 
 # עוזר להמיר מחרוזות תאריך לאובייקטי תאריך
 def parse_date(date_str):

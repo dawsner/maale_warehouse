@@ -92,8 +92,9 @@ def update_item_maintenance_status(item_id, status, notes, user_id):
                 """,
                 (item_id, status, notes, get_israel_time(), user_id)
             )
-            
-        status_id = cur.fetchone()[0]
+        
+        status_result = cur.fetchone()
+        status_id = status_result[0] if status_result else None
         conn.commit()
         
         # אם הפריט בתחזוקה, אנחנו רוצים גם לעדכן את הזמינות שלו בטבלת items
@@ -138,7 +139,8 @@ def add_maintenance_record(item_id, maintenance_type, description, start_date,
             (item_id, maintenance_type, description, start_date, end_date, performed_by,
              cost, receipt_url, get_israel_time(), user_id, notes)
         )
-        record_id = cur.fetchone()[0]
+        record_result = cur.fetchone()
+        record_id = record_result[0] if record_result else None
         conn.commit()
         
         # אם הסתיימה התחזוקה (יש תאריך סיום), נעדכן את סטטוס התחזוקה של הפריט

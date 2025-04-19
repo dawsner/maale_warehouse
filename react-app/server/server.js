@@ -634,6 +634,84 @@ app.post('/api/send-email-alert', async (req, res) => {
   }
 });
 
+// ===== נתיבי API למערכת ניהול תחזוקה ותיקונים =====
+
+// קבלת נתוני תחזוקה
+app.post('/api/maintenance/data', async (req, res) => {
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/get_maintenance_data.py'),
+      [],
+      req.body
+    );
+    res.json(result);
+  } catch (error) {
+    console.error('Error getting maintenance data:', error);
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
+  }
+});
+
+// עדכון נתוני תחזוקה
+app.post('/api/maintenance/update', async (req, res) => {
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/update_maintenance_data.py'),
+      [],
+      req.body
+    );
+    res.json(result);
+  } catch (error) {
+    console.error('Error updating maintenance data:', error);
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
+  }
+});
+
+// קיצור נתיב לקבלת סקירת מצב תחזוקה
+app.get('/api/maintenance/overview', async (req, res) => {
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/get_maintenance_data.py'),
+      [],
+      { action: 'overview' }
+    );
+    res.json(result);
+  } catch (error) {
+    console.error('Error getting maintenance overview:', error);
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
+  }
+});
+
+// קיצור נתיב לקבלת תזכורות תחזוקה קרובות
+app.get('/api/maintenance/upcoming', async (req, res) => {
+  const days = req.query.days ? parseInt(req.query.days) : 30;
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/get_maintenance_data.py'),
+      [],
+      { 
+        action: 'upcoming_schedules',
+        days: days
+      }
+    );
+    res.json(result);
+  } catch (error) {
+    console.error('Error getting upcoming maintenance:', error);
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
