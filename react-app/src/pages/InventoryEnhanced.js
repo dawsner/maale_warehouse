@@ -403,6 +403,59 @@ function InventoryEnhanced() {
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
+  
+  // סימון פריט כנמצא בתחזוקה
+  const handleMaintenanceClick = async (item, event) => {
+    if (event) {
+      event.stopPropagation();
+    }
+    
+    try {
+      // הצגת חלון אישור
+      const isConfirmed = window.confirm(
+        `האם לסמן את הפריט "${item.name}" כנמצא בתחזוקה? פריט זה לא יהיה זמין להשאלה עד לסיום הטיפול.`
+      );
+      
+      if (!isConfirmed) {
+        return;
+      }
+      
+      // קבלת מזהה המשתמש המחובר מהלוקל סטורג'
+      const userData = JSON.parse(localStorage.getItem('user')) || {};
+      const userId = userData.id;
+      
+      // עדכון סטטוס תחזוקה של הפריט
+      await maintenanceAPI.updateItemMaintenanceStatus(
+        item.id,
+        'in_maintenance', // סטטוס - נמצא בתחזוקה
+        'פריט סומן כנמצא בתחזוקה מתוך מסך המלאי', // הערות
+        userId // מזהה משתמש שביצע את הפעולה
+      );
+      
+      // שינוי זמינות הפריט (לא זמין)
+      if (item.is_available) {
+        await inventoryAPI.toggleItemAvailability(item.id, false);
+      }
+      
+      // רענון רשימת הפריטים
+      await fetchItems();
+      
+      // הצגת הודעת הצלחה
+      setSnackbar({
+        open: true,
+        message: `הפריט "${item.name}" סומן כנמצא בתחזוקה`,
+        severity: 'success'
+      });
+      
+    } catch (error) {
+      console.error('Error setting item to maintenance:', error);
+      setSnackbar({
+        open: true,
+        message: `שגיאה בסימון הפריט כנמצא בתחזוקה: ${error.message || 'שגיאה לא ידועה'}`,
+        severity: 'error'
+      });
+    }
+  };
 
   // שמירת פריט
   const handleSaveItem = async () => {
@@ -2225,6 +2278,16 @@ function InventoryEnhanced() {
                       <EditIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
+                  <Tooltip title="העבר לתחזוקה">
+                    <IconButton 
+                      onClick={(e) => handleMaintenanceClick(item, e)} 
+                      color="warning" 
+                      size="small" 
+                      sx={{ mx: 0.5 }}
+                    >
+                      <BuildIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
                   <Tooltip title="מחק פריט">
                     <IconButton onClick={() => handleDeleteItem(item.id)} color="error" size="small" sx={{ mx: 0.5 }}>
                       <DeleteIcon fontSize="small" />
@@ -2284,6 +2347,15 @@ function InventoryEnhanced() {
                   <Tooltip title="ערוך">
                     <IconButton size="small" color="primary" onClick={() => handleOpenDialog(item)}>
                       <EditIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="העבר לתחזוקה">
+                    <IconButton 
+                      size="small" 
+                      color="warning" 
+                      onClick={(e) => handleMaintenanceClick(item, e)}
+                    >
+                      <BuildIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
                   <Tooltip title="מחק">
@@ -2418,8 +2490,20 @@ function InventoryEnhanced() {
                     size="small"
                     onClick={() => handleToggleAvailability(item.id, item.is_available)}
                     fullWidth
+                    sx={{ mb: 1 }}
                   >
                     {item.is_available ? "זמין במערכת" : "לא זמין"}
+                  </Button>
+                  
+                  <Button
+                    variant="outlined"
+                    color="warning"
+                    size="small"
+                    onClick={(e) => handleMaintenanceClick(item, e)}
+                    fullWidth
+                    startIcon={<BuildIcon />}
+                  >
+                    העבר לתחזוקה
                   </Button>
                 </Box>
               </Grid>
@@ -2587,6 +2671,17 @@ function InventoryEnhanced() {
                       fullWidth
                     >
                       עריכה
+                    </Button>
+                  </Tooltip>
+                  <Tooltip title="העבר לתחזוקה">
+                    <Button 
+                      variant="outlined" 
+                      color="warning" 
+                      startIcon={<BuildIcon />}
+                      onClick={(e) => handleMaintenanceClick(item, e)}
+                      fullWidth
+                    >
+                      תחזוקה
                     </Button>
                   </Tooltip>
                   <Tooltip title="מחק פריט">
