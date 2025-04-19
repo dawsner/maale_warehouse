@@ -91,6 +91,8 @@ import SaveIcon from '@mui/icons-material/Save';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 import { inventoryAPI, importExportAPI } from '../api/api';
+import { maintenanceAPI } from '../api/maintenanceAPI';
+import BuildIcon from '@mui/icons-material/Build';
 
 // מערך של צבעי קטגוריות
 const CATEGORY_COLORS = {
