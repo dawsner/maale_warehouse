@@ -434,7 +434,7 @@ function InventoryEnhanced() {
       
       // שינוי זמינות הפריט (לא זמין)
       if (item.is_available) {
-        await inventoryAPI.toggleItemAvailability(item.id, false);
+        await inventoryAPI.toggleAvailability(item.id, false);
       }
       
       // רענון רשימת הפריטים
