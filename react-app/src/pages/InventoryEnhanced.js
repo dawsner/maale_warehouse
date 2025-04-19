@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Container, 
   Box, 
@@ -112,6 +113,7 @@ const CATEGORY_COLORS = {
 
 function InventoryEnhanced() {
   // מצב היישום
+  const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -453,8 +455,8 @@ function InventoryEnhanced() {
       );
       
       if (navigateToMaintenance) {
-        // ניווט לעמוד התחזוקה של הפריט הספציפי
-        window.location.href = `/maintenance/item/${item.id}`;
+        // ניווט לעמוד התחזוקה של הפריט הספציפי באמצעות React Router
+        navigate(`/maintenance/item/${item.id}`);
       }
       
     } catch (error) {
