@@ -441,6 +441,89 @@ export const statsAPI = {
     const response = await axiosInstance.get('/api/stats/category-analysis');
     return response.data;
   },
+  
+  // ===== ניתוח וסטטיסטיקה מתקדמת =====
+  
+  // קבלת מגמות שימוש מתקדמות
+  getAdvancedUsageTrends: async (monthsBack = 12) => {
+    try {
+      console.log('Fetching advanced usage trends...');
+      const response = await axiosInstance.post('/api/advanced-reports', {
+        report_type: 'usage_trends',
+        params: { months_back: monthsBack }
+      });
+      console.log('Advanced trends received:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching advanced trends:', error);
+      throw error;
+    }
+  },
+  
+  // קבלת חיזוי ביקוש עתידי
+  getFutureDemandPredictions: async (monthsAhead = 3) => {
+    try {
+      console.log('Fetching future demand predictions...');
+      const response = await axiosInstance.post('/api/advanced-reports', {
+        report_type: 'future_demand',
+        params: { months_ahead: monthsAhead }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching future demand:', error);
+      throw error;
+    }
+  },
+  
+  // קבלת המלצות רכש חכמות
+  getPurchaseRecommendations: async () => {
+    try {
+      console.log('Fetching purchase recommendations...');
+      const response = await axiosInstance.post('/api/advanced-reports', {
+        report_type: 'purchase_recommendations'
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching purchase recommendations:', error);
+      throw error;
+    }
+  },
+  
+  // קבלת ניתוח השוואתי בין תקופות
+  getComparativePeriodAnalysis: async (period1Start, period1End, period2Start, period2End) => {
+    try {
+      console.log('Fetching comparative period analysis...');
+      const response = await axiosInstance.post('/api/advanced-reports', {
+        report_type: 'comparative_periods',
+        params: {
+          period1_start: period1Start, 
+          period1_end: period1End,
+          period2_start: period2Start,
+          period2_end: period2End
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching comparative analysis:', error);
+      throw error;
+    }
+  },
+  
+  // ייצוא דו"ח מתקדם בפורמט מסוים
+  exportAdvancedReport: async (reportType, params = {}, format = 'excel') => {
+    try {
+      console.log(`Exporting advanced report in ${format} format...`);
+      const response = await axiosInstance.post('/api/export-advanced-report', {
+        report_type: reportType,
+        params: params,
+        format: format
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error exporting advanced report:', error);
+      throw error;
+    }
+  }
 };
 
 // API ליבוא/יצוא
