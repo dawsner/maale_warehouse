@@ -157,8 +157,9 @@ function VintageOrderWizard({ userId }) {
     try {
       setLoading(true);
       const response = await inventoryAPI.getAll();
-      // סינון רק פריטים זמינים
-      const availableItems = response.filter(item => item.is_available && item.quantity > 0);
+      // סינון פריטים זמינים (לא משנה אם is_available הוא true או false, רק שיש כמות זמינה)
+      const availableItems = response.filter(item => item.quantity > 0);
+      console.log(`נמצאו ${availableItems.length} פריטים זמינים מתוך ${response.length} סך הכל`);
       setInventory(availableItems);
       setError(null);
     } catch (err) {
