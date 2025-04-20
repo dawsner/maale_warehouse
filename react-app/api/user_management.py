@@ -7,384 +7,482 @@ import sys
 import os
 import json
 import datetime
-import traceback
+import logging
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
-# הוספת תיקיית השורש לpath כדי לאפשר import של מודולים אחרים
+# הגדרת ספרייה נוכחית להיות בספרייה של הקובץ
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(os.path.dirname(current_dir))
 sys.path.append(parent_dir)
 
+# ייבוא פונקציית חיבור למסד הנתונים
 from database import get_db_connection
-from werkzeug.security import generate_password_hash
-from auth_api import User
 
+# קידוד JSON לאובייקטי תאריך
 class DateTimeEncoder(json.JSONEncoder):
     """מחלקה להמרת אובייקטי תאריך ל-JSON"""
     def default(self, o):
         if isinstance(o, (datetime.datetime, datetime.date)):
             return o.isoformat()
-        return super().default(o)
+        return super(DateTimeEncoder, self).default(o)
 
 def get_all_users():
     """מחזיר רשימה של כל המשתמשים במערכת"""
-    with get_db_connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
-                SELECT id, username, password, role, email, full_name, 
-                       study_year, branch, status, created_at, last_login 
-                FROM users
-                ORDER BY id
-            """)
-            users = []
-            for user in cur.fetchall():
-                user_obj = User(
-                    id=user[0],
-                    username=user[1],
-                    role=user[3],
-                    email=user[4],
-                    full_name=user[5],
-                    study_year=user[6],
-                    branch=user[7],
-                    status=user[8],
-                    created_at=user[9],
-                    last_login=user[10]
-                )
-                users.append(user_obj.to_dict())
-            return users
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        
+        # שליפת כל המשתמשים עם מידע נוסף
+        cursor.execute("""
+            SELECT 
+                id, username, role, email, full_name, study_year, branch, 
+                status, created_at, last_login 
+            FROM users 
+            ORDER BY full_name
+        """)
+        
+        users = cursor.fetchall()
+        return {'success': True, 'users': users}
+    
+    except Exception as e:
+        logging.error(f"Error fetching users: {e}")
+        return {'success': False, 'message': str(e)}
+    
+    finally:
+        if conn:
+            conn.close()
 
 def update_user_status(user_id, status):
     """
     משנה את סטטוס המשתמש (פעיל/חסום)
     status יכול להיות 'active' או 'blocked'
     """
-    if status not in ['active', 'blocked']:
-        return False, "סטטוס לא חוקי. ערכים אפשריים: 'active', 'blocked'"
-        
+    conn = None
     try:
-        with get_db_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute("UPDATE users SET status = %s WHERE id = %s", (status, user_id))
-                if cur.rowcount == 0:
-                    return False, "משתמש לא נמצא"
-                conn.commit()
-                return True, f"סטטוס המשתמש עודכן ל-{status}"
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # עדכון הסטטוס של המשתמש
+        cursor.execute("""
+            UPDATE users 
+            SET status = %s, 
+                updated_at = CURRENT_TIMESTAMP 
+            WHERE id = %s
+            RETURNING id
+        """, (status, user_id))
+        
+        updated = cursor.fetchone()
+        conn.commit()
+        
+        if not updated:
+            return {'success': False, 'message': 'User not found'}
+            
+        return {'success': True, 'message': f'User status updated to {status}'}
+    
     except Exception as e:
-        return False, f"שגיאה בעדכון סטטוס המשתמש: {str(e)}"
+        if conn:
+            conn.rollback()
+        logging.error(f"Error updating user status: {e}")
+        return {'success': False, 'message': str(e)}
+    
+    finally:
+        if conn:
+            conn.close()
 
 def update_user_details(user_id, details):
     """
     עדכון פרטי משתמש
     details הוא מילון המכיל את השדות לעדכון (לדוגמה: full_name, email, role, study_year, branch)
     """
-    allowed_fields = ['full_name', 'email', 'role', 'study_year', 'branch']
-    update_fields = []
-    params = []
-    
-    # בנייה של שאילתת העדכון הדינמית
-    for field in allowed_fields:
-        if field in details and details[field] is not None:
-            update_fields.append(f"{field} = %s")
-            params.append(details[field])
-            
-    if not update_fields:
-        return False, "לא סופקו שדות לעדכון"
-            
-    # הוספת ה-ID בסוף הפרמטרים
-    params.append(user_id)
-    
+    conn = None
     try:
-        with get_db_connection() as conn:
-            with conn.cursor() as cur:
-                query = f"UPDATE users SET {', '.join(update_fields)} WHERE id = %s"
-                cur.execute(query, params)
-                
-                if cur.rowcount == 0:
-                    return False, "משתמש לא נמצא"
-                    
-                conn.commit()
-                return True, "פרטי המשתמש עודכנו בהצלחה"
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # בניית השאילתה הדינמית לעדכון רק השדות שהתקבלו
+        allowed_fields = {'full_name', 'email', 'role', 'study_year', 'branch'}
+        fields_to_update = {k: v for k, v in details.items() if k in allowed_fields}
+        
+        if not fields_to_update:
+            return {'success': False, 'message': 'No valid fields to update'}
+        
+        query_parts = []
+        values = []
+        
+        for field, value in fields_to_update.items():
+            query_parts.append(f"{field} = %s")
+            values.append(value)
+        
+        # הוספת שדה updated_at
+        query_parts.append("updated_at = CURRENT_TIMESTAMP")
+        
+        # בניית השאילתה המלאה
+        query = f"""
+            UPDATE users 
+            SET {', '.join(query_parts)} 
+            WHERE id = %s
+            RETURNING id
+        """
+        
+        values.append(user_id)
+        cursor.execute(query, values)
+        
+        updated = cursor.fetchone()
+        conn.commit()
+        
+        if not updated:
+            return {'success': False, 'message': 'User not found'}
+            
+        return {'success': True, 'message': 'User details updated successfully'}
+    
     except Exception as e:
-        return False, f"שגיאה בעדכון פרטי המשתמש: {str(e)}"
+        if conn:
+            conn.rollback()
+        logging.error(f"Error updating user details: {e}")
+        return {'success': False, 'message': str(e)}
+    
+    finally:
+        if conn:
+            conn.close()
 
 def change_user_password(user_id, new_password):
     """שינוי סיסמת משתמש"""
+    conn = None
     try:
-        hashed_password = generate_password_hash(new_password)
+        # יצירת גיבוב לסיסמה
+        from werkzeug.security import generate_password_hash
+        password_hash = generate_password_hash(new_password, method='scrypt')
         
-        with get_db_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute("UPDATE users SET password = %s WHERE id = %s", (hashed_password, user_id))
-                
-                if cur.rowcount == 0:
-                    return False, "משתמש לא נמצא"
-                    
-                conn.commit()
-                return True, "סיסמת המשתמש שונתה בהצלחה"
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # עדכון הסיסמה בבסיס הנתונים
+        cursor.execute("""
+            UPDATE users 
+            SET password_hash = %s, 
+                updated_at = CURRENT_TIMESTAMP 
+            WHERE id = %s
+            RETURNING id
+        """, (password_hash, user_id))
+        
+        updated = cursor.fetchone()
+        conn.commit()
+        
+        if not updated:
+            return {'success': False, 'message': 'User not found'}
+            
+        return {'success': True, 'message': 'Password changed successfully'}
+    
     except Exception as e:
-        return False, f"שגיאה בשינוי סיסמת המשתמש: {str(e)}"
+        if conn:
+            conn.rollback()
+        logging.error(f"Error changing user password: {e}")
+        return {'success': False, 'message': str(e)}
+    
+    finally:
+        if conn:
+            conn.close()
 
 def get_user_restrictions(user_id):
     """מחזיר רשימה של כל ההגבלות לפריטים ספציפיים עבור משתמש מסוים"""
-    with get_db_connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
-                SELECT r.id, r.user_id, r.item_id, i.name, i.category, r.reason, 
-                       r.created_at, r.created_by, u.username as created_by_name
-                FROM user_item_restrictions r
-                JOIN items i ON r.item_id = i.id
-                LEFT JOIN users u ON r.created_by = u.id
-                WHERE r.user_id = %s
-                ORDER BY r.created_at DESC
-            """, (user_id,))
-            
-            restrictions = []
-            for row in cur.fetchall():
-                restrictions.append({
-                    'id': row[0],
-                    'user_id': row[1],
-                    'item_id': row[2],
-                    'item_name': row[3],
-                    'item_category': row[4],
-                    'reason': row[5],
-                    'created_at': row[6],
-                    'created_by_id': row[7],
-                    'created_by_name': row[8]
-                })
-            
-            return restrictions
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        
+        # שליפת הגבלות הפריטים של המשתמש
+        cursor.execute("""
+            SELECT 
+                ur.id, ur.user_id, ur.item_id, ur.reason, ur.created_at,
+                ur.created_by as created_by_id, u.full_name as created_by_name,
+                i.name as item_name, i.category as item_category
+            FROM user_item_restrictions ur
+            JOIN users u ON ur.created_by = u.id
+            JOIN items i ON ur.item_id = i.id
+            WHERE ur.user_id = %s
+            ORDER BY ur.created_at DESC
+        """, (user_id,))
+        
+        restrictions = cursor.fetchall()
+        return {'success': True, 'restrictions': restrictions}
+    
+    except Exception as e:
+        logging.error(f"Error fetching user restrictions: {e}")
+        return {'success': False, 'message': str(e)}
+    
+    finally:
+        if conn:
+            conn.close()
 
 def add_user_restriction(user_id, item_id, reason, created_by):
     """הוספת הגבלת גישה לפריט ספציפי למשתמש"""
+    conn = None
     try:
-        with get_db_connection() as conn:
-            with conn.cursor() as cur:
-                # בדיקה שהמשתמש קיים
-                cur.execute("SELECT id FROM users WHERE id = %s", (user_id,))
-                if not cur.fetchone():
-                    return False, "משתמש לא נמצא"
-                
-                # בדיקה שהפריט קיים
-                cur.execute("SELECT id FROM items WHERE id = %s", (item_id,))
-                if not cur.fetchone():
-                    return False, "פריט לא נמצא"
-                
-                # בדיקה אם כבר קיימת הגבלה
-                cur.execute("""
-                    SELECT id FROM user_item_restrictions
-                    WHERE user_id = %s AND item_id = %s
-                """, (user_id, item_id))
-                
-                existing = cur.fetchone()
-                if existing:
-                    # עדכון הגבלה קיימת
-                    cur.execute("""
-                        UPDATE user_item_restrictions
-                        SET reason = %s, created_by = %s, created_at = CURRENT_TIMESTAMP
-                        WHERE id = %s
-                    """, (reason, created_by, existing[0]))
-                    conn.commit()
-                    return True, "הגבלת הגישה עודכנה בהצלחה"
-                else:
-                    # יצירת הגבלה חדשה
-                    cur.execute("""
-                        INSERT INTO user_item_restrictions (user_id, item_id, reason, created_by)
-                        VALUES (%s, %s, %s, %s)
-                    """, (user_id, item_id, reason, created_by))
-                    conn.commit()
-                    return True, "הגבלת הגישה נוספה בהצלחה"
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # בדיקה אם ההגבלה כבר קיימת
+        cursor.execute("""
+            SELECT id FROM user_item_restrictions
+            WHERE user_id = %s AND item_id = %s
+        """, (user_id, item_id))
+        
+        existing = cursor.fetchone()
+        
+        if existing:
+            # עדכון הגבלה קיימת
+            cursor.execute("""
+                UPDATE user_item_restrictions
+                SET reason = %s,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE user_id = %s AND item_id = %s
+                RETURNING id
+            """, (reason, user_id, item_id))
+        else:
+            # יצירת הגבלה חדשה
+            cursor.execute("""
+                INSERT INTO user_item_restrictions (user_id, item_id, reason, created_by)
+                VALUES (%s, %s, %s, %s)
+                RETURNING id
+            """, (user_id, item_id, reason, created_by))
+        
+        result = cursor.fetchone()
+        conn.commit()
+        
+        return {'success': True, 'restriction_id': result[0], 'message': 'Restriction added successfully'}
+    
     except Exception as e:
-        return False, f"שגיאה בהוספת הגבלת גישה: {str(e)}"
+        if conn:
+            conn.rollback()
+        logging.error(f"Error adding user restriction: {e}")
+        return {'success': False, 'message': str(e)}
+    
+    finally:
+        if conn:
+            conn.close()
 
 def remove_user_restriction(restriction_id):
     """הסרת הגבלת גישה לפריט ספציפי"""
+    conn = None
     try:
-        with get_db_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute("DELETE FROM user_item_restrictions WHERE id = %s", (restriction_id,))
-                
-                if cur.rowcount == 0:
-                    return False, "הגבלה לא נמצאה"
-                
-                conn.commit()
-                return True, "הגבלת הגישה הוסרה בהצלחה"
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # מחיקת ההגבלה
+        cursor.execute("""
+            DELETE FROM user_item_restrictions
+            WHERE id = %s
+            RETURNING id
+        """, (restriction_id,))
+        
+        deleted = cursor.fetchone()
+        conn.commit()
+        
+        if not deleted:
+            return {'success': False, 'message': 'Restriction not found'}
+            
+        return {'success': True, 'message': 'Restriction removed successfully'}
+    
     except Exception as e:
-        return False, f"שגיאה בהסרת הגבלת גישה: {str(e)}"
+        if conn:
+            conn.rollback()
+        logging.error(f"Error removing user restriction: {e}")
+        return {'success': False, 'message': str(e)}
+    
+    finally:
+        if conn:
+            conn.close()
 
 def get_category_permissions():
     """מחזיר רשימה של כל הרשאות הקטגוריות לפי שנת לימודים"""
-    with get_db_connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
-                SELECT id, study_year, category, created_at
-                FROM category_permissions
-                ORDER BY study_year, category
-            """)
-            
-            permissions = []
-            for row in cur.fetchall():
-                permissions.append({
-                    'id': row[0],
-                    'study_year': row[1],
-                    'category': row[2],
-                    'created_at': row[3]
-                })
-            
-            return permissions
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        
+        # שליפת הרשאות קטגוריות
+        cursor.execute("""
+            SELECT id, study_year, category, created_at
+            FROM category_permissions
+            ORDER BY study_year, category
+        """)
+        
+        permissions = cursor.fetchall()
+        return {'success': True, 'permissions': permissions}
+    
+    except Exception as e:
+        logging.error(f"Error fetching category permissions: {e}")
+        return {'success': False, 'message': str(e)}
+    
+    finally:
+        if conn:
+            conn.close()
 
 def add_category_permission(study_year, category):
     """הוספת הרשאה לקטגוריה עבור שנת לימודים מסוימת"""
-    if study_year not in ['first', 'second', 'third']:
-        return False, "שנת לימודים לא חוקית. ערכים אפשריים: 'first', 'second', 'third'"
-        
+    conn = None
     try:
-        with get_db_connection() as conn:
-            with conn.cursor() as cur:
-                # בדיקה שהקטגוריה קיימת
-                cur.execute("SELECT DISTINCT category FROM items WHERE category = %s", (category,))
-                if not cur.fetchone():
-                    return False, "קטגוריה לא נמצאה"
-                
-                # בדיקה אם כבר קיימת הרשאה כזו
-                cur.execute("""
-                    SELECT id FROM category_permissions
-                    WHERE study_year = %s AND category = %s
-                """, (study_year, category))
-                
-                if cur.fetchone():
-                    return False, "הרשאה כזו כבר קיימת"
-                
-                # יצירת הרשאה חדשה
-                cur.execute("""
-                    INSERT INTO category_permissions (study_year, category)
-                    VALUES (%s, %s)
-                """, (study_year, category))
-                
-                conn.commit()
-                return True, "הרשאת הקטגוריה נוספה בהצלחה"
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # בדיקה אם ההרשאה כבר קיימת
+        cursor.execute("""
+            SELECT id FROM category_permissions
+            WHERE study_year = %s AND category = %s
+        """, (study_year, category))
+        
+        existing = cursor.fetchone()
+        
+        if existing:
+            return {'success': False, 'message': 'Permission already exists'}
+        
+        # יצירת הרשאה חדשה
+        cursor.execute("""
+            INSERT INTO category_permissions (study_year, category)
+            VALUES (%s, %s)
+            RETURNING id
+        """, (study_year, category))
+        
+        result = cursor.fetchone()
+        conn.commit()
+        
+        return {'success': True, 'permission_id': result[0], 'message': 'Permission added successfully'}
+    
     except Exception as e:
-        return False, f"שגיאה בהוספת הרשאת קטגוריה: {str(e)}"
+        if conn:
+            conn.rollback()
+        logging.error(f"Error adding category permission: {e}")
+        return {'success': False, 'message': str(e)}
+    
+    finally:
+        if conn:
+            conn.close()
 
 def remove_category_permission(permission_id):
     """הסרת הרשאה לקטגוריה"""
+    conn = None
     try:
-        with get_db_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute("DELETE FROM category_permissions WHERE id = %s", (permission_id,))
-                
-                if cur.rowcount == 0:
-                    return False, "הרשאה לא נמצאה"
-                
-                conn.commit()
-                return True, "הרשאת הקטגוריה הוסרה בהצלחה"
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # מחיקת ההרשאה
+        cursor.execute("""
+            DELETE FROM category_permissions
+            WHERE id = %s
+            RETURNING id
+        """, (permission_id,))
+        
+        deleted = cursor.fetchone()
+        conn.commit()
+        
+        if not deleted:
+            return {'success': False, 'message': 'Permission not found'}
+            
+        return {'success': True, 'message': 'Permission removed successfully'}
+    
     except Exception as e:
-        return False, f"שגיאה בהסרת הרשאת קטגוריה: {str(e)}"
+        if conn:
+            conn.rollback()
+        logging.error(f"Error removing category permission: {e}")
+        return {'success': False, 'message': str(e)}
+    
+    finally:
+        if conn:
+            conn.close()
 
 def get_available_categories_for_user(user_id):
     """מחזיר רשימה של כל הקטגוריות הזמינות למשתמש מסוים"""
-    with get_db_connection() as conn:
-        with conn.cursor() as cur:
-            # קבלת נתוני המשתמש
-            cur.execute("""
-                SELECT role, study_year
-                FROM users
-                WHERE id = %s
-            """, (user_id,))
-            
-            user_data = cur.fetchone()
-            if not user_data:
-                return []
-                
-            role, study_year = user_data
-            
-            # אם המשתמש הוא מנהל מחסן או אדמין, הוא יכול לגשת לכל הקטגוריות
-            if role in ['admin', 'warehouse_staff']:
-                cur.execute("SELECT DISTINCT category FROM items ORDER BY category")
-                return [row[0] for row in cur.fetchall()]
-            
-            # אם המשתמש הוא סטודנט, מחזיר רק את הקטגוריות המורשות לשנת הלימודים שלו
-            if role == 'student' and study_year:
-                cur.execute("""
-                    SELECT DISTINCT category
-                    FROM category_permissions
-                    WHERE study_year = %s
-                    ORDER BY category
-                """, (study_year,))
-                return [row[0] for row in cur.fetchall()]
-            
-            return []
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        
+        # שליפת פרטי המשתמש
+        cursor.execute("""
+            SELECT role, study_year FROM users WHERE id = %s
+        """, (user_id,))
+        
+        user = cursor.fetchone()
+        
+        if not user:
+            return {'success': False, 'message': 'User not found'}
+        
+        # אם המשתמש הוא מנהל או מחסנאי - כל הקטגוריות זמינות
+        if user['role'] in ('admin', 'warehouse_staff'):
+            cursor.execute("""
+                SELECT DISTINCT category FROM items ORDER BY category
+            """)
+            categories = [row['category'] for row in cursor.fetchall()]
+            return {'success': True, 'categories': categories}
+        
+        # עבור סטודנטים - רק קטגוריות המורשות לשנת הלימוד שלהם
+        cursor.execute("""
+            SELECT category FROM category_permissions
+            WHERE study_year = %s
+            ORDER BY category
+        """, (user['study_year'],))
+        
+        categories = [row['category'] for row in cursor.fetchall()]
+        return {'success': True, 'categories': categories}
+    
+    except Exception as e:
+        logging.error(f"Error fetching available categories: {e}")
+        return {'success': False, 'message': str(e)}
+    
+    finally:
+        if conn:
+            conn.close()
 
 def main():
     """פונקציה ראשית למודול ניהול משתמשים"""
     try:
-        # קריאת נתוני ה-request מה-input הסטנדרטי
-        request_data = json.loads(sys.stdin.read())
+        # קריאת הקלט מ-stdin
+        request_body = sys.stdin.read()
+        request_data = json.loads(request_body) if request_body else {}
         
-        # שליפת הפעולה הנדרשת והפרמטרים מהבקשה
         action = request_data.get('action', '')
         params = request_data.get('params', {})
         
-        result = {'success': False, 'error': 'פעולה לא מוכרת'}
-        
-        # ביצוע הפעולה הנדרשת
+        # ביצוע הפעולה המבוקשת
         if action == 'get_all_users':
-            users = get_all_users()
-            result = {'success': True, 'users': users}
-            
+            result = get_all_users()
         elif action == 'update_user_status':
-            success, message = update_user_status(params.get('user_id'), params.get('status'))
-            result = {'success': success, 'message': message}
-            
+            result = update_user_status(params.get('user_id'), params.get('status'))
         elif action == 'update_user_details':
-            success, message = update_user_details(params.get('user_id'), params.get('details', {}))
-            result = {'success': success, 'message': message}
-            
+            result = update_user_details(params.get('user_id'), params.get('details', {}))
         elif action == 'change_user_password':
-            success, message = change_user_password(params.get('user_id'), params.get('new_password'))
-            result = {'success': success, 'message': message}
-            
+            result = change_user_password(params.get('user_id'), params.get('new_password'))
         elif action == 'get_user_restrictions':
-            restrictions = get_user_restrictions(params.get('user_id'))
-            result = {'success': True, 'restrictions': restrictions}
-            
+            result = get_user_restrictions(params.get('user_id'))
         elif action == 'add_user_restriction':
-            success, message = add_user_restriction(
+            result = add_user_restriction(
                 params.get('user_id'), 
                 params.get('item_id'), 
                 params.get('reason', ''), 
                 params.get('created_by')
             )
-            result = {'success': success, 'message': message}
-            
         elif action == 'remove_user_restriction':
-            success, message = remove_user_restriction(params.get('restriction_id'))
-            result = {'success': success, 'message': message}
-            
+            result = remove_user_restriction(params.get('restriction_id'))
         elif action == 'get_category_permissions':
-            permissions = get_category_permissions()
-            result = {'success': True, 'permissions': permissions}
-            
+            result = get_category_permissions()
         elif action == 'add_category_permission':
-            success, message = add_category_permission(params.get('study_year'), params.get('category'))
-            result = {'success': success, 'message': message}
-            
+            result = add_category_permission(params.get('study_year'), params.get('category'))
         elif action == 'remove_category_permission':
-            success, message = remove_category_permission(params.get('permission_id'))
-            result = {'success': success, 'message': message}
-            
+            result = remove_category_permission(params.get('permission_id'))
         elif action == 'get_available_categories':
-            categories = get_available_categories_for_user(params.get('user_id'))
-            result = {'success': True, 'categories': categories}
-            
-        # החזרת התוצאה ב-JSON
+            result = get_available_categories_for_user(params.get('user_id'))
+        else:
+            result = {'success': False, 'message': f'Unknown action: {action}'}
+        
+        # החזרת תוצאה כ-JSON
         print(json.dumps(result, cls=DateTimeEncoder))
         
     except Exception as e:
-        error_details = traceback.format_exc()
-        print(json.dumps({
-            'success': False,
-            'error': f'שגיאה במודול ניהול משתמשים: {str(e)}',
-            'details': error_details
-        }, cls=DateTimeEncoder))
+        error_result = {'success': False, 'message': str(e)}
+        print(json.dumps(error_result))
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

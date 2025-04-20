@@ -16,6 +16,8 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import BuildIcon from '@mui/icons-material/Build';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
+import PeopleIcon from '@mui/icons-material/People';
+import AssessmentIcon from '@mui/icons-material/Assessment';
 
 import AlertsCenter from './AlertsCenter';
 import { alertsAPI } from '../api/api';
@@ -218,8 +220,12 @@ function TopNavigation({ user, onLogout }) {
                         ניהול תחזוקה
                       </MenuItem>
                       <MenuItem onClick={() => handleNavigation('/advanced-reports')}>
-                        <BarChartIcon fontSize="small" sx={{ mr: 1 }} />
+                        <AssessmentIcon fontSize="small" sx={{ mr: 1 }} />
                         דוחות מתקדמים
+                      </MenuItem>
+                      <MenuItem onClick={() => handleNavigation('/user-management')}>
+                        <PeopleIcon fontSize="small" sx={{ mr: 1 }} />
+                        ניהול משתמשים
                       </MenuItem>
                       <MenuItem onClick={() => handleNavigation('/inventory-legacy')}>
                         <InventoryIcon fontSize="small" sx={{ mr: 1 }} />
