@@ -281,7 +281,11 @@ def update_maintenance_record(record_id, maintenance_type=None, description=None
             # נשיג את סוג התחזוקה
             if maintenance_type is None:
                 cur.execute("SELECT maintenance_type FROM maintenance_records WHERE id = %s", (record_id,))
-                maintenance_type = cur.fetchone()[0]
+                result = cur.fetchone()
+                if result:
+                    maintenance_type = result[0]
+                else:
+                    maintenance_type = "general"  # ערך ברירת מחדל אם לא נמצא
                 
             # נעדכן תאריך תחזוקה אחרונה ונחשב מועד תחזוקה הבא
             cur.execute(
