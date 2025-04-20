@@ -7,421 +7,642 @@ import os
 import sys
 import json
 import datetime
-from datetime import timedelta
+import time
+import pytz
 import pandas as pd
 import numpy as np
-from collections import defaultdict
-import pytz
-from dateutil.relativedelta import relativedelta
 
 # הוספת תיקיית השורש לpath כדי לאפשר import של מודולים אחרים
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-import database
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(os.path.dirname(current_dir))
+sys.path.append(parent_dir)
 
-def get_israel_time():
-    """מחזיר את השעה הנוכחית בישראל"""
-    israel_tz = pytz.timezone('Asia/Jerusalem')
-    return datetime.datetime.now(israel_tz)
+# חיבור למסד הנתונים
+import database
+from utils import get_israel_time
 
 def get_db_connection():
     """יוצר חיבור למסד הנתונים"""
     return database.get_db_connection()
 
-# -------------------------
-# ניתוח מגמות שימוש בציוד
-# -------------------------
-
-def analyze_usage_trends(months_back=12):
+def analyze_usage_trends(params=None):
     """
     מנתח מגמות שימוש בציוד לאורך זמן
     חזרה: נתונים על תדירות השימוש בפריטים לפי קטגוריות, מגמות לאורך זמן
     """
+    if params is None:
+        params = {}
+    
+    months_back = int(params.get('months_back', 12))
     conn = get_db_connection()
     cur = conn.cursor()
     
-    # תאריך התחלה לניתוח - X חודשים אחורה
-    start_date = (get_israel_time() - relativedelta(months=months_back)).strftime('%Y-%m-%d')
+    # תאריך לפני X חודשים
+    cutoff_date = get_israel_time() - datetime.timedelta(days=30 * months_back)
+    cutoff_date_str = cutoff_date.strftime('%Y-%m-%d')
     
-    # שליפת נתוני השאלות בטווח הזמן
+    # ניתוח לפי קטגוריה
     cur.execute("""
-        SELECT l.item_id, i.name, i.category, 
-               TO_CHAR(l.loan_date, 'YYYY-MM') as month,
-               COUNT(*) as loan_count
+        SELECT i.category, COUNT(l.id) as loan_count
         FROM loans l
         JOIN items i ON l.item_id = i.id
         WHERE l.loan_date >= %s
-        GROUP BY l.item_id, i.name, i.category, month
-        ORDER BY month, loan_count DESC
-    """, (start_date,))
+        GROUP BY i.category
+        ORDER BY loan_count DESC
+    """, (cutoff_date_str,))
     
-    loans_data = cur.fetchall()
+    usage_by_category = {}
+    for row in cur.fetchall():
+        usage_by_category[row[0]] = row[1]
     
-    # יצירת DataFrame מהנתונים
-    df = pd.DataFrame(loans_data, columns=['item_id', 'item_name', 'category', 'month', 'loan_count'])
+    # פריטים פופולריים ביותר
+    cur.execute("""
+        SELECT i.id, i.name, i.category, COUNT(l.id) as loan_count
+        FROM loans l
+        JOIN items i ON l.item_id = i.id
+        WHERE l.loan_date >= %s
+        GROUP BY i.id, i.name, i.category
+        ORDER BY loan_count DESC
+        LIMIT 10
+    """, (cutoff_date_str,))
     
-    # ניתוח מגמות לאורך זמן - חישוב השינוי החודשי בשימוש
-    trend_analysis = {}
+    most_popular_items = []
+    for row in cur.fetchall():
+        most_popular_items.append({
+            'id': row[0],
+            'name': row[1],
+            'category': row[2],
+            'loan_count': row[3]
+        })
     
-    # אם אין מספיק נתונים, נחזיר מבנה נתונים ריק
-    if df.empty:
-        return {
-            'usage_by_category': {},
-            'usage_by_month': {},
-            'trend_by_category': {},
-            'most_popular_items': [],
-            'least_popular_items': [],
-            'growth_items': []
-        }
+    # פריטים פחות פופולריים
+    cur.execute("""
+        SELECT i.id, i.name, i.category, COUNT(l.id) as loan_count
+        FROM loans l
+        JOIN items i ON l.item_id = i.id
+        WHERE l.loan_date >= %s
+        GROUP BY i.id, i.name, i.category
+        HAVING COUNT(l.id) > 0
+        ORDER BY loan_count ASC
+        LIMIT 10
+    """, (cutoff_date_str,))
     
-    # ניתוח לפי קטגוריה
-    usage_by_category = df.groupby('category')['loan_count'].sum().to_dict()
+    least_popular_items = []
+    for row in cur.fetchall():
+        least_popular_items.append({
+            'id': row[0],
+            'name': row[1],
+            'category': row[2],
+            'loan_count': row[3]
+        })
     
-    # ניתוח לפי חודש
-    df['month_date'] = pd.to_datetime(df['month'] + '-01')
-    df = df.sort_values('month_date')
-    usage_by_month = df.groupby(['month', 'category'])['loan_count'].sum().unstack().fillna(0).to_dict()
+    # מגמות שימוש לפי קטגוריה (חלוקה לתקופות)
+    # מחשב מקדם גידול בין תקופה מוקדמת לתקופה מאוחרת
+    half_period = months_back // 2
+    mid_cutoff_date = get_israel_time() - datetime.timedelta(days=30 * half_period)
+    mid_cutoff_date_str = mid_cutoff_date.strftime('%Y-%m-%d')
     
-    # ניתוח מגמות לפי קטגוריה
+    cur.execute("""
+        SELECT i.category,
+            SUM(CASE WHEN l.loan_date < %s THEN 1 ELSE 0 END) as early_period,
+            SUM(CASE WHEN l.loan_date >= %s THEN 1 ELSE 0 END) as later_period
+        FROM loans l
+        JOIN items i ON l.item_id = i.id
+        WHERE l.loan_date >= %s
+        GROUP BY i.category
+    """, (mid_cutoff_date_str, mid_cutoff_date_str, cutoff_date_str))
+    
     trend_by_category = {}
-    for category in df['category'].unique():
-        category_data = df[df['category'] == category].groupby('month')['loan_count'].sum()
-        if len(category_data) > 1:
-            # חישוב אחוז השינוי הממוצע בין חודשים
-            pct_changes = category_data.pct_change().dropna()
-            avg_change = pct_changes.mean() if not pct_changes.empty else 0
-            trend_by_category[category] = avg_change
+    for row in cur.fetchall():
+        category, early, later = row
+        # חישוב יחס גידול (אם התקופה המוקדמת היא 0, נקבע ערך יחסי גבוה)
+        if early == 0:
+            trend_value = 2.0 if later > 0 else 0.0
         else:
-            trend_by_category[category] = 0
+            trend_value = float(later) / early
+        trend_by_category[category] = trend_value
     
-    # זיהוי פריטים פופולריים ביותר
-    popular_items = df.groupby(['item_id', 'item_name', 'category'])['loan_count'].sum().reset_index().sort_values('loan_count', ascending=False).head(10)
-    popular_items_list = popular_items.to_dict('records')
-    
-    # זיהוי פריטים פחות פופולריים
-    unpopular_items = df.groupby(['item_id', 'item_name', 'category'])['loan_count'].sum().reset_index().sort_values('loan_count').head(10)
-    unpopular_items_list = unpopular_items.to_dict('records')
-    
-    # פריטים עם הצמיחה המהירה ביותר
-    growth_items = []
-    
-    # סגירת החיבור
-    cur.close()
     conn.close()
     
-    return {
+    result = {
         'usage_by_category': usage_by_category,
-        'usage_by_month': usage_by_month,
+        'most_popular_items': most_popular_items,
+        'least_popular_items': least_popular_items,
         'trend_by_category': trend_by_category,
-        'most_popular_items': popular_items_list,
-        'least_popular_items': unpopular_items_list,
-        'growth_items': growth_items
+        'time_period': {
+            'months_back': months_back,
+            'start_date': cutoff_date.isoformat(),
+            'end_date': get_israel_time().isoformat()
+        }
     }
+    
+    return result
 
-# -------------------------
-# חיזוי ביקוש עתידי
-# -------------------------
-
-def predict_future_demand(months_ahead=3):
+def predict_future_demand(params=None):
     """
     חיזוי ביקוש עתידי לפריטים בהתבסס על נתוני העבר
     מודל פשוט מבוסס על ממוצע נע ומגמות
     """
+    if params is None:
+        params = {}
+    
+    months_ahead = int(params.get('months_ahead', 3))
     conn = get_db_connection()
     cur = conn.cursor()
     
-    # קבלת נתוני ההשאלות לפי חודשים
+    # ניתוח היסטוריה של 12 חודשים אחורה
+    twelve_months_ago = get_israel_time() - datetime.timedelta(days=365)
+    twelve_months_ago_str = twelve_months_ago.strftime('%Y-%m-%d')
+    
+    # ניתוח לפי חודשים
     cur.execute("""
         SELECT 
-            i.id as item_id, 
-            i.name as item_name, 
+            i.id, 
+            i.name, 
             i.category,
-            TO_CHAR(l.loan_date, 'YYYY-MM') as month,
-            COUNT(*) as loan_count
+            date_trunc('month', l.loan_date) as month,
+            COUNT(l.id) as loan_count
         FROM loans l
         JOIN items i ON l.item_id = i.id
-        WHERE l.loan_date >= NOW() - INTERVAL '12 months'
-        GROUP BY i.id, i.name, i.category, month
+        WHERE l.loan_date >= %s
+        GROUP BY i.id, i.name, i.category, date_trunc('month', l.loan_date)
         ORDER BY i.id, month
-    """)
+    """, (twelve_months_ago_str,))
     
-    loans_data = cur.fetchall()
-    
-    # יצירת DataFrame
-    df = pd.DataFrame(loans_data, columns=['item_id', 'item_name', 'category', 'month', 'loan_count'])
-    
-    if df.empty:
-        return {
-            'predicted_demand': [],
-            'predicted_categories': {}
-        }
-    
-    # המרת חודש לאובייקט תאריך לצורך חישובים
-    df['month_date'] = pd.to_datetime(df['month'] + '-01')
-    df = df.sort_values(['item_id', 'month_date'])
-    
-    # חיזוי ביקוש עתידי לכל פריט
-    predicted_demand = []
-    
-    # רשימת כל החודשים העתידיים שנרצה לחזות
-    future_months = [(get_israel_time() + relativedelta(months=i)).strftime('%Y-%m') 
-                    for i in range(1, months_ahead + 1)]
-    
-    # חיזוי לפי פריט
-    for item_id in df['item_id'].unique():
-        item_data = df[df['item_id'] == item_id]
-        if len(item_data) <= 1:  # צריך לפחות 2 נקודות מידע לחיזוי
-            continue
-            
-        item_name = item_data['item_name'].iloc[0]
-        category = item_data['category'].iloc[0]
-        
-        # מודל חיזוי פשוט - ממוצע נע + מגמה
-        loan_counts = item_data['loan_count'].tolist()
-        
-        # חישוב מגמה פשוטה (שיפוע)
-        if len(loan_counts) >= 3:
-            recent_trend = (loan_counts[-1] - loan_counts[-2]) + (loan_counts[-2] - loan_counts[-3]) / 2
-        elif len(loan_counts) == 2:
-            recent_trend = loan_counts[-1] - loan_counts[-2]
-        else:
-            recent_trend = 0
-            
-        # חיזוי לפי ממוצע + מגמה
-        last_count = loan_counts[-1]
-        avg_count = sum(loan_counts) / len(loan_counts)
-        
-        for i, future_month in enumerate(future_months):
-            predicted_count = max(0, last_count + (recent_trend * (i+1)))
-            weighted_prediction = (predicted_count * 0.7) + (avg_count * 0.3)  # שילוב של מגמה וממוצע
-            
-            predicted_demand.append({
-                'item_id': item_id,
-                'item_name': item_name,
+    # עיבוד הנתונים לפי פריט
+    monthly_data = {}
+    for row in cur.fetchall():
+        item_id, item_name, category, month, count = row
+        if item_id not in monthly_data:
+            monthly_data[item_id] = {
+                'id': item_id,
+                'name': item_name,
                 'category': category,
-                'month': future_month,
-                'predicted_count': round(weighted_prediction, 1)
-            })
+                'months': {}
+            }
+        month_str = month.strftime('%Y-%m')
+        monthly_data[item_id]['months'][month_str] = count
     
-    # חיזוי ביקוש לפי קטגוריות
-    df_category = df.groupby(['category', 'month'])['loan_count'].sum().reset_index()
-    df_category['month_date'] = pd.to_datetime(df_category['month'] + '-01')
-    df_category = df_category.sort_values(['category', 'month_date'])
-    
-    predicted_categories = {}
-    
-    for category in df_category['category'].unique():
-        category_data = df_category[df_category['category'] == category]
-        if len(category_data) <= 1:
+    # חיזוי ביקוש עתידי בהתבסס על מגמות עבר
+    predicted_demand = []
+    for item_id, data in monthly_data.items():
+        if len(data['months']) < 3:  # צריך לפחות 3 חודשים למגמה משמעותית
             continue
-            
-        loan_counts = category_data['loan_count'].tolist()
         
-        # חישוב מגמה
-        if len(loan_counts) >= 3:
-            recent_trend = (loan_counts[-1] - loan_counts[-2]) + (loan_counts[-2] - loan_counts[-3]) / 2
-        elif len(loan_counts) == 2:
-            recent_trend = loan_counts[-1] - loan_counts[-2]
+        # המרה לרשימה מסודרת לפי תאריך
+        months_list = sorted(data['months'].keys())
+        counts_list = [data['months'][m] for m in months_list]
+        
+        # חישוב מקדם מגמה פשוט
+        if len(counts_list) >= 6:
+            # השוואה בין ממוצע 3 חודשים אחרונים ל-3 חודשים שלפניהם
+            recent_avg = sum(counts_list[-3:]) / 3
+            previous_avg = sum(counts_list[-6:-3]) / 3
+            
+            if previous_avg > 0:
+                trend_factor = recent_avg / previous_avg
+            else:
+                trend_factor = 1.0 if recent_avg == 0 else 1.5
         else:
-            recent_trend = 0
-            
-        last_count = loan_counts[-1]
-        avg_count = sum(loan_counts) / len(loan_counts)
+            # שימוש במקדם מגמה בסיסי
+            trend_factor = 1.1
         
-        category_predictions = []
-        for i, future_month in enumerate(future_months):
-            predicted_count = max(0, last_count + (recent_trend * (i+1)))
-            weighted_prediction = (predicted_count * 0.7) + (avg_count * 0.3)
+        # חיזוי לפי ממוצע תקופה אחרונה + מקדם מגמה
+        recent_avg = sum(counts_list[-3:]) / 3 if len(counts_list) >= 3 else sum(counts_list) / len(counts_list)
+        
+        # חיזוי לתקופה עתידית
+        predictions = []
+        for i in range(1, months_ahead + 1):
+            predicted_count = recent_avg * (trend_factor ** i)
             
-            category_predictions.append({
+            # חישוב תאריך עתידי
+            last_date = datetime.datetime.strptime(months_list[-1], '%Y-%m')
+            future_date = last_date + datetime.timedelta(days=30 * i)
+            future_month = future_date.strftime('%Y-%m')
+            
+            predictions.append({
                 'month': future_month,
-                'predicted_count': round(weighted_prediction, 1)
+                'predicted_count': round(predicted_count, 1)
             })
-            
-        predicted_categories[category] = category_predictions
+        
+        predicted_demand.append({
+            'id': data['id'],
+            'name': data['name'],
+            'category': data['category'],
+            'current_avg_monthly': round(recent_avg, 1),
+            'trend_factor': round(trend_factor, 2),
+            'predictions': predictions
+        })
     
-    # סגירת החיבור
-    cur.close()
+    # חיזוי לפי קטגוריות
+    cur.execute("""
+        SELECT 
+            i.category,
+            date_trunc('month', l.loan_date) as month,
+            COUNT(l.id) as loan_count
+        FROM loans l
+        JOIN items i ON l.item_id = i.id
+        WHERE l.loan_date >= %s
+        GROUP BY i.category, date_trunc('month', l.loan_date)
+        ORDER BY i.category, month
+    """, (twelve_months_ago_str,))
+    
+    # עיבוד הנתונים לפי קטגוריה
+    monthly_cat_data = {}
+    for row in cur.fetchall():
+        category, month, count = row
+        if category not in monthly_cat_data:
+            monthly_cat_data[category] = {'months': {}}
+        month_str = month.strftime('%Y-%m')
+        monthly_cat_data[category]['months'][month_str] = count
+    
+    # חיזוי לפי קטגוריה
+    predicted_categories = {}
+    for category, data in monthly_cat_data.items():
+        if len(data['months']) < 3:  # צריך לפחות 3 חודשים למגמה משמעותית
+            continue
+        
+        # המרה לרשימה מסודרת לפי תאריך
+        months_list = sorted(data['months'].keys())
+        counts_list = [data['months'][m] for m in months_list]
+        
+        # חישוב מקדם מגמה פשוט
+        if len(counts_list) >= 6:
+            # השוואה בין ממוצע 3 חודשים אחרונים ל-3 חודשים שלפניהם
+            recent_avg = sum(counts_list[-3:]) / 3
+            previous_avg = sum(counts_list[-6:-3]) / 3
+            
+            if previous_avg > 0:
+                trend_factor = recent_avg / previous_avg
+            else:
+                trend_factor = 1.0 if recent_avg == 0 else 1.5
+        else:
+            # שימוש במקדם מגמה בסיסי
+            trend_factor = 1.1
+        
+        # חיזוי לפי ממוצע תקופה אחרונה + מקדם מגמה
+        recent_avg = sum(counts_list[-3:]) / 3 if len(counts_list) >= 3 else sum(counts_list) / len(counts_list)
+        
+        # חיזוי לתקופה עתידית
+        predictions = []
+        for i in range(1, months_ahead + 1):
+            predicted_count = recent_avg * (trend_factor ** i)
+            
+            # חישוב תאריך עתידי
+            last_date = datetime.datetime.strptime(months_list[-1], '%Y-%m')
+            future_date = last_date + datetime.timedelta(days=30 * i)
+            future_month = future_date.strftime('%Y-%m')
+            
+            predictions.append({
+                'month': future_month,
+                'predicted_count': round(predicted_count, 1),
+                'current_avg_monthly': round(recent_avg, 1),
+                'trend_factor': round(trend_factor, 2)
+            })
+        
+        predicted_categories[category] = predictions
+    
     conn.close()
     
-    return {
+    result = {
         'predicted_demand': predicted_demand,
-        'predicted_categories': predicted_categories
+        'predicted_categories': predicted_categories,
+        'time_period': {
+            'months_ahead': months_ahead
+        }
     }
+    
+    return result
 
-# -------------------------
-# המלצות רכש חכמות
-# -------------------------
-
-def generate_purchase_recommendations():
+def generate_purchase_recommendations(params=None):
     """
     יצירת המלצות לרכש פריטים חדשים בהתבסס על:
     1. ביקוש צפוי
     2. זמינות נוכחית
     3. היסטוריית מחירים
     """
+    if params is None:
+        params = {}
+    
+    # המלצות מותאמות פר קטגוריה
+    threshold_percents = params.get('threshold_percents', {
+        'מצלמה': 50,  # צריך לפחות 50% זמינות בקטגוריה זו
+        'תאורה': 30,
+        'סאונד': 40,
+        'עדשות': 25,
+        'default': 20  # ברירת מחדל לשאר הקטגוריות
+    })
+    
     conn = get_db_connection()
     cur = conn.cursor()
     
-    # קבלת נתוני מלאי נוכחיים
+    # ביקוש עתידי
+    future_demand = predict_future_demand(params)
+    predicted_items = {item['id']: item for item in future_demand['predicted_demand']}
+    
+    # בדיקת מצב נוכחי של המלאי
     cur.execute("""
         SELECT 
             id, name, category, quantity, 
-            COALESCE(price_per_unit, 0) as price_per_unit,
-            COALESCE(loaned_quantity, 0) as loaned_quantity
-        FROM items 
-        WHERE quantity > 0
+            (quantity - COALESCE((
+                SELECT SUM(l.quantity) 
+                FROM loans l 
+                WHERE l.item_id = items.id AND l.return_date IS NULL
+            ), 0)) as available_quantity,
+            price_per_unit
+        FROM items
     """)
     
-    inventory_data = cur.fetchall()
-    inventory_df = pd.DataFrame(inventory_data, columns=['item_id', 'name', 'category', 'quantity', 'price_per_unit', 'loaned_quantity'])
+    inventory_status = {}
+    for row in cur.fetchall():
+        item_id, name, category, total_qty, available_qty, price = row
+        inventory_status[item_id] = {
+            'id': item_id,
+            'name': name,
+            'category': category,
+            'total_quantity': total_qty,
+            'available_quantity': available_qty,
+            'price_per_unit': price if price is not None else 0
+        }
     
-    # חישוב אחוז הניצולת הנוכחי (כמה אחוזים מהמלאי מושאל כרגע)
-    inventory_df['utilization'] = (inventory_df['loaned_quantity'] / inventory_df['quantity']).fillna(0)
+    # המלצות רכש
+    recommendations = []
     
-    # קבלת נתוני השאלות של 3 החודשים האחרונים
-    cur.execute("""
-        SELECT 
-            l.item_id,
-            COUNT(*) as loan_count,
-            MAX(l.due_date - l.loan_date) as max_loan_period
-        FROM loans l
-        WHERE l.loan_date >= NOW() - INTERVAL '3 months'
-        GROUP BY l.item_id
-    """)
+    for item_id, status in inventory_status.items():
+        # קביעת סף התראה לפי קטגוריה
+        category = status['category']
+        threshold_percent = threshold_percents.get(category, threshold_percents['default'])
+        
+        # חישוב אחוז זמינות נוכחי
+        if status['total_quantity'] > 0:
+            availability_percent = (status['available_quantity'] / status['total_quantity']) * 100
+        else:
+            availability_percent = 0
+        
+        # בדיקה האם זמינות נמוכה מהסף
+        if availability_percent < threshold_percent:
+            # בדיקה אם יש חיזוי ביקוש עתידי
+            future_status = predicted_items.get(item_id)
+            
+            if future_status:
+                # חישוב כמות מומלצת לרכישה
+                predicted_max = max([p['predicted_count'] for p in future_status['predictions']])
+                recommended_quantity = max(1, int(predicted_max - status['available_quantity']))
+                
+                if recommended_quantity > 0:
+                    recommendations.append({
+                        'id': item_id,
+                        'name': status['name'],
+                        'category': status['category'],
+                        'current_quantity': status['total_quantity'],
+                        'available_quantity': status['available_quantity'],
+                        'availability_percent': round(availability_percent, 1),
+                        'predicted_demand': round(predicted_max, 1),
+                        'recommended_quantity': recommended_quantity,
+                        'price_per_unit': status['price_per_unit'],
+                        'total_cost': round(recommended_quantity * status['price_per_unit'], 2),
+                        'urgency': 'high' if availability_percent < (threshold_percent / 2) else 'medium'
+                    })
+            else:
+                # אם אין חיזוי אבל זמינות נמוכה מאוד, עדיין ממליץ
+                if availability_percent < (threshold_percent / 2):
+                    recommendations.append({
+                        'id': item_id,
+                        'name': status['name'],
+                        'category': status['category'],
+                        'current_quantity': status['total_quantity'],
+                        'available_quantity': status['available_quantity'],
+                        'availability_percent': round(availability_percent, 1),
+                        'recommended_quantity': max(1, status['total_quantity'] - status['available_quantity']),
+                        'price_per_unit': status['price_per_unit'],
+                        'total_cost': round(max(1, status['total_quantity'] - status['available_quantity']) * status['price_per_unit'], 2),
+                        'urgency': 'medium'
+                    })
     
-    recent_loans = cur.fetchall()
-    loans_df = pd.DataFrame(recent_loans, columns=['item_id', 'loan_count', 'max_loan_period'])
+    # מיון לפי דחיפות וקטגוריה
+    recommendations.sort(key=lambda x: (0 if x['urgency'] == 'high' else 1, x['category']))
     
-    # מיזוג נתוני מלאי והשאלות
-    merged_df = inventory_df.merge(loans_df, on='item_id', how='left')
-    merged_df['loan_count'] = merged_df['loan_count'].fillna(0)
-    merged_df['max_loan_period'] = merged_df['max_loan_period'].fillna(0)
+    # סיכום לפי קטגוריה
+    category_summary = []
+    category_totals = {}
     
-    # חישוב דרישה יחסית - כמה פעמים בממוצע מבקשים כל פריט ביחס לכמות במלאי
-    merged_df['demand_ratio'] = merged_df['loan_count'] / merged_df['quantity']
+    for rec in recommendations:
+        cat = rec['category']
+        if cat not in category_totals:
+            category_totals[cat] = {
+                'category': cat,
+                'item_count': 0,
+                'total_cost': 0,
+                'high_urgency_count': 0
+            }
+        
+        category_totals[cat]['item_count'] += 1
+        category_totals[cat]['total_cost'] += rec['total_cost']
+        if rec['urgency'] == 'high':
+            category_totals[cat]['high_urgency_count'] += 1
     
-    # זיהוי פריטים שכדאי לרכוש עוד מהם - בעלי ביקוש גבוה או ניצולת גבוהה
-    merged_df['purchase_score'] = (0.7 * merged_df['utilization']) + (0.3 * merged_df['demand_ratio'])
+    for cat, summary in category_totals.items():
+        category_summary.append(summary)
     
-    # סינון הפריטים המומלצים לרכישה (ציון מעל 0.5)
-    recommended_items = merged_df[merged_df['purchase_score'] > 0.5].sort_values('purchase_score', ascending=False)
+    # מיון לפי דחיפות (כמות פריטים דחופים)
+    category_summary.sort(key=lambda x: x['high_urgency_count'], reverse=True)
     
-    # קביעת כמות מומלצת לרכישה
-    recommended_items['suggested_quantity'] = np.ceil(recommended_items['quantity'] * 0.3)  # תוספת של 30% מהכמות הקיימת
-    recommended_items['suggested_quantity'] = recommended_items['suggested_quantity'].astype(int)
-    recommended_items.loc[recommended_items['suggested_quantity'] < 1, 'suggested_quantity'] = 1
-    
-    # חישוב עלות משוערת
-    recommended_items['estimated_cost'] = recommended_items['suggested_quantity'] * recommended_items['price_per_unit']
-    
-    # הכנת רשימת התוצאות
-    recommendations = recommended_items[[
-        'item_id', 'name', 'category', 'quantity', 'loan_count', 
-        'utilization', 'purchase_score', 'suggested_quantity', 'price_per_unit', 'estimated_cost'
-    ]].to_dict('records')
-    
-    # קבלת סיכום לפי קטגוריה
-    category_summary = recommended_items.groupby('category').agg({
-        'suggested_quantity': 'sum',
-        'estimated_cost': 'sum'
-    }).reset_index().to_dict('records')
-    
-    # סגירת החיבור
-    cur.close()
     conn.close()
     
-    return {
+    result = {
         'recommendations': recommendations,
-        'category_summary': category_summary,
-        'total_cost': recommended_items['estimated_cost'].sum()
+        'category_summary': category_summary
     }
+    
+    return result
 
-# -------------------------
-# השוואה בין תקופות
-# -------------------------
-
-def comparative_periods_analysis(period1_start, period1_end, period2_start, period2_end):
+def comparative_periods_analysis(params=None):
     """
     השוואה בין שתי תקופות זמן - מאפשר להשוות שימוש בין סמסטרים או שנים
     """
+    if params is None:
+        params = {}
+    
+    # פרמטרים של התקופות להשוואה
+    period1_start = params.get('period1_start', '')
+    period1_end = params.get('period1_end', '')
+    period2_start = params.get('period2_start', '')
+    period2_end = params.get('period2_end', '')
+    
+    # אם לא סופקו תאריכים, נשתמש בברירת מחדל של סמסטר נוכחי מול קודם
+    now = get_israel_time()
+    
+    if not period1_start or not period1_end or not period2_start or not period2_end:
+        # תקופה 2: סמסטר נוכחי
+        period2_end = now.strftime('%Y-%m-%d')
+        period2_start = (now - datetime.timedelta(days=180)).strftime('%Y-%m-%d')
+        
+        # תקופה 1: סמסטר קודם
+        period1_end = (now - datetime.timedelta(days=180)).strftime('%Y-%m-%d')
+        period1_start = (now - datetime.timedelta(days=360)).strftime('%Y-%m-%d')
+    
     conn = get_db_connection()
     cur = conn.cursor()
     
-    # הגדרת שאילתא לקבלת נתוני השאלות בטווח תאריכים
-    query = """
+    # השוואת הלוואות פריטים בין התקופות
+    cur.execute("""
+        WITH period1 AS (
+            SELECT i.id, i.name, i.category, COUNT(l.id) as loan_count, SUM(l.quantity) as total_qty
+            FROM loans l
+            JOIN items i ON l.item_id = i.id
+            WHERE l.loan_date BETWEEN %s AND %s
+            GROUP BY i.id, i.name, i.category
+        ), 
+        period2 AS (
+            SELECT i.id, i.name, i.category, COUNT(l.id) as loan_count, SUM(l.quantity) as total_qty
+            FROM loans l
+            JOIN items i ON l.item_id = i.id
+            WHERE l.loan_date BETWEEN %s AND %s
+            GROUP BY i.id, i.name, i.category
+        )
         SELECT 
-            i.id, i.name, i.category,
-            COUNT(*) as loan_count
-        FROM loans l
-        JOIN items i ON l.item_id = i.id
-        WHERE l.loan_date BETWEEN %s AND %s
-        GROUP BY i.id, i.name, i.category
-    """
+            COALESCE(p1.id, p2.id) as id,
+            COALESCE(p1.name, p2.name) as name,
+            COALESCE(p1.category, p2.category) as category,
+            COALESCE(p1.loan_count, 0) as period1_loans,
+            COALESCE(p1.total_qty, 0) as period1_qty,
+            COALESCE(p2.loan_count, 0) as period2_loans,
+            COALESCE(p2.total_qty, 0) as period2_qty
+        FROM period1 p1
+        FULL OUTER JOIN period2 p2 ON p1.id = p2.id
+        ORDER BY 
+            COALESCE(p2.loan_count, 0) - COALESCE(p1.loan_count, 0) DESC,
+            COALESCE(p2.loan_count, 0) DESC
+    """, (period1_start, period1_end, period2_start, period2_end))
     
-    # קבלת נתונים עבור תקופה 1
-    cur.execute(query, (period1_start, period1_end))
-    period1_data = cur.fetchall()
-    period1_df = pd.DataFrame(period1_data, columns=['item_id', 'name', 'category', 'loan_count'])
+    item_comparison = []
+    for row in cur.fetchall():
+        id, name, category, p1_loans, p1_qty, p2_loans, p2_qty = row
+        
+        # חישוב שינוי באחוזים
+        if p1_loans > 0:
+            loan_change_percent = ((p2_loans - p1_loans) / p1_loans) * 100
+        else:
+            loan_change_percent = float('inf') if p2_loans > 0 else 0
+        
+        if p1_qty > 0:
+            qty_change_percent = ((p2_qty - p1_qty) / p1_qty) * 100
+        else:
+            qty_change_percent = float('inf') if p2_qty > 0 else 0
+        
+        item_comparison.append({
+            'id': id,
+            'name': name,
+            'category': category,
+            'period1_loans': p1_loans,
+            'period1_quantity': p1_qty,
+            'period2_loans': p2_loans,
+            'period2_quantity': p2_qty,
+            'loan_change': p2_loans - p1_loans,
+            'loan_change_percent': round(loan_change_percent, 1) if loan_change_percent != float('inf') else None,
+            'quantity_change': p2_qty - p1_qty,
+            'quantity_change_percent': round(qty_change_percent, 1) if qty_change_percent != float('inf') else None
+        })
     
-    # קבלת נתונים עבור תקופה 2
-    cur.execute(query, (period2_start, period2_end))
-    period2_data = cur.fetchall()
-    period2_df = pd.DataFrame(period2_data, columns=['item_id', 'name', 'category', 'loan_count'])
+    # השוואת קטגוריות בין התקופות
+    cur.execute("""
+        WITH period1 AS (
+            SELECT i.category, COUNT(l.id) as loan_count, SUM(l.quantity) as total_qty,
+                COUNT(DISTINCT l.student_id) as unique_students
+            FROM loans l
+            JOIN items i ON l.item_id = i.id
+            WHERE l.loan_date BETWEEN %s AND %s
+            GROUP BY i.category
+        ), 
+        period2 AS (
+            SELECT i.category, COUNT(l.id) as loan_count, SUM(l.quantity) as total_qty,
+                COUNT(DISTINCT l.student_id) as unique_students
+            FROM loans l
+            JOIN items i ON l.item_id = i.id
+            WHERE l.loan_date BETWEEN %s AND %s
+            GROUP BY i.category
+        )
+        SELECT 
+            COALESCE(p1.category, p2.category) as category,
+            COALESCE(p1.loan_count, 0) as period1_loans,
+            COALESCE(p1.total_qty, 0) as period1_qty,
+            COALESCE(p1.unique_students, 0) as period1_students,
+            COALESCE(p2.loan_count, 0) as period2_loans,
+            COALESCE(p2.total_qty, 0) as period2_qty,
+            COALESCE(p2.unique_students, 0) as period2_students
+        FROM period1 p1
+        FULL OUTER JOIN period2 p2 ON p1.category = p2.category
+        ORDER BY 
+            COALESCE(p2.loan_count, 0) - COALESCE(p1.loan_count, 0) DESC,
+            COALESCE(p2.loan_count, 0) DESC
+    """, (period1_start, period1_end, period2_start, period2_end))
     
-    # מיזוג הנתונים משתי התקופות
-    merged_df = period1_df.merge(period2_df, on=['item_id', 'name', 'category'], how='outer', suffixes=('_period1', '_period2'))
-    merged_df = merged_df.fillna(0)
+    category_comparison = []
+    for row in cur.fetchall():
+        category, p1_loans, p1_qty, p1_students, p2_loans, p2_qty, p2_students = row
+        
+        # חישוב שינוי באחוזים
+        if p1_loans > 0:
+            loan_change_percent = ((p2_loans - p1_loans) / p1_loans) * 100
+        else:
+            loan_change_percent = float('inf') if p2_loans > 0 else 0
+        
+        if p1_qty > 0:
+            qty_change_percent = ((p2_qty - p1_qty) / p1_qty) * 100
+        else:
+            qty_change_percent = float('inf') if p2_qty > 0 else 0
+        
+        if p1_students > 0:
+            students_change_percent = ((p2_students - p1_students) / p1_students) * 100
+        else:
+            students_change_percent = float('inf') if p2_students > 0 else 0
+        
+        category_comparison.append({
+            'category': category,
+            'period1_loans': p1_loans,
+            'period1_quantity': p1_qty,
+            'period1_students': p1_students,
+            'period2_loans': p2_loans,
+            'period2_quantity': p2_qty,
+            'period2_students': p2_students,
+            'loan_change': p2_loans - p1_loans,
+            'loan_change_percent': round(loan_change_percent, 1) if loan_change_percent != float('inf') else None,
+            'quantity_change': p2_qty - p1_qty,
+            'quantity_change_percent': round(qty_change_percent, 1) if qty_change_percent != float('inf') else None,
+            'students_change': p2_students - p1_students,
+            'students_change_percent': round(students_change_percent, 1) if students_change_percent != float('inf') else None
+        })
     
-    # חישוב השינוי באחוזים בין התקופות
-    merged_df['change'] = merged_df['loan_count_period2'] - merged_df['loan_count_period1']
-    merged_df['change_percent'] = 0.0
+    # סיכום כללי
+    cur.execute("""
+        SELECT COUNT(*) FROM loans WHERE loan_date BETWEEN %s AND %s
+    """, (period1_start, period1_end))
+    period1_total_loans = cur.fetchone()[0]
     
-    # טיפול במקרה של חלוקה באפס
-    mask = merged_df['loan_count_period1'] > 0
-    merged_df.loc[mask, 'change_percent'] = ((merged_df.loc[mask, 'loan_count_period2'] - 
-                                           merged_df.loc[mask, 'loan_count_period1']) / 
-                                           merged_df.loc[mask, 'loan_count_period1']) * 100
+    cur.execute("""
+        SELECT COUNT(*) FROM loans WHERE loan_date BETWEEN %s AND %s
+    """, (period2_start, period2_end))
+    period2_total_loans = cur.fetchone()[0]
     
-    # אם loan_count_period1 הוא 0 והשני גדול מ-0, השינוי הוא 100%
-    mask = (merged_df['loan_count_period1'] == 0) & (merged_df['loan_count_period2'] > 0)
-    merged_df.loc[mask, 'change_percent'] = 100.0
-    
-    # סיכום לפי קטגוריה
-    category_summary = merged_df.groupby('category').agg({
-        'loan_count_period1': 'sum',
-        'loan_count_period2': 'sum'
-    }).reset_index()
-    
-    category_summary['change'] = category_summary['loan_count_period2'] - category_summary['loan_count_period1']
-    category_summary['change_percent'] = 0.0
-    
-    mask = category_summary['loan_count_period1'] > 0
-    category_summary.loc[mask, 'change_percent'] = ((category_summary.loc[mask, 'loan_count_period2'] - 
-                                                   category_summary.loc[mask, 'loan_count_period1']) / 
-                                                   category_summary.loc[mask, 'loan_count_period1']) * 100
-    
-    # סגירת החיבור
-    cur.close()
     conn.close()
     
-    return {
-        'item_comparison': merged_df.sort_values('change_percent', ascending=False).to_dict('records'),
-        'category_comparison': category_summary.sort_values('change_percent', ascending=False).to_dict('records'),
+    result = {
+        'item_comparison': item_comparison,
+        'category_comparison': category_comparison,
         'period1': {
             'start': period1_start,
             'end': period1_end,
-            'total_loans': int(period1_df['loan_count'].sum())
+            'total_loans': period1_total_loans
         },
         'period2': {
             'start': period2_start,
             'end': period2_end,
-            'total_loans': int(period2_df['loan_count'].sum())
-        }
+            'total_loans': period2_total_loans
+        },
+        'total_change_percent': round(((period2_total_loans - period1_total_loans) / period1_total_loans * 100), 1) if period1_total_loans > 0 else None
     }
-
-# -------------------------
-# יצוא דו"חות מתקדמים
-# -------------------------
+    
+    return result
 
 def export_advanced_report(report_type, params=None):
     """
@@ -431,48 +652,46 @@ def export_advanced_report(report_type, params=None):
         params = {}
     
     if report_type == 'usage_trends':
-        months_back = params.get('months_back', 12)
-        data = analyze_usage_trends(months_back)
+        return analyze_usage_trends(params)
     elif report_type == 'future_demand':
-        months_ahead = params.get('months_ahead', 3)
-        data = predict_future_demand(months_ahead)
+        return predict_future_demand(params)
     elif report_type == 'purchase_recommendations':
-        data = generate_purchase_recommendations()
+        return generate_purchase_recommendations(params)
     elif report_type == 'comparative_periods':
-        period1_start = params.get('period1_start')
-        period1_end = params.get('period1_end')
-        period2_start = params.get('period2_start')
-        period2_end = params.get('period2_end')
-        
-        if not all([period1_start, period1_end, period2_start, period2_end]):
-            return {'error': 'חסרים פרמטרים נדרשים עבור דו"ח השוואתי'}
-            
-        data = comparative_periods_analysis(period1_start, period1_end, period2_start, period2_end)
+        return comparative_periods_analysis(params)
     else:
-        return {'error': 'סוג דו"ח לא נתמך'}
-    
-    return data
-
-# -------------------------
-# פונקציה ראשית להפעלה
-# -------------------------
+        return {'error': f'סוג דו"ח לא מוכר: {report_type}'}
 
 def main():
     """פונקציה ראשית"""
     try:
-        # קבלת פרמטרים מה-request
-        request_json = json.loads(sys.stdin.read())
-        report_type = request_json.get('report_type', '')
-        params = request_json.get('params', {})
+        # קריאת נתוני ה-request מה-input הסטנדרטי
+        request_data = json.loads(sys.stdin.read())
         
-        result = export_advanced_report(report_type, params)
+        # שליפת הפרמטרים מהבקשה
+        report_type = request_data.get('report_type', '')
+        params = request_data.get('params', {})
         
-        # החזרת תוצאות ב-JSON
-        print(json.dumps(result, default=str))
+        if not report_type:
+            result = {
+                'success': False,
+                'error': 'לא סופק סוג דו"ח (report_type)'
+            }
+        else:
+            # הפקת הדו"ח המבוקש
+            result = {
+                'success': True,
+                'report_type': report_type,
+                'data': export_advanced_report(report_type, params)
+            }
+        
+        # החזרת התוצאה ב-JSON
+        print(json.dumps(result))
         
     except Exception as e:
         print(json.dumps({
-            'error': f'שגיאה בייצוא הדו"ח: {str(e)}'
+            'success': False,
+            'error': f'שגיאה בהפקת הדו"ח: {str(e)}'
         }))
 
 if __name__ == "__main__":

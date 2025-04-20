@@ -391,6 +391,57 @@ app.get('/api/stats/category-analysis', async (req, res) => {
   }
 });
 
+// דוחות מתקדמים וניתוח נתונים
+app.post('/api/advanced-reports', async (req, res) => {
+  try {
+    console.log('Received advanced report request:', JSON.stringify(req.body).substring(0, 200));
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/get_advanced_reports.py'),
+      [],
+      req.body
+    );
+    res.json(result);
+  } catch (error) {
+    console.error('Error generating advanced report:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'שגיאה בהפקת דו"ח מתקדם: ' + error.message 
+    });
+  }
+});
+
+// ייצוא דוחות מתקדמים בפורמטים שונים
+app.post('/api/export-advanced-report', async (req, res) => {
+  try {
+    console.log('Received advanced report export request:', JSON.stringify(req.body).substring(0, 200));
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/export_advanced_report.py'),
+      [],
+      req.body
+    );
+    
+    // בדיקה האם מדובר בקובץ או תשובת JSON
+    if (result.format === 'excel' || result.format === 'csv') {
+      // כאשר התוצאה היא קובץ מקודד ב-base64, נפענח ונחזיר
+      const fileBuffer = Buffer.from(result.data, 'base64');
+      res.setHeader('Content-Type', result.format === 'excel' ? 
+                  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 
+                  'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+      res.send(fileBuffer);
+    } else {
+      // החזרת התוצאה כ-JSON
+      res.json(result);
+    }
+  } catch (error) {
+    console.error('Error exporting advanced report:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'שגיאה בייצוא דו"ח מתקדם: ' + error.message 
+    });
+  }
+});
+
 // קונפיגורציה של multer לטיפול בקבצים
 const upload = multer({
   dest: os.tmpdir(),
