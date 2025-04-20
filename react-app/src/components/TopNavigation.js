@@ -161,6 +161,23 @@ function TopNavigation({ user, onLogout }) {
                       ניהול תחזוקה
                     </Button>
                     
+                    <Button 
+                      color="inherit" 
+                      onClick={() => navigate('/vintage-order-wizard')}
+                      startIcon={<AddCircleIcon />}
+                      sx={{ 
+                        background: 'linear-gradient(45deg, #1E2875 30%, #373B5C 90%)',
+                        color: 'white',
+                        '&:hover': {
+                          background: 'linear-gradient(45deg, #141a4d 30%, #282b45 90%)',
+                        },
+                        fontWeight: 'bold',
+                        mr: 1
+                      }}
+                    >
+                      אשף וינטג'
+                    </Button>
+                    
                     {/* כפתור התראות */}
                     <IconButton
                       onClick={handleOpenAlerts}
