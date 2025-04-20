@@ -2,6 +2,7 @@
 סקריפט זה מחזיר התראות למשתמש:
 1. התראות על השאלות שמועד החזרתן קרב או שחלף
 2. התראות על פריטים שכמותם במלאי נמוכה
+3. התראות על תזכורות תחזוקה קרובות
 """
 
 import sys
@@ -11,6 +12,50 @@ import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import pytz
+
+# מודול תחזוקה - נגדיר את הפונקציות ישירות כאן
+def get_upcoming_maintenance_schedules(days_threshold=30):
+    """מחזיר את כל תזכורות התחזוקה הקרובות"""
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    
+    today = get_israel_time().date()
+    future_date = today + datetime.timedelta(days=days_threshold)
+    
+    try:
+        # שליפת תזכורות תחזוקה קרובות
+        cursor.execute("""
+            SELECT ms.*, i.name as item_name, i.category, i.id as item_id
+            FROM maintenance_schedules ms
+            JOIN items i ON ms.item_id = i.id
+            WHERE ms.next_due <= %s
+            ORDER BY ms.next_due ASC
+        """, (future_date,))
+        
+        schedules = []
+        for schedule in cursor.fetchall():
+            next_due = schedule['next_due']
+            days_until_due = (next_due - today).days
+            
+            # קביעת רמת חומרה
+            if days_until_due <= 0:  # יום זה או בעבר
+                severity = 'high'
+            elif days_until_due <= 7:  # שבוע
+                severity = 'medium'
+            else:
+                severity = 'low'
+                
+            schedule_data = dict(schedule)
+            schedule_data['days_until_due'] = days_until_due
+            schedule_data['severity'] = severity
+            schedule_data['alert_type'] = 'maintenance'
+            schedules.append(schedule_data)
+            
+        return schedules
+        
+    finally:
+        cursor.close()
+        conn.close()
 
 # חיבור למסד הנתונים
 def get_db_connection():
