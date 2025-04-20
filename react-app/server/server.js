@@ -582,10 +582,8 @@ app.get('/api/export/template', async (req, res) => {
   }
 });
 
-// ניתוב כל בקשה אחרת לאפליקציית React
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../build', 'index.html'));
-});
+// הסרת המשפט הזה כי הוא מפריע לנתיבי ה-API שמוגדרים אחריו
+// נעביר אותו לסוף הקובץ
 
 // הפעלת השרת
 /* נתיבי API למערכת ההתראות */
@@ -724,27 +722,27 @@ app.get('/api/maintenance', async (req, res) => {
   }
 });
 
-// הגש את הקבצים הסטטיים האפליקציה אחרי שכל הנתיבים האחרים כבר הוגדרו,
-// אבל רק לבקשות שאינן מכילות '/api/' בנתיב
-app.use((req, res, next) => {
-  // דלג על בקשות API ותן להן להגיע למסלולי API שכבר הוגדרו
-  if (req.path.includes('/api/')) {
-    console.log(`API path detected: ${req.path} - skipping static middleware`);
-    return next();
+// הגדרות API נוספות
+// מסלול אחד מרוכז לתחזוקה
+app.get('/api/maintenance_data', async (req, res) => {
+  try {
+    console.log("Requesting maintenance data");
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/get_maintenance_overview.py')
+    );
+    console.log("Maintenance data response type:", typeof result);
+    res.json(result);
+  } catch (error) {
+    console.error('Error getting maintenance data:', error);
+    res.status(500).json({ message: 'Error getting maintenance data: ' + error.message });
   }
-  
-  // עבור נתיבים אחרים, השתמש במידלוור הסטטי
-  return express.static(path.join(__dirname, '../build'))(req, res, next);
 });
+
+// הגש את הקבצים הסטטיים האפליקציה אחרי שכל הנתיבים האחרים כבר הוגדרו
+app.use(express.static(path.join(__dirname, '../build')));
 
 // אם אף אחד מהנתיבים לא טיפל בבקשה, החזר את הדף הראשי של האפליקציה
 app.get('*', (req, res) => {
-  // האם זו בקשת API? אם כן, זו שגיאה 404
-  if (req.path.includes('/api/')) {
-    console.log(`API endpoint not found: ${req.path}`);
-    return res.status(404).json({ message: 'API endpoint not found', path: req.path });
-  }
-  
   // אחרת, החזר את הדף הראשי
   res.sendFile(path.join(__dirname, '../build/index.html'));
 });
