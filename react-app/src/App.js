@@ -30,6 +30,7 @@ import CreateReservation from './pages/student/CreateReservation';
 import MyReservations from './pages/student/MyReservations';
 import VintageOrderWizard from './pages/student/VintageOrderWizard';
 import AdvancedReports from './pages/admin/AdvancedReports';
+import UserManagement from './pages/admin/UserManagement';
 import NotFound from './pages/NotFound';
 
 // Maintenance Pages
@@ -175,6 +176,9 @@ function App() {
             } />
             <Route path="/advanced-reports" element={
               <AdminRoute><AdvancedReports /></AdminRoute>
+            } />
+            <Route path="/user-management" element={
+              <AdminRoute><UserManagement /></AdminRoute>
             } />
             
             {/* דפי ניהול תחזוקה */}
