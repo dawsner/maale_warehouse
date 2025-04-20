@@ -361,7 +361,8 @@ def add_warranty_info(item_id, warranty_provider, warranty_number, start_date, e
                  contact_info, terms, get_israel_time(), get_israel_time())
             )
             
-        warranty_id = cur.fetchone()[0]
+        result = cur.fetchone()
+        warranty_id = result[0] if result else None
         conn.commit()
         return warranty_id
     except Exception as e:
@@ -463,7 +464,8 @@ def add_maintenance_schedule(item_id, maintenance_type, frequency_days, next_due
                  last_performed, get_israel_time(), get_israel_time(), user_id)
             )
             
-        schedule_id = cur.fetchone()[0]
+        result = cur.fetchone()
+        schedule_id = result[0] if result else None
         conn.commit()
         return schedule_id
     except Exception as e:
@@ -593,7 +595,8 @@ def get_maintenance_overview():
             WHERE status = 'in_maintenance'
             """
         )
-        in_maintenance_count = cur.fetchone()[0]
+        result = cur.fetchone()
+        in_maintenance_count = result[0] if result else 0
         
         # פריטים שדורשים תיקון
         cur.execute(
@@ -603,7 +606,8 @@ def get_maintenance_overview():
             WHERE status = 'needs_repair'
             """
         )
-        needs_repair_count = cur.fetchone()[0]
+        result = cur.fetchone()
+        needs_repair_count = result[0] if result else 0
         
         # פריטים מושבתים
         cur.execute(
@@ -613,7 +617,8 @@ def get_maintenance_overview():
             WHERE status = 'out_of_order'
             """
         )
-        out_of_order_count = cur.fetchone()[0]
+        result = cur.fetchone()
+        out_of_order_count = result[0] if result else 0
         
         # תחזוקות תקופתיות שחלף מועדן
         cur.execute(
@@ -623,7 +628,8 @@ def get_maintenance_overview():
             WHERE next_due < CURRENT_DATE
             """
         )
-        overdue_maintenance_count = cur.fetchone()[0]
+        result = cur.fetchone()
+        overdue_maintenance_count = result[0] if result else 0
         
         # תחזוקות קרובות (ב-30 יום הקרובים)
         cur.execute(
@@ -633,7 +639,8 @@ def get_maintenance_overview():
             WHERE next_due BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '30 days'
             """
         )
-        upcoming_maintenance_count = cur.fetchone()[0]
+        result = cur.fetchone()
+        upcoming_maintenance_count = result[0] if result else 0
         
         # אחריות שפגה תוקפה
         cur.execute(
@@ -643,7 +650,8 @@ def get_maintenance_overview():
             WHERE end_date < CURRENT_DATE
             """
         )
-        expired_warranty_count = cur.fetchone()[0]
+        result = cur.fetchone()
+        expired_warranty_count = result[0] if result else 0
         
         # אחריות שתפוג בקרוב (ב-90 יום הקרובים)
         cur.execute(
@@ -653,7 +661,8 @@ def get_maintenance_overview():
             WHERE end_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '90 days'
             """
         )
-        expiring_warranty_count = cur.fetchone()[0]
+        result = cur.fetchone()
+        expiring_warranty_count = result[0] if result else 0
         
         # פריטים עם אחריות תקפה
         cur.execute(
@@ -663,7 +672,8 @@ def get_maintenance_overview():
             WHERE end_date >= CURRENT_DATE
             """
         )
-        active_warranty_count = cur.fetchone()[0]
+        result = cur.fetchone()
+        active_warranty_count = result[0] if result else 0
         
         # סטטיסטיקת עלויות תחזוקה
         cur.execute(
@@ -678,9 +688,15 @@ def get_maintenance_overview():
         )
         cost_stats = cur.fetchone()
         
-        total_cost = float(cost_stats[0]) if cost_stats[0] is not None else 0
-        average_cost = float(cost_stats[1]) if cost_stats[1] is not None else 0
-        max_cost = float(cost_stats[2]) if cost_stats[2] is not None else 0
+        # טיפול במקרה שאין נתונים או שהנתונים הם NULL
+        if cost_stats is None:
+            total_cost = 0
+            average_cost = 0
+            max_cost = 0
+        else:
+            total_cost = float(cost_stats[0]) if cost_stats[0] is not None else 0
+            average_cost = float(cost_stats[1]) if cost_stats[1] is not None else 0
+            max_cost = float(cost_stats[2]) if cost_stats[2] is not None else 0
         
         # קבלת רשימת הפריטים שנמצאים בתחזוקה עם פרטיהם
         cur.execute(
