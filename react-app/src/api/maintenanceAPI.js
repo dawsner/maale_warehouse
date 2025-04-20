@@ -239,8 +239,16 @@ export const maintenanceAPI = {
   // קבלת סקירה כללית של מצב התחזוקה במערכת
   getMaintenanceOverview: async () => {
     try {
-      const response = await axiosInstance.get('/api/maintenance/overview');
-      return response.data;
+      // ניסיון לקבל נתונים מנתיב חדש
+      try {
+        const response = await axiosInstance.get('/api/maintenance_data');
+        return response.data;
+      } catch (innerError) {
+        console.warn('Failed to get maintenance data from new API endpoint, trying fallback', innerError);
+        // נתיב גיבוי
+        const response = await axiosInstance.get('/api/maintenance');
+        return response.data;
+      }
     } catch (error) {
       console.error('Error getting maintenance overview:', error);
       throw error;
