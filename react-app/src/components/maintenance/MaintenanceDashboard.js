@@ -139,7 +139,7 @@ const MaintenanceDashboard = () => {
               {overview?.in_maintenance_count || 0}
             </Typography>
             <Typography variant="body2" color="text.secondary" align="center">
-              מתוך {overview?.total_items || 0} פריטים
+              מתוך {overview?.total_issues_count || 0} בעיות פתוחות
             </Typography>
           </Item>
         </Grid>
@@ -233,7 +233,7 @@ const MaintenanceDashboard = () => {
                       <Button 
                         variant="contained" 
                         size="small" 
-                        onClick={() => handleEditMaintenanceItem(item.id)}
+                        onClick={() => handleEditMaintenanceItem(item.item_id)}
                       >
                         ניהול תחזוקה
                       </Button>

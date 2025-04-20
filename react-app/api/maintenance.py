@@ -678,28 +678,46 @@ def get_maintenance_overview():
         average_cost = float(cost_stats[1]) if cost_stats[1] is not None else 0
         max_cost = float(cost_stats[2]) if cost_stats[2] is not None else 0
         
+        # קבלת רשימת הפריטים שנמצאים בתחזוקה עם פרטיהם
+        cur.execute(
+            """
+            SELECT 
+                ms.id, ms.item_id, ms.status, ms.notes, ms.updated_at,
+                i.name, i.category
+            FROM maintenance_status ms
+            JOIN items i ON ms.item_id = i.id
+            WHERE ms.status IN ('in_maintenance', 'out_of_order', 'needs_repair')
+            ORDER BY ms.updated_at DESC
+            """
+        )
+        maintenance_items = []
+        for row in cur.fetchall():
+            maintenance_items.append({
+                'id': row[0],
+                'item_id': row[1],
+                'status': row[2],
+                'notes': row[3],
+                'updated_at': row[4],
+                'name': row[5],
+                'category': row[6]
+            })
+        
+        # סיכום כולל
         return {
-            'items_status': {
-                'in_maintenance': in_maintenance_count,
-                'needs_repair': needs_repair_count,
-                'out_of_order': out_of_order_count,
-                'total_issues': in_maintenance_count + needs_repair_count + out_of_order_count
-            },
-            'maintenance_schedules': {
-                'overdue': overdue_maintenance_count,
-                'upcoming': upcoming_maintenance_count,
-                'total_alerts': overdue_maintenance_count + upcoming_maintenance_count
-            },
-            'warranty': {
-                'active': active_warranty_count,
-                'expired': expired_warranty_count,
-                'expiring_soon': expiring_warranty_count
-            },
-            'cost_stats': {
-                'total_yearly': total_cost,
-                'average_per_maintenance': average_cost,
-                'highest_single_cost': max_cost
-            },
+            'in_maintenance_count': in_maintenance_count,
+            'needs_repair_count': needs_repair_count,
+            'out_of_order_count': out_of_order_count,
+            'total_issues_count': in_maintenance_count + needs_repair_count + out_of_order_count,
+            'overdue_maintenance_count': overdue_maintenance_count,
+            'upcoming_maintenance_count': upcoming_maintenance_count,
+            'active_warranty_count': active_warranty_count,
+            'expired_warranty_count': expired_warranty_count,
+            'expiring_warranty_count': expiring_warranty_count,
+            'total_yearly_cost': total_cost,
+            'average_maintenance_cost': average_cost,
+            'highest_single_cost': max_cost,
+            'in_maintenance_items': maintenance_items,
+            'under_warranty_count': active_warranty_count,
             'last_updated': get_israel_time()
         }
     finally:
