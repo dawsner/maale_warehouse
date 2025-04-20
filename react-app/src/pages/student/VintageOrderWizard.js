@@ -149,6 +149,7 @@ function VintageOrderWizard({ userId }) {
 
   // טעינת המלאי בעת טעינת הדף
   useEffect(() => {
+    console.log('VintageOrderWizard: טעינת המלאי');
     fetchInventory();
   }, []);
 

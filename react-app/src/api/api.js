@@ -85,6 +85,19 @@ export const inventoryAPI = {
       throw error;
     }
   },
+  
+  // קבלת כל פריטי המלאי - שם חלופי נוסף לאותה פונקציה לתאימות עם VintageOrderWizard
+  getAll: async () => {
+    try {
+      console.log('Fetching inventory from API via getAll...');
+      const response = await axiosInstance.get('/api/inventory');
+      console.log('Inventory response received in getAll:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching inventory in getAll:', error);
+      throw error;
+    }
+  },
 
   // הוספת פריט חדש
   addItem: async (itemData) => {
@@ -228,6 +241,19 @@ export const reservationsAPI = {
       return response.data;
     } catch (error) {
       console.error('Error checking item availability:', error);
+      throw error;
+    }
+  },
+  
+  // פונקציה זהה במהות אך בשם אחר לתאימות עם VintageOrderWizard
+  checkAvailability: async (params) => {
+    try {
+      console.log('Checking availability with params:', params);
+      const response = await axiosInstance.post('/api/reservations/check-availability', params);
+      console.log('Availability check response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error checking availability:', error);
       throw error;
     }
   },
