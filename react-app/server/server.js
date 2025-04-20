@@ -676,9 +676,7 @@ app.post('/api/maintenance/update', async (req, res) => {
 app.get('/api/maintenance/overview', async (req, res) => {
   try {
     const result = await runPythonScript(
-      path.join(__dirname, '../api/get_maintenance_data.py'),
-      [],
-      { action: 'overview' }
+      path.join(__dirname, '../api/get_maintenance_overview.py')
     );
     res.json(result);
   } catch (error) {
