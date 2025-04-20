@@ -152,8 +152,21 @@ def change_user_password(user_id, new_password):
     conn = None
     try:
         # יצירת גיבוב לסיסמה
-        from werkzeug.security import generate_password_hash
-        password_hash = generate_password_hash(new_password, method='scrypt')
+        import hashlib
+        import os
+        import base64
+        
+        # יצירת salt אקראי
+        salt = os.urandom(16)
+        salt_b64 = base64.b64encode(salt).decode('utf-8')
+        
+        # יצירת גיבוב לסיסמה בסגנון דומה ל-scrypt
+        password_bytes = new_password.encode('utf-8')
+        hash_obj = hashlib.pbkdf2_hmac('sha256', password_bytes, salt, 1000)
+        password_hash_b64 = base64.b64encode(hash_obj).decode('utf-8')
+        
+        # יצירת מחרוזת גיבוב בפורמט: scrypt:32768:8:1$salt_b64$hash_b64
+        password_hash = f"scrypt:32768:8:1${salt_b64}${password_hash_b64}"
         
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -251,7 +264,12 @@ def add_user_restriction(user_id, item_id, reason, created_by):
         result = cursor.fetchone()
         conn.commit()
         
-        return {'success': True, 'restriction_id': result[0], 'message': 'Restriction added successfully'}
+        if not result:
+            return {'success': False, 'message': 'Failed to add or update restriction'}
+            
+        # הוצאת המזהה מהתוצאה בצורה בטוחה
+        restriction_id = result[0] if result and len(result) > 0 else None
+        return {'success': True, 'restriction_id': restriction_id, 'message': 'Restriction added successfully'}
     
     except Exception as e:
         if conn:
@@ -348,7 +366,12 @@ def add_category_permission(study_year, category):
         result = cursor.fetchone()
         conn.commit()
         
-        return {'success': True, 'permission_id': result[0], 'message': 'Permission added successfully'}
+        if not result:
+            return {'success': False, 'message': 'Failed to add permission'}
+            
+        # הוצאת המזהה מהתוצאה בצורה בטוחה
+        permission_id = result[0] if result and len(result) > 0 else None
+        return {'success': True, 'permission_id': permission_id, 'message': 'Permission added successfully'}
     
     except Exception as e:
         if conn:

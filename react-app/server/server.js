@@ -442,6 +442,25 @@ app.post('/api/export-advanced-report', async (req, res) => {
   }
 });
 
+// ניהול משתמשים
+app.post('/api/user-management', async (req, res) => {
+  try {
+    console.log('Received user management request for action:', req.body.action);
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/user_management.py'),
+      [],
+      req.body
+    );
+    res.json(result);
+  } catch (error) {
+    console.error('Error in user management operation:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'שגיאה בפעולת ניהול משתמשים: ' + error.message 
+    });
+  }
+});
+
 // קונפיגורציה של multer לטיפול בקבצים
 const upload = multer({
   dest: os.tmpdir(),
@@ -720,23 +739,7 @@ app.post('/api/maintenance/update', async (req, res) => {
   }
 });
 
-// ניהול משתמשים - נתיב API חדש
-app.post('/api/user-management', async (req, res) => {
-  try {
-    const result = await runPythonScript(
-      path.join(__dirname, '../api/user_management.py'),
-      [],
-      req.body
-    );
-    res.json(result);
-  } catch (error) {
-    console.error('Error in user management:', error);
-    res.status(500).json({ 
-      success: false,
-      message: error.message 
-    });
-  }
-});
+
 
 // קיצור נתיב לקבלת סקירת מצב תחזוקה
 app.get('/api/maintenance/overview', async (req, res) => {
