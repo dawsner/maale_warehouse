@@ -573,3 +573,163 @@ export const importExportAPI = {
     return response.data;
   }
 };
+
+// ממשק API לניהול משתמשים
+export const userManagementAPI = {
+  // קבלת רשימת כל המשתמשים
+  getAllUsers: async () => {
+    try {
+      const response = await axiosInstance.post('/api/user-management', {
+        action: 'get_all_users'
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      throw error;
+    }
+  },
+  
+  // עדכון סטטוס משתמש (חסום/פעיל)
+  updateUserStatus: async (userId, status) => {
+    try {
+      const response = await axiosInstance.post('/api/user-management', {
+        action: 'update_user_status',
+        params: { user_id: userId, status }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating user status:', error);
+      throw error;
+    }
+  },
+  
+  // עדכון פרטי משתמש
+  updateUserDetails: async (userId, details) => {
+    try {
+      const response = await axiosInstance.post('/api/user-management', {
+        action: 'update_user_details',
+        params: { user_id: userId, details }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating user details:', error);
+      throw error;
+    }
+  },
+  
+  // שינוי סיסמת משתמש
+  changeUserPassword: async (userId, newPassword) => {
+    try {
+      const response = await axiosInstance.post('/api/user-management', {
+        action: 'change_user_password',
+        params: { user_id: userId, new_password: newPassword }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error changing user password:', error);
+      throw error;
+    }
+  },
+  
+  // קבלת הגבלות גישה לפריטים עבור משתמש מסוים
+  getUserRestrictions: async (userId) => {
+    try {
+      const response = await axiosInstance.post('/api/user-management', {
+        action: 'get_user_restrictions',
+        params: { user_id: userId }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user restrictions:', error);
+      throw error;
+    }
+  },
+  
+  // הוספת הגבלת גישה לפריט עבור משתמש
+  addUserRestriction: async (userId, itemId, reason, createdBy) => {
+    try {
+      const response = await axiosInstance.post('/api/user-management', {
+        action: 'add_user_restriction',
+        params: { 
+          user_id: userId, 
+          item_id: itemId,
+          reason,
+          created_by: createdBy
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error adding user restriction:', error);
+      throw error;
+    }
+  },
+  
+  // הסרת הגבלת גישה לפריט
+  removeUserRestriction: async (restrictionId) => {
+    try {
+      const response = await axiosInstance.post('/api/user-management', {
+        action: 'remove_user_restriction',
+        params: { restriction_id: restrictionId }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error removing user restriction:', error);
+      throw error;
+    }
+  },
+  
+  // קבלת הרשאות קטגוריות
+  getCategoryPermissions: async () => {
+    try {
+      const response = await axiosInstance.post('/api/user-management', {
+        action: 'get_category_permissions'
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching category permissions:', error);
+      throw error;
+    }
+  },
+  
+  // הוספת הרשאת קטגוריה עבור שנת לימודים
+  addCategoryPermission: async (studyYear, category) => {
+    try {
+      const response = await axiosInstance.post('/api/user-management', {
+        action: 'add_category_permission',
+        params: { study_year: studyYear, category }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error adding category permission:', error);
+      throw error;
+    }
+  },
+  
+  // הסרת הרשאת קטגוריה
+  removeCategoryPermission: async (permissionId) => {
+    try {
+      const response = await axiosInstance.post('/api/user-management', {
+        action: 'remove_category_permission',
+        params: { permission_id: permissionId }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error removing category permission:', error);
+      throw error;
+    }
+  },
+  
+  // קבלת רשימת קטגוריות זמינות למשתמש
+  getAvailableCategories: async (userId) => {
+    try {
+      const response = await axiosInstance.post('/api/user-management', {
+        action: 'get_available_categories',
+        params: { user_id: userId }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching available categories:', error);
+      throw error;
+    }
+  }
+};

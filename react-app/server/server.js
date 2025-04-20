@@ -720,6 +720,24 @@ app.post('/api/maintenance/update', async (req, res) => {
   }
 });
 
+// ניהול משתמשים - נתיב API חדש
+app.post('/api/user-management', async (req, res) => {
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/user_management.py'),
+      [],
+      req.body
+    );
+    res.json(result);
+  } catch (error) {
+    console.error('Error in user management:', error);
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
+  }
+});
+
 // קיצור נתיב לקבלת סקירת מצב תחזוקה
 app.get('/api/maintenance/overview', async (req, res) => {
   try {
