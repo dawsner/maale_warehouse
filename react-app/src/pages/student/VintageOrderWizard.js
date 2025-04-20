@@ -5,7 +5,8 @@ import {
   Button, Grid, Card, CardContent, CardMedia, CardActionArea, 
   TextField, Alert, CircularProgress, Chip, Divider, 
   List, ListItem, ListItemText, ListItemIcon, Checkbox, 
-  FormControlLabel, Switch, Stack, Snackbar, FormHelperText
+  FormControlLabel, Switch, Stack, Snackbar, FormHelperText,
+  IconButton, TableContainer, Table
 } from '@mui/material';
 import { 
   CameraAlt as CameraIcon, 

@@ -15,6 +15,7 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import BuildIcon from '@mui/icons-material/Build';
+import AddCircleIcon from '@mui/icons-material/AddCircle';
 
 import AlertsCenter from './AlertsCenter';
 import { alertsAPI } from '../api/api';
@@ -239,6 +240,22 @@ function TopNavigation({ user, onLogout }) {
                       startIcon={<EventNoteIcon />}
                     >
                       הזמנה חדשה
+                    </Button>
+                    <Button 
+                      color="inherit" 
+                      onClick={() => navigate('/vintage-order-wizard')}
+                      startIcon={<AddCircleIcon />}
+                      sx={{ 
+                        background: 'linear-gradient(45deg, #1E2875 30%, #373B5C 90%)',
+                        color: 'white',
+                        '&:hover': {
+                          background: 'linear-gradient(45deg, #141a4d 30%, #282b45 90%)',
+                        },
+                        fontWeight: 'bold',
+                        mr: 1
+                      }}
+                    >
+                      אשף וינטג'
                     </Button>
                     <Button 
                       color="inherit" 
