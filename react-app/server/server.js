@@ -709,30 +709,43 @@ app.get('/api/maintenance/upcoming', async (req, res) => {
   }
 });
 
-// מסלולי API תחזוקה
-app.get('/api/maintenance/overview', async (req, res) => {
+// מסלולי API תחזוקה - בסגנון /api/inventory שעובד
+app.get('/api/maintenance', async (req, res) => {
   try {
-    console.log("Running maintenance overview API");
+    console.log("Running maintenance API in inventory style");
     const result = await runPythonScript(
       path.join(__dirname, '../api/get_maintenance_overview.py')
     );
-    console.log("Maintenance overview result:", typeof result === 'string' ? 'Text response' : JSON.stringify(result).substring(0, 150) + '...');
+    console.log("Maintenance data result:", typeof result === 'string' ? 'Text response' : (Array.isArray(result) ? `Array with ${result.length} items` : typeof result));
     res.json(result);
   } catch (error) {
-    console.error('Error getting maintenance overview:', error);
-    res.status(500).json({ 
-      success: false,
-      message: error.message 
-    });
+    console.error('Error fetching maintenance data:', error);
+    res.status(500).json({ message: 'שגיאה בקבלת נתוני תחזוקה: ' + error.message });
   }
 });
 
-// הגש את הקבצים הסטטיים האפליקציה אחרי שכל הנתיבים האחרים כבר הוגדרו.
-// חשוב: זה חייב להיות אחרי הגדרת כל נתיבי ה-API
-app.use(express.static(path.join(__dirname, '../build')));
+// הגש את הקבצים הסטטיים האפליקציה אחרי שכל הנתיבים האחרים כבר הוגדרו,
+// אבל רק לבקשות שאינן מכילות '/api/' בנתיב
+app.use((req, res, next) => {
+  // דלג על בקשות API ותן להן להגיע למסלולי API שכבר הוגדרו
+  if (req.path.includes('/api/')) {
+    console.log(`API path detected: ${req.path} - skipping static middleware`);
+    return next();
+  }
+  
+  // עבור נתיבים אחרים, השתמש במידלוור הסטטי
+  return express.static(path.join(__dirname, '../build'))(req, res, next);
+});
 
 // אם אף אחד מהנתיבים לא טיפל בבקשה, החזר את הדף הראשי של האפליקציה
 app.get('*', (req, res) => {
+  // האם זו בקשת API? אם כן, זו שגיאה 404
+  if (req.path.includes('/api/')) {
+    console.log(`API endpoint not found: ${req.path}`);
+    return res.status(404).json({ message: 'API endpoint not found', path: req.path });
+  }
+  
+  // אחרת, החזר את הדף הראשי
   res.sendFile(path.join(__dirname, '../build/index.html'));
 });
 
