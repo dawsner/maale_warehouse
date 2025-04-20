@@ -574,7 +574,38 @@ def delete_maintenance_schedule(schedule_id):
 
 def get_item_maintenance_data(item_id):
     """מחזיר את כל נתוני התחזוקה של פריט: סטטוס, היסטוריה, אחריות ותזכורות"""
+    # קבלת נתוני הפריט הבסיסיים
+    conn = get_db_connection()
+    item = None
+    try:
+        cur = conn.cursor()
+        # קריאת פרטי הפריט בסיסיים
+        cur.execute(
+            """
+            SELECT id, name, category, quantity, notes, is_available 
+            FROM items 
+            WHERE id = %s
+            """,
+            (item_id,)
+        )
+        item_data = cur.fetchone()
+        
+        if item_data:
+            item = {
+                'id': item_data[0],
+                'name': item_data[1],
+                'category': item_data[2],
+                'quantity': item_data[3],
+                'notes': item_data[4],
+                'is_available': item_data[5]
+            }
+    except Exception as e:
+        print(f"DEBUG: Error fetching item info: {e}", file=sys.stderr)
+    finally:
+        conn.close()
+    
     return {
+        'item': item,  # הוספת פרטי הפריט הבסיסיים
         'status': get_item_maintenance_status(item_id),
         'records': get_item_maintenance_records(item_id),
         'warranty': get_item_warranty_info(item_id),
