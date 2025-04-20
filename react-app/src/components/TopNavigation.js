@@ -217,6 +217,10 @@ function TopNavigation({ user, onLogout }) {
                         <BuildIcon fontSize="small" sx={{ mr: 1 }} />
                         ניהול תחזוקה
                       </MenuItem>
+                      <MenuItem onClick={() => handleNavigation('/advanced-reports')}>
+                        <BarChartIcon fontSize="small" sx={{ mr: 1 }} />
+                        דוחות מתקדמים
+                      </MenuItem>
                       <MenuItem onClick={() => handleNavigation('/inventory-legacy')}>
                         <InventoryIcon fontSize="small" sx={{ mr: 1 }} />
                         מלאי (גרסה ישנה)

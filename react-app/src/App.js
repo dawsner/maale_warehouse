@@ -29,6 +29,7 @@ import MyEquipment from './pages/student/MyEquipment';
 import CreateReservation from './pages/student/CreateReservation';
 import MyReservations from './pages/student/MyReservations';
 import VintageOrderWizard from './pages/student/VintageOrderWizard';
+import AdvancedReports from './pages/admin/AdvancedReports';
 import NotFound from './pages/NotFound';
 
 // Maintenance Pages
@@ -171,6 +172,9 @@ function App() {
             } />
             <Route path="/settings" element={
               <AdminRoute><Settings /></AdminRoute>
+            } />
+            <Route path="/advanced-reports" element={
+              <AdminRoute><AdvancedReports /></AdminRoute>
             } />
             
             {/* דפי ניהול תחזוקה */}
