@@ -44,6 +44,7 @@ import InventoryIcon from '@mui/icons-material/Inventory';
 import SettingsIcon from '@mui/icons-material/Settings';
 import CloseIcon from '@mui/icons-material/Close';
 import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
+import BuildIcon from '@mui/icons-material/Build';
 
 import { alertsAPI } from '../api/api';
 
@@ -73,7 +74,8 @@ function AlertsCenter({ user, onClose }) {
   const [emailError, setEmailError] = useState(null);
   const [alertSettings, setAlertSettings] = useState({
     daysThreshold: 3,
-    stockThreshold: 20
+    stockThreshold: 20,
+    maintenanceDaysThreshold: 30
   });
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
 
@@ -81,7 +83,11 @@ function AlertsCenter({ user, onClose }) {
   const fetchAlerts = async () => {
     try {
       setLoading(true);
-      const data = await alertsAPI.getAlerts(alertSettings.daysThreshold, alertSettings.stockThreshold);
+      const data = await alertsAPI.getAlerts(
+        alertSettings.daysThreshold, 
+        alertSettings.stockThreshold,
+        alertSettings.maintenanceDaysThreshold || 30
+      );
       setAlerts(data);
       setError(null);
     } catch (err) {
@@ -94,7 +100,7 @@ function AlertsCenter({ user, onClose }) {
   // טעינה ראשונית
   useEffect(() => {
     fetchAlerts();
-  }, [alertSettings.daysThreshold, alertSettings.stockThreshold]);
+  }, [alertSettings.daysThreshold, alertSettings.stockThreshold, alertSettings.maintenanceDaysThreshold]);
 
   // שינוי טאב פעיל
   const handleTabChange = (event, newValue) => {
@@ -185,6 +191,8 @@ function AlertsCenter({ user, onClose }) {
       return `איחור בהחזרת ${alert.item_name}`;
     } else if (alert.days_remaining !== undefined) {
       return `החזרה קרובה: ${alert.item_name}`;
+    } else if (alert.days_until_maintenance !== undefined) {
+      return `תחזוקה צפויה: ${alert.item_name || alert.name}`;
     } else {
       return `מלאי נמוך: ${alert.name}`;
     }
@@ -409,6 +417,85 @@ function AlertsCenter({ user, onClose }) {
     </Box>
   );
 
+  // פאנל תזכורות תחזוקה
+  const MaintenanceSchedulesTab = () => (
+    <Box sx={{ mt: 2 }}>
+      {alerts.maintenance_schedules && alerts.maintenance_schedules.length > 0 ? (
+        <List sx={{ bgcolor: 'background.paper', borderRadius: 1 }}>
+          {alerts.maintenance_schedules.map((schedule, index) => (
+            <React.Fragment key={`maintenance-${schedule.id}`}>
+              <ListItem 
+                alignItems="flex-start"
+                sx={{ 
+                  py: 2,
+                  bgcolor: '#e3f2fd',
+                  borderRight: `4px solid ${schedule.severity === 'high' ? '#2196f3' : schedule.severity === 'medium' ? '#03a9f4' : '#b3e5fc'}`
+                }}
+              >
+                <ListItemAvatar>
+                  <Avatar sx={{ bgcolor: '#e1f5fe' }}>
+                    <BuildIcon color="info" />
+                  </Avatar>
+                </ListItemAvatar>
+                <ListItemText
+                  primary={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="subtitle1" fontWeight="bold">
+                        {getAlertTitle(schedule)}
+                      </Typography>
+                      <Chip 
+                        size="small" 
+                        color="info"
+                        label={`${schedule.days_until_maintenance} ימים לתחזוקה`}
+                      />
+                    </Box>
+                  }
+                  secondary={
+                    <Box sx={{ mt: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                        <Typography variant="body2" color="text.secondary" component="span">
+                          סוג תחזוקה: {schedule.maintenance_type}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                        <EventIcon fontSize="small" color="action" />
+                        <Typography variant="body2" color="text.secondary" component="span">
+                          תאריך יעד: {new Date(schedule.next_due).toLocaleDateString('he-IL')}
+                        </Typography>
+                      </Box>
+                      {schedule.description && (
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                          פרטים: {schedule.description}
+                        </Typography>
+                      )}
+                      {schedule.last_performed && (
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                          בוצע לאחרונה: {new Date(schedule.last_performed).toLocaleDateString('he-IL')}
+                        </Typography>
+                      )}
+                    </Box>
+                  }
+                />
+                <ListItemSecondaryAction>
+                  <Tooltip title="שלח תזכורת במייל">
+                    <IconButton edge="end" onClick={() => handleOpenEmailDialog(schedule)}>
+                      <EmailIcon />
+                    </IconButton>
+                  </Tooltip>
+                </ListItemSecondaryAction>
+              </ListItem>
+              {index < alerts.maintenance_schedules.length - 1 && <Divider />}
+            </React.Fragment>
+          ))}
+        </List>
+      ) : (
+        <Alert severity="info" sx={{ mt: 2 }}>
+          אין תזכורות תחזוקה צפויות ב-{alertSettings.maintenanceDaysThreshold} הימים הקרובים.
+        </Alert>
+      )}
+    </Box>
+  );
+
   return (
     <Paper 
       elevation={3} 
@@ -464,6 +551,12 @@ function AlertsCenter({ user, onClose }) {
           variant={alerts.summary?.low_stock_count > 0 ? "filled" : "outlined"} 
           label={`${alerts.summary?.low_stock_count || 0} פריטים במלאי נמוך`}
         />
+        <Chip 
+          icon={<BuildIcon />} 
+          color="info" 
+          variant={alerts.summary?.maintenance_count > 0 ? "filled" : "outlined"} 
+          label={`${alerts.summary?.maintenance_count || 0} תזכורות תחזוקה`}
+        />
         {alerts.summary?.high_severity_count > 0 && (
           <Chip 
             icon={<WarningIcon />} 
@@ -503,6 +596,13 @@ function AlertsCenter({ user, onClose }) {
               </Badge>
             } 
           />
+          <Tab 
+            label={
+              <Badge color="info" badgeContent={alerts.summary?.maintenance_count || 0} max={99}>
+                תזכורות תחזוקה
+              </Badge>
+            } 
+          />
         </Tabs>
       </Paper>
       
@@ -524,6 +624,7 @@ function AlertsCenter({ user, onClose }) {
           {tabValue === 0 && <OverdueLoansTab />}
           {tabValue === 1 && <UpcomingReturnsTab />}
           {tabValue === 2 && <LowStockTab />}
+          {tabValue === 3 && <MaintenanceSchedulesTab />}
         </>
       )}
       
@@ -619,7 +720,7 @@ function AlertsCenter({ user, onClose }) {
             </Select>
           </FormControl>
           
-          <FormControl fullWidth>
+          <FormControl fullWidth sx={{ mb: 3 }}>
             <InputLabel id="stock-threshold-label">סף אחוזי מלאי להתראה</InputLabel>
             <Select
               labelId="stock-threshold-label"
@@ -634,6 +735,23 @@ function AlertsCenter({ user, onClose }) {
               <MenuItem value={20}>20%</MenuItem>
               <MenuItem value={25}>25%</MenuItem>
               <MenuItem value={30}>30%</MenuItem>
+            </Select>
+          </FormControl>
+          
+          <FormControl fullWidth>
+            <InputLabel id="maintenance-days-threshold-label">סף ימים להתראה על תחזוקה</InputLabel>
+            <Select
+              labelId="maintenance-days-threshold-label"
+              id="maintenance-days-threshold"
+              value={alertSettings.maintenanceDaysThreshold}
+              label="סף ימים להתראה על תחזוקה"
+              onChange={(e) => setAlertSettings({ ...alertSettings, maintenanceDaysThreshold: e.target.value })}
+            >
+              <MenuItem value={7}>שבוע</MenuItem>
+              <MenuItem value={14}>שבועיים</MenuItem>
+              <MenuItem value={30}>חודש</MenuItem>
+              <MenuItem value={60}>חודשיים</MenuItem>
+              <MenuItem value={90}>3 חודשים</MenuItem>
             </Select>
           </FormControl>
         </DialogContent>

@@ -55,10 +55,15 @@ function TopNavigation({ user, onLogout }) {
     try {
       // קריאה ל-API רק אם המשתמש מחובר והוא מנהל מחסן
       if (user && (user.role === 'admin' || user.role === 'warehouse_staff')) {
-        const alertsData = await alertsAPI.getAlerts(3, 20); // ערכי ברירת מחדל לימים ואחוזי מלאי
+        // ערכי ברירת מחדל: 3 ימים להשאלות, 20% למלאי נמוך, 30 יום לתזכורות תחזוקה
+        const alertsData = await alertsAPI.getAlerts(3, 20, 30);
         if (alertsData && alertsData.summary) {
-          // סכום כל ההתראות
-          setAlertCount(alertsData.summary.total_alerts || 0);
+          // סכום כל ההתראות כולל תזכורות תחזוקה
+          const totalAlerts = (alertsData.summary.overdue_count || 0) + 
+                             (alertsData.summary.upcoming_count || 0) + 
+                             (alertsData.summary.low_stock_count || 0) +
+                             (alertsData.summary.maintenance_count || 0);
+          setAlertCount(totalAlerts);
         }
       }
     } catch (error) {
