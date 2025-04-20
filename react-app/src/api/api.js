@@ -329,12 +329,13 @@ export const dashboardAPI = {
 // API להתראות
 export const alertsAPI = {
   // קבלת כל ההתראות
-  getAlerts: async (daysThreshold = 3, stockThreshold = 20) => {
+  getAlerts: async (daysThreshold = 3, stockThreshold = 20, maintenanceDaysThreshold = 30) => {
     try {
       console.log('Fetching alerts data...');
       const response = await axiosInstance.post('/api/alerts', {
         days_threshold: daysThreshold,
-        stock_threshold: stockThreshold
+        stock_threshold: stockThreshold,
+        maintenance_days_threshold: maintenanceDaysThreshold
       });
       console.log('Alerts data received:', response.data);
       return response.data;
