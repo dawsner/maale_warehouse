@@ -196,29 +196,33 @@ def get_severity_level(days, alert_type):
         else:
             return 'low'
 
-def get_all_alerts(days_threshold=3, stock_threshold=20):
+def get_all_alerts(days_threshold=3, stock_threshold=20, maintenance_days_threshold=30):
     """מחזיר את כל סוגי ההתראות"""
     loan_alerts = get_overdue_loans(days_threshold)
     low_stock = get_low_stock_items(stock_threshold)
+    maintenance_schedules = get_upcoming_maintenance_schedules(maintenance_days_threshold)
     
     overdue_loans = loan_alerts.get('overdue_loans', [])
     upcoming_returns = loan_alerts.get('upcoming_returns', [])
     
     # חישוב התראות לסיכום
-    total_alerts = len(overdue_loans) + len(upcoming_returns) + len(low_stock)
+    total_alerts = len(overdue_loans) + len(upcoming_returns) + len(low_stock) + len(maintenance_schedules)
     high_severity_count = sum(1 for alert in overdue_loans if alert.get('severity') == 'high')
     high_severity_count += sum(1 for alert in upcoming_returns if alert.get('severity') == 'high')
     high_severity_count += sum(1 for alert in low_stock if alert.get('severity') == 'high')
+    high_severity_count += sum(1 for alert in maintenance_schedules if alert.get('severity') == 'high')
     
     return {
         "overdue_loans": overdue_loans,
         "upcoming_returns": upcoming_returns,
         "low_stock": low_stock,
+        "maintenance_schedules": maintenance_schedules,
         "summary": {
             "total_alerts": total_alerts,
             "overdue_count": len(overdue_loans),
             "upcoming_count": len(upcoming_returns),
             "low_stock_count": len(low_stock),
+            "maintenance_count": len(maintenance_schedules),
             "high_severity_count": high_severity_count,
             "last_updated": get_israel_time().isoformat()
         }
@@ -232,12 +236,14 @@ def main():
             input_data = json.loads(sys.argv[1])
             days_threshold = input_data.get('days_threshold', 3)
             stock_threshold = input_data.get('stock_threshold', 20)
+            maintenance_days_threshold = input_data.get('maintenance_days_threshold', 30)
         else:
             # ברירת מחדל
             days_threshold = 3
             stock_threshold = 20
+            maintenance_days_threshold = 30
         
-        alerts = get_all_alerts(days_threshold, stock_threshold)
+        alerts = get_all_alerts(days_threshold, stock_threshold, maintenance_days_threshold)
         print(json.dumps(alerts))
     
     except Exception as e:
