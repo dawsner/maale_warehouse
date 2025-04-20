@@ -23,7 +23,6 @@ app.use(cors({
   credentials: true
 }));
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, '../build')));
 
 /**
  * פונקציה כללית להפעלת סקריפט פייתון
@@ -708,6 +707,33 @@ app.get('/api/maintenance/upcoming', async (req, res) => {
       message: error.message 
     });
   }
+});
+
+// מסלולי API תחזוקה
+app.get('/api/maintenance/overview', async (req, res) => {
+  try {
+    console.log("Running maintenance overview API");
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/get_maintenance_overview.py')
+    );
+    console.log("Maintenance overview result:", typeof result === 'string' ? 'Text response' : JSON.stringify(result).substring(0, 150) + '...');
+    res.json(result);
+  } catch (error) {
+    console.error('Error getting maintenance overview:', error);
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
+  }
+});
+
+// הגש את הקבצים הסטטיים האפליקציה אחרי שכל הנתיבים האחרים כבר הוגדרו.
+// חשוב: זה חייב להיות אחרי הגדרת כל נתיבי ה-API
+app.use(express.static(path.join(__dirname, '../build')));
+
+// אם אף אחד מהנתיבים לא טיפל בבקשה, החזר את הדף הראשי של האפליקציה
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../build/index.html'));
 });
 
 app.listen(PORT, () => {
