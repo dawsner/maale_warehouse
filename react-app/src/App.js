@@ -28,6 +28,7 @@ import BookEquipment from './pages/student/BookEquipment';
 import MyEquipment from './pages/student/MyEquipment';
 import CreateReservation from './pages/student/CreateReservation';
 import MyReservations from './pages/student/MyReservations';
+import VintageOrderWizard from './pages/student/VintageOrderWizard';
 import NotFound from './pages/NotFound';
 
 // Maintenance Pages
@@ -198,6 +199,9 @@ function App() {
             } />
             <Route path="/my-reservations" element={
               <ProtectedRoute><MyReservations userId={user?.id} /></ProtectedRoute>
+            } />
+            <Route path="/vintage-order-wizard" element={
+              <ProtectedRoute><VintageOrderWizard userId={user?.id} /></ProtectedRoute>
             } />
             
             {/* דף ברירת מחדל */}
