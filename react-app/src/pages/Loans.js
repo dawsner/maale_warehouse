@@ -53,8 +53,7 @@ function Loans() {
     notes: '',
     director: '',
     producer: '',
-    photographer: '',
-    totalPrice: 0
+    photographer: ''
   });
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -67,19 +66,7 @@ function Loans() {
     fetchInventory();
   }, []);
 
-  useEffect(() => {
-    // חישוב מחיר כולל עבור כל הפריטים הנבחרים
-    const totalPrice = newLoan.selectedItems.reduce((sum, selectedItem) => {
-      const item = inventory.find(item => item.id === selectedItem.itemId);
-      const price = (item?.price_per_unit || 0) * selectedItem.quantity;
-      return sum + price;
-    }, 0);
-    
-    setNewLoan(prev => ({
-      ...prev,
-      totalPrice
-    }));
-  }, [newLoan.selectedItems, inventory]);
+  // הסרנו את החישוב של מחיר כי הציוד מושאל בחינם
 
   const fetchLoans = async () => {
     try {
@@ -227,7 +214,6 @@ function Loans() {
       
       // יצירת השאלה נפרדת עבור כל פריט
       const loanPromises = newLoan.selectedItems.map(async (selectedItem) => {
-        const item = inventory.find(item => item.id === selectedItem.itemId);
         const loanData = {
           item_id: selectedItem.itemId,
           student_name: newLoan.studentName,
@@ -237,9 +223,7 @@ function Loans() {
           loan_notes: newLoan.notes,
           director: newLoan.director,
           producer: newLoan.producer,
-          photographer: newLoan.photographer,
-          price_per_unit: item?.price_per_unit || 0,
-          total_price: (item?.price_per_unit || 0) * selectedItem.quantity
+          photographer: newLoan.photographer
         };
         
         return loansAPI.createLoan(loanData);
@@ -261,8 +245,7 @@ function Loans() {
         notes: '',
         director: '',
         producer: '',
-        photographer: '',
-        totalPrice: 0
+        photographer: ''
       });
       await fetchLoans();
     } catch (err) {
@@ -587,22 +570,14 @@ function Loans() {
                             </Grid>
                           </Grid>
                           
-                          {/* הצגת מחיר עבור הפריט הנוכחי */}
-                          {selectedItem.itemId && (
-                            <Box sx={{ mt: 1, p: 1, bgcolor: '#F8F9FF', borderRadius: 1 }}>
-                              <Typography variant="body2" color="text.secondary">
-                                מחיר יחידה: ₪{inventory.find(item => item.id === selectedItem.itemId)?.price_per_unit || 0} | 
-                                סה"כ: ₪{((inventory.find(item => item.id === selectedItem.itemId)?.price_per_unit || 0) * selectedItem.quantity).toFixed(2)}
-                              </Typography>
-                            </Box>
-                          )}
+                          {/* הסרנו את הצגת המחיר כי הציוד מושאל בחינם */}
                         </Paper>
                       ))}
                       
-                      {/* סיכום מחיר כולל */}
+                      {/* סיכום פריטים נבחרים */}
                       <Paper sx={{ p: 2, bgcolor: '#F0F4FF', border: '1px solid #1E2875' }}>
                         <Typography variant="h6" sx={{ color: '#1E2875', fontWeight: 'bold', textAlign: 'center' }}>
-                          מחיר כולל: ₪{newLoan.totalPrice.toFixed(2)}
+                          סה"כ פריטים נבחרים: {newLoan.selectedItems.length}
                         </Typography>
                       </Paper>
                     </Box>
