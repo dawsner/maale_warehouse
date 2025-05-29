@@ -46,16 +46,14 @@ function Loans() {
   const [returnNotes, setReturnNotes] = useState('');
   const [currentLoan, setCurrentLoan] = useState(null);
   const [newLoan, setNewLoan] = useState({
-    itemId: '',
+    selectedItems: [], // משנה לרשימה של פריטים נבחרים
     studentName: '',
     studentId: '',
-    quantity: 1,
     dueDate: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000), // שבוע מהיום
     notes: '',
     director: '',
     producer: '',
     photographer: '',
-    pricePerUnit: 0,
     totalPrice: 0
   });
   const [snackbar, setSnackbar] = useState({
@@ -70,18 +68,18 @@ function Loans() {
   }, []);
 
   useEffect(() => {
-    if (newLoan.itemId && newLoan.quantity) {
-      const selectedItem = inventory.find(item => item.id === newLoan.itemId);
-      if (selectedItem && selectedItem.price_per_unit) {
-        const totalPrice = selectedItem.price_per_unit * newLoan.quantity;
-        setNewLoan(prev => ({
-          ...prev,
-          pricePerUnit: selectedItem.price_per_unit,
-          totalPrice
-        }));
-      }
-    }
-  }, [newLoan.itemId, newLoan.quantity, inventory]);
+    // חישוב מחיר כולל עבור כל הפריטים הנבחרים
+    const totalPrice = newLoan.selectedItems.reduce((sum, selectedItem) => {
+      const item = inventory.find(item => item.id === selectedItem.itemId);
+      const price = (item?.price_per_unit || 0) * selectedItem.quantity;
+      return sum + price;
+    }, 0);
+    
+    setNewLoan(prev => ({
+      ...prev,
+      totalPrice
+    }));
+  }, [newLoan.selectedItems, inventory]);
 
   const fetchLoans = async () => {
     try {
@@ -152,33 +150,46 @@ function Loans() {
 
   const handleNewLoanChange = (e) => {
     const { name, value } = e.target;
-    
-    if (name === 'quantity') {
-      const numValue = parseInt(value, 10) || 0;
-      const selectedItem = inventory.find(item => item.id === newLoan.itemId);
-      const pricePerUnit = selectedItem ? selectedItem.price_per_unit || 0 : 0;
-      
-      setNewLoan({
-        ...newLoan,
-        quantity: numValue,
-        totalPrice: numValue * pricePerUnit
-      });
-    } else if (name === 'itemId') {
-      const selectedItem = inventory.find(item => item.id === value);
-      const pricePerUnit = selectedItem ? selectedItem.price_per_unit || 0 : 0;
-      
-      setNewLoan({
-        ...newLoan,
-        itemId: value,
-        pricePerUnit,
-        totalPrice: newLoan.quantity * pricePerUnit
-      });
-    } else {
-      setNewLoan({
-        ...newLoan,
-        [name]: value
-      });
-    }
+    setNewLoan({
+      ...newLoan,
+      [name]: value
+    });
+  };
+
+  // פונקציה להוספת פריט חדש לרשימה
+  const addItemToLoan = () => {
+    const newItem = {
+      itemId: '',
+      quantity: 1,
+      id: Date.now() // מזהה זמני
+    };
+    setNewLoan({
+      ...newLoan,
+      selectedItems: [...newLoan.selectedItems, newItem]
+    });
+  };
+
+  // פונקציה להסרת פריט מהרשימה
+  const removeItemFromLoan = (itemIndex) => {
+    const updatedItems = newLoan.selectedItems.filter((_, index) => index !== itemIndex);
+    setNewLoan({
+      ...newLoan,
+      selectedItems: updatedItems
+    });
+  };
+
+  // פונקציה לעדכון פריט ברשימה
+  const updateSelectedItem = (itemIndex, field, value) => {
+    const updatedItems = newLoan.selectedItems.map((item, index) => {
+      if (index === itemIndex) {
+        return { ...item, [field]: field === 'quantity' ? parseInt(value, 10) || 1 : value };
+      }
+      return item;
+    });
+    setNewLoan({
+      ...newLoan,
+      selectedItems: updatedItems
+    });
   };
 
   const handleDateChange = (date) => {
@@ -189,10 +200,22 @@ function Loans() {
   };
 
   const handleCreateLoan = async () => {
-    if (!newLoan.itemId || !newLoan.studentName || !newLoan.studentId || !newLoan.quantity || !newLoan.dueDate) {
+    // בדיקת תקינות - צריך לפחות פריט אחד
+    if (newLoan.selectedItems.length === 0 || !newLoan.studentName || !newLoan.studentId || !newLoan.dueDate) {
       setSnackbar({
         open: true,
-        message: 'יש למלא את כל שדות החובה',
+        message: 'יש למלא את כל שדות החובה ולבחור לפחות פריט אחד',
+        severity: 'error'
+      });
+      return;
+    }
+
+    // בדיקה שכל הפריטים הנבחרים מוגדרים כראוי
+    const invalidItems = newLoan.selectedItems.filter(item => !item.itemId || !item.quantity);
+    if (invalidItems.length > 0) {
+      setSnackbar({
+        open: true,
+        message: 'יש לבחור פריט וכמות עבור כל שורה',
         severity: 'error'
       });
       return;
@@ -200,51 +223,53 @@ function Loans() {
 
     try {
       setLoading(true);
-      console.log('Creating new loan with data:', newLoan);
+      console.log('Creating loans for multiple items:', newLoan);
       
-      // הכנת האובייקט לשליחה לשרת
-      const loanData = {
-        item_id: newLoan.itemId,
-        student_name: newLoan.studentName,
-        student_id: newLoan.studentId,
-        quantity: newLoan.quantity,
-        due_date: newLoan.dueDate instanceof Date ? newLoan.dueDate.toISOString() : newLoan.dueDate,
-        loan_notes: newLoan.notes,
-        director: newLoan.director,
-        producer: newLoan.producer,
-        photographer: newLoan.photographer,
-        price_per_unit: newLoan.pricePerUnit,
-        total_price: newLoan.totalPrice
-      };
+      // יצירת השאלה נפרדת עבור כל פריט
+      const loanPromises = newLoan.selectedItems.map(async (selectedItem) => {
+        const item = inventory.find(item => item.id === selectedItem.itemId);
+        const loanData = {
+          item_id: selectedItem.itemId,
+          student_name: newLoan.studentName,
+          student_id: newLoan.studentId,
+          quantity: selectedItem.quantity,
+          due_date: newLoan.dueDate instanceof Date ? newLoan.dueDate.toISOString() : newLoan.dueDate,
+          loan_notes: newLoan.notes,
+          director: newLoan.director,
+          producer: newLoan.producer,
+          photographer: newLoan.photographer,
+          price_per_unit: item?.price_per_unit || 0,
+          total_price: (item?.price_per_unit || 0) * selectedItem.quantity
+        };
+        
+        return loansAPI.createLoan(loanData);
+      });
       
-      const response = await loansAPI.createLoan(loanData);
-      console.log('Create loan response:', response);
+      await Promise.all(loanPromises);
       
       setSnackbar({
         open: true,
-        message: 'ההשאלה נוצרה בהצלחה',
+        message: `נוצרו ${newLoan.selectedItems.length} השאלות בהצלחה`,
         severity: 'success'
       });
       setOpenDialog(false);
       setNewLoan({
-        itemId: '',
+        selectedItems: [],
         studentName: '',
         studentId: '',
-        quantity: 1,
         dueDate: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000),
         notes: '',
         director: '',
         producer: '',
         photographer: '',
-        pricePerUnit: 0,
         totalPrice: 0
       });
       await fetchLoans();
     } catch (err) {
-      console.error('Error creating loan:', err);
+      console.error('Error creating loans:', err);
       setSnackbar({
         open: true,
-        message: err.response?.data?.message || 'שגיאה ביצירת השאלה',
+        message: err.response?.data?.message || 'שגיאה ביצירת השאלות',
         severity: 'error'
       });
     } finally {
@@ -456,64 +481,134 @@ function Loans() {
               {/* מידע בסיסי */}
               <Grid item xs={12}>
                 <Paper sx={{ p: 2, borderRadius: 2, border: '1px solid #CECECE' }}>
-                  <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold', color: '#373B5C' }}>
-                    פרטי ציוד ותלמיד
-                  </Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#373B5C' }}>
+                      פריטים לשאילה
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<AddIcon />}
+                      onClick={addItemToLoan}
+                      sx={{ color: '#373B5C', borderColor: '#373B5C' }}
+                    >
+                      הוסף פריט
+                    </Button>
+                  </Box>
+                  
+                  {/* רשימת פריטים נבחרים */}
+                  {newLoan.selectedItems.length === 0 ? (
+                    <Box sx={{ 
+                      p: 3, 
+                      textAlign: 'center', 
+                      border: '2px dashed #CECECE', 
+                      borderRadius: 2,
+                      bgcolor: '#FAFBFF',
+                      mb: 2
+                    }}>
+                      <Typography variant="body2" color="text.secondary">
+                        לחץ על "הוסף פריט" כדי להתחיל לבחור ציוד להשאלה
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <Box sx={{ mb: 2 }}>
+                      {newLoan.selectedItems.map((selectedItem, index) => (
+                        <Paper 
+                          key={index} 
+                          sx={{ 
+                            p: 2, 
+                            mb: 2, 
+                            border: '1px solid #E5E8F5',
+                            borderRadius: 2
+                          }}
+                        >
+                          <Grid container spacing={2} alignItems="center">
+                            <Grid item xs={12} md={6}>
+                              <TextField
+                                select
+                                label="בחירת פריט *"
+                                fullWidth
+                                required
+                                value={selectedItem.itemId}
+                                onChange={(e) => updateSelectedItem(index, 'itemId', e.target.value)}
+                                sx={{ direction: 'rtl' }}
+                                error={!selectedItem.itemId}
+                                helperText={!selectedItem.itemId ? "חובה לבחור פריט" : ""}
+                              >
+                                <MenuItem value="" disabled>
+                                  <em>בחר פריט</em>
+                                </MenuItem>
+                                {inventory
+                                  .filter(item => item.is_available && item.available_quantity > 0)
+                                  .sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name))
+                                  .map(item => (
+                                    <MenuItem key={item.id} value={item.id}>
+                                      <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                                        <span>
+                                          <strong>{item.category}</strong> - {item.name}
+                                        </span>
+                                        <span style={{ color: '#666' }}>
+                                          (זמין: {item.available_quantity})
+                                        </span>
+                                      </Box>
+                                    </MenuItem>
+                                  ))
+                                }
+                              </TextField>
+                            </Grid>
+                            <Grid item xs={8} md={4}>
+                              <TextField
+                                label="כמות *"
+                                type="number"
+                                fullWidth
+                                required
+                                value={selectedItem.quantity}
+                                onChange={(e) => updateSelectedItem(index, 'quantity', e.target.value)}
+                                inputProps={{ 
+                                  min: 1,
+                                  max: selectedItem.itemId ? 
+                                    inventory.find(item => item.id === selectedItem.itemId)?.available_quantity || 1 : 1 
+                                }}
+                                sx={{ direction: 'rtl' }}
+                                error={selectedItem.quantity < 1}
+                                helperText={selectedItem.quantity < 1 ? "כמות חייבת להיות 1 לפחות" : ""}
+                              />
+                            </Grid>
+                            <Grid item xs={4} md={2}>
+                              <Button
+                                variant="outlined"
+                                color="error"
+                                size="small"
+                                onClick={() => removeItemFromLoan(index)}
+                                sx={{ minWidth: 'auto', px: 1 }}
+                              >
+                                הסר
+                              </Button>
+                            </Grid>
+                          </Grid>
+                          
+                          {/* הצגת מחיר עבור הפריט הנוכחי */}
+                          {selectedItem.itemId && (
+                            <Box sx={{ mt: 1, p: 1, bgcolor: '#F8F9FF', borderRadius: 1 }}>
+                              <Typography variant="body2" color="text.secondary">
+                                מחיר יחידה: ₪{inventory.find(item => item.id === selectedItem.itemId)?.price_per_unit || 0} | 
+                                סה"כ: ₪{((inventory.find(item => item.id === selectedItem.itemId)?.price_per_unit || 0) * selectedItem.quantity).toFixed(2)}
+                              </Typography>
+                            </Box>
+                          )}
+                        </Paper>
+                      ))}
+                      
+                      {/* סיכום מחיר כולל */}
+                      <Paper sx={{ p: 2, bgcolor: '#F0F4FF', border: '1px solid #1E2875' }}>
+                        <Typography variant="h6" sx={{ color: '#1E2875', fontWeight: 'bold', textAlign: 'center' }}>
+                          מחיר כולל: ₪{newLoan.totalPrice.toFixed(2)}
+                        </Typography>
+                      </Paper>
+                    </Box>
+                  )}
                   
                   <Grid container spacing={2}>
-                    <Grid item xs={12} md={6}>
-                      <TextField
-                        select
-                        label="בחירת פריט *"
-                        name="itemId"
-                        fullWidth
-                        required
-                        value={newLoan.itemId}
-                        onChange={handleNewLoanChange}
-                        sx={{ direction: 'rtl' }}
-                        error={!newLoan.itemId}
-                        helperText={!newLoan.itemId ? "חובה לבחור פריט" : ""}
-                      >
-                        <MenuItem value="" disabled>
-                          <em>בחר פריט</em>
-                        </MenuItem>
-                        {inventory
-                          .filter(item => item.is_available && item.available_quantity > 0)
-                          .sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name))
-                          .map(item => (
-                            <MenuItem key={item.id} value={item.id}>
-                              <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                                <span>
-                                  <strong>{item.category}</strong> - {item.name}
-                                </span>
-                                <span style={{ color: '#666' }}>
-                                  (כמות זמינה: {item.available_quantity})
-                                </span>
-                              </Box>
-                            </MenuItem>
-                          ))
-                        }
-                      </TextField>
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <TextField
-                        label="כמות *"
-                        name="quantity"
-                        type="number"
-                        fullWidth
-                        required
-                        value={newLoan.quantity}
-                        onChange={handleNewLoanChange}
-                        inputProps={{ 
-                          min: 1,
-                          max: newLoan.itemId ? 
-                            inventory.find(item => item.id === newLoan.itemId)?.available_quantity || 1 : 1 
-                        }}
-                        sx={{ direction: 'rtl' }}
-                        error={newLoan.quantity < 1}
-                        helperText={newLoan.quantity < 1 ? "הכמות חייבת להיות 1 לפחות" : ""}
-                      />
-                    </Grid>
                     
                     <Grid item xs={12} md={6}>
                       <TextField
