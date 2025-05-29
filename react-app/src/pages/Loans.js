@@ -720,44 +720,14 @@ function Loans() {
                 </Paper>
               </Grid>
               
-              {/* מחירים והערות */}
+              {/* הערות */}
               <Grid item xs={12}>
                 <Paper sx={{ p: 2, borderRadius: 2, border: '1px solid #CECECE' }}>
                   <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold', color: '#373B5C' }}>
-                    מחירים והערות
+                    הערות נוספות
                   </Typography>
                   
                   <Grid container spacing={2}>
-                    <Grid item xs={12} md={6}>
-                      <TextField
-                        label="מחיר ליחידה"
-                        name="pricePerUnit"
-                        type="number"
-                        fullWidth
-                        value={newLoan.pricePerUnit}
-                        onChange={handleNewLoanChange}
-                        InputProps={{
-                          readOnly: true,
-                          startAdornment: <InputAdornment position="start">₪</InputAdornment>,
-                        }}
-                        sx={{ direction: 'rtl' }}
-                      />
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <TextField
-                        label="מחיר כולל"
-                        name="totalPrice"
-                        type="number"
-                        fullWidth
-                        value={newLoan.totalPrice}
-                        InputProps={{
-                          readOnly: true,
-                          startAdornment: <InputAdornment position="start">₪</InputAdornment>,
-                        }}
-                        sx={{ direction: 'rtl' }}
-                      />
-                    </Grid>
-                    
                     <Grid item xs={12}>
                       <TextField
                         label="הערות להשאלה"
