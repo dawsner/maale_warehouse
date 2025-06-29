@@ -26,6 +26,7 @@ import { inventoryAPI } from '../../api/api';
 import { useAuth } from '../../contexts/AuthContext';
 
 function AvailableItems() {
+  const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -72,14 +73,47 @@ function AvailableItems() {
     setCategoryFilter(category);
   };
 
+  const getStudyYearText = (year) => {
+    switch (year) {
+      case 'first': return 'שנה א\'';
+      case 'second': return 'שנה ב\'';
+      case 'third': return 'שנה ג\'';
+      default: return year || 'לא מוגדר';
+    }
+  };
+
+  const getBranchText = (branch) => {
+    switch (branch) {
+      case 'main': return 'מחלקה ראשית';
+      case 'haredi': return 'מחלקה חרדית';
+      default: return branch || 'לא מוגדר';
+    }
+  };
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" sx={{ mb: 2, fontWeight: 'bold', color: '#373B5C' }}>
-          פריטים זמינים
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: '#373B5C' }}>
+            פריטים זמינים
+          </Typography>
+          {user && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <SchoolIcon sx={{ color: '#9197B3', fontSize: 20 }} />
+              <Chip 
+                label={`${getStudyYearText(user.study_year)} | ${getBranchText(user.branch)}`}
+                size="small"
+                sx={{ 
+                  backgroundColor: '#373B5C', 
+                  color: 'white',
+                  fontWeight: 'bold'
+                }}
+              />
+            </Box>
+          )}
+        </Box>
         <Typography variant="body1" sx={{ color: '#9197B3' }}>
-          רשימת הציוד הזמין להשאלה או הזמנה
+          רשימת הציוד הזמין להשאלה או הזמנה לפי ההרשאות שלך
         </Typography>
       </Box>
       
