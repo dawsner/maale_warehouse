@@ -382,7 +382,9 @@ function Inventory() {
             </TableHead>
             <TableBody>
               {filteredItems.length > 0 ? (
-                filteredItems.map((item) => (
+                filteredItems.map((item) => {
+                  console.log('Rendering item row:', item.id, item.name);
+                  return (
                   <TableRow key={item.id} hover sx={{ '&:hover': { backgroundColor: '#f5f5f5' } }}>
                     <TableCell>{item.category}</TableCell>
                     <TableCell>{item.name}</TableCell>
@@ -527,7 +529,9 @@ function Inventory() {
                       </IconButton>
                     </TableCell>
                   </TableRow>
-                ))
+                  );
+                })
+              
               ) : (
                 <TableRow>
                   <TableCell colSpan={11} align="center">
