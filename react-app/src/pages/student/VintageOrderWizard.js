@@ -364,7 +364,7 @@ function VintageOrderWizard({ userId }) {
           start_date: formData.start_date.toISOString().split('T')[0],
           end_date: formData.end_date.toISOString().split('T')[0],
           user_id: userId,
-          notes: `${formData.notes} [וינטג' סט: ${PRODUCTION_TEMPLATES[selectedTemplate].name}]`
+          notes: `${formData.notes} [הזמנות סט: ${PRODUCTION_TEMPLATES[selectedTemplate].name}]`
         });
       });
       
@@ -446,10 +446,10 @@ function VintageOrderWizard({ userId }) {
       {/* כותרת */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" component="h1" sx={{ mb: 2, fontWeight: 'bold', color: '#373B5C' }}>
-          אשף הזמנות ווינטג'
+          אשף הזמנות והזמנות
         </Typography>
         <Typography variant="body1" sx={{ color: '#9197B3' }}>
-          צור הזמנה מותאמת אישית בסגנון ווינטג' עם תבניות מוכנות מראש
+          צור הזמנה מותאמת אישית בסגנון והזמנות עם תבניות מוכנות מראש
         </Typography>
       </Box>
       

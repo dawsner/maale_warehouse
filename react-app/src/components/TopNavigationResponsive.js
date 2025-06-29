@@ -236,7 +236,7 @@ function TopNavigationResponsive({ user, onLogout }) {
                           mr: 1
                         }}
                       >
-                        אשף וינטג'
+                        אשף ההזמנות
                       </Button>
                       
                       {/* כפתור התראות */}
@@ -322,7 +322,7 @@ function TopNavigationResponsive({ user, onLogout }) {
                           mr: 1
                         }}
                       >
-                        אשף וינטג'
+                        אשף ההזמנות
                       </Button>
                     </>
                   )}
@@ -431,7 +431,7 @@ function TopNavigationResponsive({ user, onLogout }) {
                 <ListItemIcon sx={{ color: '#1E2875' }}>
                   <AddCircleIcon />
                 </ListItemIcon>
-                <ListItemText primary="אשף וינטג'" />
+                <ListItemText primary="אשף ההזמנות" />
               </ListItem>
               
               <Divider sx={{ my: 1 }} />
@@ -492,7 +492,7 @@ function TopNavigationResponsive({ user, onLogout }) {
                 <ListItemIcon sx={{ color: '#1E2875' }}>
                   <AddCircleIcon />
                 </ListItemIcon>
-                <ListItemText primary="אשף וינטג'" />
+                <ListItemText primary="אשף ההזמנות" />
               </ListItem>
             </>
           )}

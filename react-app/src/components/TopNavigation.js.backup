@@ -210,7 +210,7 @@ function TopNavigation({ user, onLogout }) {
                         mr: 1
                       }}
                     >
-                      אשף וינטג'
+                      אשף הזמנות
                     </Button>
                     
                     {/* כפתור התראות */}
@@ -322,7 +322,7 @@ function TopNavigation({ user, onLogout }) {
                         mr: 1
                       }}
                     >
-                      אשף וינטג'
+                      אשף הזמנות
                     </Button>
                     <Button 
                       color="inherit" 
