@@ -1,0 +1,50 @@
+Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+App.js:59 Token found in localStorage, trying to authenticate...
+App.js:67 Token expired, redirecting to login
+App.js:91 No token found, user not logged in
+deleteLegacyGridProps.js:37 MUI Grid: The `item` prop has been removed and is no longer necessary. You can safely remove it.
+
+(anonymous) @ deleteLegacyGridProps.js:37Understand this warning
+inject_main.js:1 inject_main.js
+WebSocketClient.js:13 WebSocket connection to 'wss://91d245b0-607c-440f-ac35-1c784e2fea9f-00-33ztdwby8gd1b.sisko.replit.dev:5000/ws' failed: 
+WebSocketClient @ WebSocketClient.js:13Understand this error
+login:1 Error while trying to use the following icon from the Manifest: https://91d245b0-607c-440f-ac35-1c784e2fea9f-00-33ztdwby8gd1b.sisko.replit.dev/logo192.png (Resource size is not correct - typo in the Manifest?)Understand this error
+Login.js:51 Attempting login with: Object
+api.js:301 Sending login request to: /api/auth/login
+WebSocketClient.js:13 WebSocket connection to 'wss://91d245b0-607c-440f-ac35-1c784e2fea9f-00-33ztdwby8gd1b.sisko.replit.dev:5000/ws' failed: 
+WebSocketClient @ WebSocketClient.js:13Understand this error
+api.js:303 Login response: Object
+Login.js:53 Login response: Object
+App.js:97 Login successful, user data: Object
+api.js:383 Fetching alerts data...
+deleteLegacyGridProps.js:37 MUI Grid: The `xs` prop has been removed. See https://mui.com/material-ui/migration/upgrade-to-grid-v2/ for migration instructions.
+
+(anonymous) @ deleteLegacyGridProps.js:37Understand this warning
+deleteLegacyGridProps.js:37 MUI Grid: The `sm` prop has been removed. See https://mui.com/material-ui/migration/upgrade-to-grid-v2/ for migration instructions.
+
+(anonymous) @ deleteLegacyGridProps.js:37Understand this warning
+deleteLegacyGridProps.js:37 MUI Grid: The `md` prop has been removed. See https://mui.com/material-ui/migration/upgrade-to-grid-v2/ for migration instructions.
+
+(anonymous) @ deleteLegacyGridProps.js:37Understand this warning
+InventoryEnhanced.js:181 Trying to fetch inventory items...
+api.js:66 Fetching inventory from API...
+InventoryEnhanced.js:181 Trying to fetch inventory items...
+api.js:66 Fetching inventory from API...
+WebSocketClient.js:13 WebSocket connection to 'wss://91d245b0-607c-440f-ac35-1c784e2fea9f-00-33ztdwby8gd1b.sisko.replit.dev:5000/ws' failed: 
+WebSocketClient @ WebSocketClient.js:13Understand this error
+api.js:68 Inventory response received: Array(257)
+InventoryEnhanced.js:201 Inventory data received: 257 items
+api.js:389 Alerts data received: Object
+api.js:68 Inventory response received: Array(257)
+InventoryEnhanced.js:201 Inventory data received: 257 items
+InventoryEnhanced.js:181 Trying to fetch inventory items...
+api.js:66 Fetching inventory from API...
+InventoryEnhanced.js:181 Trying to fetch inventory items...
+api.js:66 Fetching inventory from API...
+WebSocketClient.js:13 WebSocket connection to 'wss://91d245b0-607c-440f-ac35-1c784e2fea9f-00-33ztdwby8gd1b.sisko.replit.dev:5000/ws' failed: 
+WebSocketClient @ WebSocketClient.js:13Understand this error
+api.js:68 Inventory response received: Array(257)
+InventoryEnhanced.js:201 Inventory data received: 257 items
+api.js:68 Inventory response received: Array(257)
+InventoryEnhanced.js:201 Inventory data received: 257 items
+WebSocketClient.js:13 WebSocket connection to 'wss://91d245b0-607c-440f-ac35-1c784e2fea9f-00-33ztdwby8gd1b.sisko.replit.dev:5000/ws' failed: 

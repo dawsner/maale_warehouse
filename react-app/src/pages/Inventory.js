@@ -106,6 +106,10 @@ function Inventory() {
     item.category.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  console.log('Items count:', items.length);
+  console.log('Filtered items count:', filteredItems.length);
+  console.log('Search query:', searchQuery);
+
   const handleOpenDialog = (item = null) => {
     if (item) {
       setCurrentItem({ ...item });
