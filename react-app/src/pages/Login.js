@@ -182,9 +182,15 @@ function Login({ onLogin }) {
             fullWidth
             variant="contained"
             color="primary"
-            size="large"
+            size={isMobile ? "medium" : "large"}
             disabled={loading}
-            sx={{ mt: 4, mb: 2, py: 1.5, fontWeight: 'bold' }}
+            sx={{ 
+              mt: { xs: 3, md: 4 }, 
+              mb: 2, 
+              py: { xs: 1.2, sm: 1.5 }, 
+              fontWeight: 'bold',
+              fontSize: { xs: '0.9rem', sm: '1rem' }
+            }}
           >
             {loading ? 'מתחבר...' : 'התחברות'}
           </Button>
