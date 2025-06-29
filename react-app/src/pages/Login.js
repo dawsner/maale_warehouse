@@ -11,12 +11,17 @@ import {
   InputAdornment,
   IconButton,
   Alert,
-  Container
+  Container,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { authAPI } from '../api/api';
 
 function Login({ onLogin }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('admin123');
   const [error, setError] = useState('');
@@ -79,12 +84,13 @@ function Login({ onLogin }) {
   };
 
   return (
-    <Container maxWidth="sm">
+    <Container maxWidth={isMobile ? "xs" : "sm"}>
       <Paper 
         elevation={3} 
         sx={{ 
-          p: 4, 
-          mt: 8, 
+          p: { xs: 2, sm: 3, md: 4 }, 
+          mt: { xs: 4, sm: 6, md: 8 }, 
+          mx: { xs: 1, sm: 0 },
           borderRadius: 2,
           boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
         }}
@@ -98,12 +104,27 @@ function Login({ onLogin }) {
           <img 
             src="/logo.png" 
             alt="לוגו המערכת" 
-            style={{ width: '100px', marginBottom: '16px' }} 
+            style={{ 
+              width: isMobile ? '80px' : '100px', 
+              marginBottom: '16px' 
+            }} 
           />
-          <Typography component="h1" variant="h4" fontWeight="600" color="primary">
+          <Typography 
+            component="h1" 
+            variant={isMobile ? "h5" : "h4"} 
+            fontWeight="600" 
+            color="primary"
+            textAlign="center"
+          >
             התחברות למערכת
           </Typography>
-          <Typography variant="body2" color="text.secondary" mt={1}>
+          <Typography 
+            variant="body2" 
+            color="text.secondary" 
+            mt={1}
+            textAlign="center"
+            sx={{ px: { xs: 1, sm: 0 } }}
+          >
             התחבר כדי לנהל את מערכת ציוד הקולנוע
           </Typography>
         </Box>

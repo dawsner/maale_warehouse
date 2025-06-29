@@ -144,7 +144,17 @@ function App() {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <TopNavigationResponsive user={user} onLogout={handleLogout} />
-        <Container maxWidth={false} sx={{ mt: 3, mb: 4, px: { xs: 2, sm: 4 }, maxWidth: '98%', mx: 'auto' }}>
+        <Container 
+          maxWidth={false} 
+          sx={{ 
+            mt: { xs: 1, sm: 2, md: 3 }, 
+            mb: 4, 
+            px: { xs: 1, sm: 2, md: 3, lg: 4 }, 
+            maxWidth: '98%', 
+            mx: 'auto',
+            minHeight: 'calc(100vh - 64px)' // גובה מלא פחות הנוויגציה
+          }}
+        >
           <Routes>
             {/* דפים פתוחים לכל */}
             <Route path="/login" element={<Login onLogin={handleLogin} />} />
