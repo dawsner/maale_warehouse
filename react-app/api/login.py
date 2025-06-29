@@ -46,6 +46,8 @@ def main():
                 'role': user.role,
                 'email': user.email,
                 'full_name': user.full_name,
+                'study_year': user.study_year,
+                'branch': user.branch,
                 'exp': datetime.utcnow() + timedelta(hours=JWT_EXPIRATION)
             }
             
@@ -60,6 +62,8 @@ def main():
                 'role': user.role,
                 'email': user.email,
                 'full_name': user.full_name,
+                'study_year': user.study_year,
+                'branch': user.branch,
                 'token': token,
                 'message': 'התחברות הצליחה'
             }

@@ -41,7 +41,7 @@ function AvailableItems() {
       setLoading(true);
       const response = await inventoryAPI.getAll();
       console.log('Inventory data received:', response.data?.length, 'items');
-      setItems(response.data);
+      setItems(response.data || []);
       setError('');
     } catch (err) {
       console.error('Error fetching inventory:', err);
