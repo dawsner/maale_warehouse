@@ -164,6 +164,14 @@ function InventoryEnhanced() {
     message: '',
     severity: 'success'
   });
+  
+  // דיאלוג הרשאות
+  const [permissionsDialog, setPermissionsDialog] = useState({
+    open: false,
+    item: null,
+    allowedYears: []
+  });
+  
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewData, setPreviewData] = useState(null);
   const [columnMapping, setColumnMapping] = useState({});
@@ -579,6 +587,68 @@ function InventoryEnhanced() {
   const handleViewModeChange = (event, newMode) => {
     if (newMode !== null) {
       setViewMode(newMode);
+    }
+  };
+
+  // פתיחת דיאלוג הרשאות
+  const handleOpenPermissions = (item) => {
+    console.log('Opening permissions dialog for item:', item);
+    const allowedYearsArray = item.allowed_years ? item.allowed_years.split(',').map(y => y.trim()) : ['1', '2', '3'];
+    setPermissionsDialog({
+      open: true,
+      item: item,
+      allowedYears: allowedYearsArray
+    });
+  };
+
+  // סגירת דיאלוג הרשאות
+  const handleClosePermissions = () => {
+    setPermissionsDialog({
+      open: false,
+      item: null,
+      allowedYears: []
+    });
+  };
+
+  // שינוי הרשאה של שנה
+  const handlePermissionChange = (year, checked) => {
+    if (checked) {
+      setPermissionsDialog({
+        ...permissionsDialog,
+        allowedYears: [...permissionsDialog.allowedYears, year]
+      });
+    } else {
+      setPermissionsDialog({
+        ...permissionsDialog,
+        allowedYears: permissionsDialog.allowedYears.filter(y => y !== year)
+      });
+    }
+  };
+
+  // עדכון הרשאות פריט
+  const handleUpdatePermissions = async () => {
+    try {
+      setLoading(true);
+      await inventoryAPI.updateItemPermissions(
+        permissionsDialog.item.id, 
+        permissionsDialog.allowedYears
+      );
+      await fetchItems();
+      setSnackbar({
+        open: true,
+        message: 'הרשאות הפריט עודכנו בהצלחה',
+        severity: 'success'
+      });
+      handleClosePermissions();
+    } catch (err) {
+      console.error('Error updating permissions:', err);
+      setSnackbar({
+        open: true,
+        message: 'שגיאה בעדכון הרשאות הפריט',
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -2299,6 +2369,17 @@ function InventoryEnhanced() {
                     >
                       <BuildIcon fontSize="small" />
                     </IconButton>
+                  </Tooltip>
+                  <Tooltip title="הרשאות שנות לימוד">
+                    <Button 
+                      onClick={() => handleOpenPermissions(item)} 
+                      variant="outlined"
+                      color="secondary" 
+                      size="small" 
+                      sx={{ mx: 0.5, minWidth: 'auto', px: 1 }}
+                    >
+                      הרשאות שנים
+                    </Button>
                   </Tooltip>
                   <Tooltip title="מחק פריט">
                     <IconButton onClick={() => handleDeleteItem(item.id)} color="error" size="small" sx={{ mx: 0.5 }}>
