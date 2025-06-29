@@ -49,8 +49,14 @@ function AvailableItems() {
     try {
       setLoading(true);
       const response = await inventoryAPI.getAll();
-      console.log('Inventory data received:', response.data?.length, 'items');
-      setItems(response.data || []);
+      console.log('Full API response:', response);
+      console.log('Response data type:', typeof response);
+      console.log('Is response an array:', Array.isArray(response));
+      
+      // התאמה לפורמט שמחזיר ה-API
+      const itemsData = Array.isArray(response) ? response : response.data || [];
+      console.log('Items data length:', itemsData.length);
+      setItems(itemsData);
       setError('');
     } catch (err) {
       console.error('Error fetching inventory:', err);
