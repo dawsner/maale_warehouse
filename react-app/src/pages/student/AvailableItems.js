@@ -21,7 +21,9 @@ import {
   Chip
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import SchoolIcon from '@mui/icons-material/School';
 import { inventoryAPI } from '../../api/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 function AvailableItems() {
   const [items, setItems] = useState([]);

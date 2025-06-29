@@ -29,6 +29,7 @@ import MyEquipment from './pages/student/MyEquipment';
 import CreateReservation from './pages/student/CreateReservation';
 import MyReservations from './pages/student/MyReservations';
 import VintageOrderWizard from './pages/student/VintageOrderWizard';
+import Profile from './pages/student/Profile';
 import AdvancedReports from './pages/admin/AdvancedReports';
 import UserManagement from './pages/admin/UserManagement';
 import NotFound from './pages/NotFound';
@@ -195,6 +196,9 @@ function App() {
             {/* דפים לסטודנטים */}
             <Route path="/available-items" element={
               <ProtectedRoute><AvailableItems /></ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute><Profile /></ProtectedRoute>
             } />
             <Route path="/book-equipment" element={
               <ProtectedRoute><BookEquipment userId={user?.id} /></ProtectedRoute>

@@ -18,6 +18,7 @@ import BuildIcon from '@mui/icons-material/Build';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import PeopleIcon from '@mui/icons-material/People';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import PersonIcon from '@mui/icons-material/Person';
 
 import AlertsCenter from './AlertsCenter';
 import { alertsAPI } from '../api/api';
@@ -246,6 +247,13 @@ function TopNavigation({ user, onLogout }) {
                       startIcon={<InventoryIcon />}
                     >
                       פריטים זמינים
+                    </Button>
+                    <Button 
+                      color="inherit" 
+                      onClick={() => navigate('/profile')}
+                      startIcon={<PersonIcon />}
+                    >
+                      פרופיל אישי
                     </Button>
                     <Button 
                       color="inherit" 
