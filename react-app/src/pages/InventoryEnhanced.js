@@ -48,6 +48,9 @@ import {
   Stack,
   CircularProgress,
   Autocomplete,
+  useTheme,
+  useMediaQuery,
+  Hidden,
   ToggleButton,
   ToggleButtonGroup,
   Drawer,
@@ -114,6 +117,10 @@ const CATEGORY_COLORS = {
 function InventoryEnhanced() {
   // מצב היישום
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
+  
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

@@ -16,7 +16,12 @@ import {
   Grid,
   Button,
   InputAdornment,
-  Chip
+  Chip,
+  useTheme,
+  useMediaQuery,
+  Card,
+  CardContent,
+  Stack
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import SchoolIcon from '@mui/icons-material/School';
@@ -26,6 +31,10 @@ import { useAuth } from '../../contexts/AuthContext';
 function AvailableItems() {
   const authContext = useAuth();
   const user = authContext?.user;
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
+  
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -124,11 +133,104 @@ function AvailableItems() {
     }
   };
 
+  // רכיב כרטיסיה למובייל
+  const ItemCard = ({ item }) => (
+    <Card 
+      sx={{ 
+        mb: 2, 
+        borderRadius: 2,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        border: '1px solid #CECECE'
+      }}
+    >
+      <CardContent sx={{ p: 2 }}>
+        <Stack spacing={1}>
+          <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#373B5C' }}>
+            {item.name}
+          </Typography>
+          
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Chip 
+              label={item.category} 
+              size="small" 
+              sx={{ 
+                backgroundColor: '#f5f5f5', 
+                color: '#666',
+                fontSize: '0.75rem'
+              }} 
+            />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                זמין:
+              </Typography>
+              <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#1E2875' }}>
+                {item.available_quantity} / {item.quantity}
+              </Typography>
+            </Box>
+          </Box>
+          
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            pt: 1 
+          }}>
+            <LinearProgress 
+              variant="determinate" 
+              value={(item.available_quantity / item.quantity) * 100}
+              sx={{ 
+                flexGrow: 1, 
+                mr: 2,
+                height: 6,
+                borderRadius: 3,
+                '& .MuiLinearProgress-bar': {
+                  backgroundColor: item.available_quantity > 0 ? '#4caf50' : '#f44336'
+                }
+              }}
+            />
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                color: item.available_quantity > 0 ? '#4caf50' : '#f44336',
+                fontWeight: 'bold'
+              }}
+            >
+              {item.available_quantity > 0 ? 'זמין' : 'אין במלאי'}
+            </Typography>
+          </Box>
+          
+          {item.notes && (
+            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+              {item.notes}
+            </Typography>
+          )}
+        </Stack>
+      </CardContent>
+    </Card>
+  );
+
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+    <Container 
+      maxWidth="lg" 
+      sx={{ 
+        mt: isMobile ? 2 : 4, 
+        mb: 4,
+        px: isMobile ? 1 : 3
+      }}
+    >
       <Box sx={{ mb: 4 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: '#373B5C' }}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: isMobile ? 'column' : 'row',
+          alignItems: isMobile ? 'flex-start' : 'center', 
+          gap: 2, 
+          mb: 2 
+        }}>
+          <Typography 
+            variant={isMobile ? "h5" : "h4"} 
+            component="h1" 
+            sx={{ fontWeight: 'bold', color: '#373B5C' }}
+          >
             פריטים זמינים
           </Typography>
           {user && (
@@ -196,26 +298,44 @@ function AvailableItems() {
 
         {loading && <LinearProgress sx={{ mb: 2 }} />}
         
-        <TableContainer>
-          <Table sx={{ minWidth: 650 }}>
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 'bold' }}>שם הפריט</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>קטגוריה</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>כמות זמינה</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>הערות</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>פעולות</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredItems.length > 0 ? (
-                filteredItems.map((item) => (
-                  <TableRow key={item.id} hover>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell>{item.category}</TableCell>
-                    <TableCell>{item.quantity}</TableCell>
-                    <TableCell>{item.notes}</TableCell>
-                    <TableCell>
+        {/* תצוגה רספונסיבית */}
+        {isMobile ? (
+          // תצוגת כרטיסיות למובייל
+          <Box>
+            {filteredItems.length > 0 ? (
+              filteredItems.map((item) => (
+                <ItemCard key={item.id} item={item} />
+              ))
+            ) : (
+              <Paper sx={{ p: 4, textAlign: 'center' }}>
+                <Typography variant="h6" color="text.secondary">
+                  לא נמצאו פריטים העונים על הקריטריונים
+                </Typography>
+              </Paper>
+            )}
+          </Box>
+        ) : (
+          // תצוגת טבלה לדסקטופ
+          <TableContainer>
+            <Table sx={{ minWidth: 650 }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>שם הפריט</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>קטגוריה</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>כמות זמינה</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>הערות</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>פעולות</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredItems.length > 0 ? (
+                  filteredItems.map((item) => (
+                    <TableRow key={item.id} hover>
+                      <TableCell>{item.name}</TableCell>
+                      <TableCell>{item.category}</TableCell>
+                      <TableCell>{item.quantity}</TableCell>
+                      <TableCell>{item.notes}</TableCell>
+                      <TableCell>
                       <Button 
                         variant="contained" 
                         size="small"
@@ -233,10 +353,11 @@ function AvailableItems() {
                     {loading ? 'טוען נתונים...' : 'לא נמצאו פריטים זמינים'}
                   </TableCell>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
       </Paper>
     </Container>
   );
