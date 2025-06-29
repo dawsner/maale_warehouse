@@ -10,7 +10,7 @@ import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 
 // Components
-import TopNavigation from './components/TopNavigation';
+import TopNavigationResponsive from './components/TopNavigationResponsive';
 
 // Pages
 import Login from './pages/Login';
@@ -143,7 +143,7 @@ function App() {
     <CacheProvider value={cacheRtl}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <TopNavigation user={user} onLogout={handleLogout} />
+        <TopNavigationResponsive user={user} onLogout={handleLogout} />
         <Container maxWidth={false} sx={{ mt: 3, mb: 4, px: { xs: 2, sm: 4 }, maxWidth: '98%', mx: 'auto' }}>
           <Routes>
             {/* דפים פתוחים לכל */}
