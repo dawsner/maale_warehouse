@@ -99,6 +99,8 @@ function AvailableItems() {
   console.log(`User: ${user?.username}, Study Year: ${user?.study_year}, Filtered Items: ${filteredItems.length}`);
   if (filteredItems.length === 0 && items.length > 0) {
     console.log('No items after filtering. User year:', user?.study_year, 'Items count:', items.length);
+    // בדיקה זמנית לכל פריט
+    console.log('Sample item permissions:', items[0]?.allowed_years, 'User year number:', studyYearToNumber(user?.study_year));
   }
 
   const categoryFilterHandler = (category) => {

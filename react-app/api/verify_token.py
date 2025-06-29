@@ -77,6 +77,8 @@ def main():
                 'role': payload.get('role'),
                 'email': payload.get('email'),
                 'full_name': payload.get('full_name'),
+                'study_year': payload.get('study_year'),
+                'branch': payload.get('branch'),
                 'message': 'אימות הצליח'
             }
                 
