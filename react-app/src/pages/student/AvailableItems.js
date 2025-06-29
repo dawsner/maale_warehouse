@@ -26,7 +26,8 @@ import { inventoryAPI } from '../../api/api';
 import { useAuth } from '../../contexts/AuthContext';
 
 function AvailableItems() {
-  const { user } = useAuth();
+  const authContext = useAuth();
+  const user = authContext?.user;
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
