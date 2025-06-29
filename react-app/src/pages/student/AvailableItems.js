@@ -94,10 +94,8 @@ function AvailableItems() {
         const allowedYearsList = item.allowed_years.split(',').map(y => y.trim());
         hasPermission = allowedYearsList.includes(userYearNumber);
         
-        // דיבאג לבדיקה
-        if (!hasPermission) {
-          console.log(`User year: ${userYearNumber}, Item allowed years: ${allowedYearsList}, Permission: ${hasPermission}`);
-        }
+        // דיבאג מפורט לכל פריט
+        console.log(`Item: ${item.name}, User year: ${userYearNumber}, Allowed: ${allowedYearsList}, Has permission: ${hasPermission}`);
       }
     }
     

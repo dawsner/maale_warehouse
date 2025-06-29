@@ -201,6 +201,19 @@ def login_api(username, password):
             status='active'
         )
     
+    if username == 'student1' and password == '123456':
+        # סטודנט שנה א' לדוגמה
+        return User(
+            id=4,
+            username='student1',
+            role='student',
+            email='student1@student.example.com',
+            full_name='סטודנט ראשון',
+            study_year='first',
+            branch='main',
+            status='active'
+        )
+    
     if username == 'admin' and (password == '123456' or password == 'admin123'):
         # משתמש אדמין לדוגמה
         return User(
