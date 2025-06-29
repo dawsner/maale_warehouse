@@ -94,12 +94,29 @@ function AvailableItems() {
         const allowedYearsList = item.allowed_years.split(',').map(y => y.trim());
         hasPermission = allowedYearsList.includes(userYearNumber);
         
-        // דיבאג מפורט לכל פריט
-        console.log(`Item: ${item.name}, User year: ${userYearNumber}, Allowed: ${allowedYearsList}, Has permission: ${hasPermission}`);
+        // דיבאג מפורט רק לפריט הראשון
+        if (items.indexOf(item) === 0) {
+          console.log(`Item: ${item.name}, User year: ${userYearNumber}, Allowed: ${allowedYearsList}, Has permission: ${hasPermission}`);
+        }
       }
     }
     
-    return matchesSearch && matchesCategory && item.is_available && item.quantity > 0 && hasPermission;
+    const result = matchesSearch && matchesCategory && item.is_available && item.quantity > 0 && hasPermission;
+    
+    // דיבאג מפורט לפריט הראשון
+    if (items.indexOf(item) === 0) {
+      console.log('Debug first item:', {
+        name: item.name,
+        matchesSearch,
+        matchesCategory,
+        is_available: item.is_available,
+        quantity: item.quantity,
+        hasPermission,
+        finalResult: result
+      });
+    }
+    
+    return result;
   });
 
   // דיבאג נוסף
