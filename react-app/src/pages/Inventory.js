@@ -33,6 +33,7 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
+import SecurityIcon from '@mui/icons-material/Security';
 import { inventoryAPI } from '../api/api';
 
 function Inventory() {
@@ -67,6 +68,13 @@ function Inventory() {
     open: false,
     message: '',
     severity: 'success'
+  });
+  
+  // דיאלוג הרשאות
+  const [permissionsDialog, setPermissionsDialog] = useState({
+    open: false,
+    item: null,
+    allowedYears: []
   });
 
   useEffect(() => {
@@ -237,6 +245,66 @@ function Inventory() {
     setSnackbar({
       ...snackbar,
       open: false
+    });
+  };
+
+  // פתיחת דיאלוג הרשאות
+  const handleOpenPermissions = (item) => {
+    const allowedYearsArray = item.allowed_years ? item.allowed_years.split(',').map(y => y.trim()) : ['1', '2', '3'];
+    setPermissionsDialog({
+      open: true,
+      item: item,
+      allowedYears: allowedYearsArray
+    });
+  };
+
+  // סגירת דיאלוג הרשאות
+  const handleClosePermissions = () => {
+    setPermissionsDialog({
+      open: false,
+      item: null,
+      allowedYears: []
+    });
+  };
+
+  // עדכון הרשאות פריט
+  const handleUpdatePermissions = async () => {
+    try {
+      setLoading(true);
+      await inventoryAPI.updateItemPermissions(
+        permissionsDialog.item.id, 
+        permissionsDialog.allowedYears
+      );
+      await fetchItems();
+      setSnackbar({
+        open: true,
+        message: 'הרשאות הפריט עודכנו בהצלחה',
+        severity: 'success'
+      });
+      handleClosePermissions();
+    } catch (err) {
+      console.error('Error updating permissions:', err);
+      setSnackbar({
+        open: true,
+        message: 'שגיאה בעדכון הרשאות הפריט',
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // עדכון רשימת השנים המורשות
+  const handlePermissionChange = (year, checked) => {
+    setPermissionsDialog(prev => {
+      const newAllowedYears = checked 
+        ? [...prev.allowedYears, year]
+        : prev.allowedYears.filter(y => y !== year);
+      
+      return {
+        ...prev,
+        allowedYears: newAllowedYears
+      };
     });
   };
 
@@ -437,6 +505,9 @@ function Inventory() {
                     <TableCell align="center">
                       <IconButton onClick={() => handleOpenDialog(item)} color="primary" size="small" sx={{ mx: 0.5 }}>
                         <EditIcon />
+                      </IconButton>
+                      <IconButton onClick={() => handleOpenPermissions(item)} color="secondary" size="small" sx={{ mx: 0.5 }}>
+                        <SecurityIcon />
                       </IconButton>
                       <IconButton onClick={() => handleDeleteItem(item.id)} color="error" size="small" sx={{ mx: 0.5 }}>
                         <DeleteIcon />

@@ -117,6 +117,29 @@ export const inventoryAPI = {
     return true;
   },
 
+  // עדכון הרשאות פריט לפי שנות לימוד
+  updateItemPermissions: async (itemId, allowedYears) => {
+    try {
+      const response = await fetch(`${API_URL}/api/inventory/update-permissions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          item_id: itemId,
+          allowed_years: allowedYears
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error updating item permissions:', error);
+      throw error;
+    }
+  },
+
   // שינוי זמינות פריט
   toggleAvailability: async (itemId, isAvailable) => {
     const response = await axiosInstance.put(`/api/inventory/${itemId}/availability`, { isAvailable });
