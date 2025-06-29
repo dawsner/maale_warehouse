@@ -822,6 +822,85 @@ function Inventory() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* דיאלוג הרשאות לפי שנות לימוד */}
+      <Dialog open={permissionsDialog.open} onClose={handleClosePermissions} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ 
+          borderBottom: '1px solid #eaeaea', 
+          pb: 2, 
+          fontWeight: 'bold',
+          fontSize: '1.2rem',
+          color: '#1E2875'
+        }}>
+          הרשאות גישה לפי שנת לימוד
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          {permissionsDialog.item && (
+            <Box>
+              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold' }}>
+                פריט: {permissionsDialog.item.name}
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
+                בחר איזה שנות לימוד יכולות לראות ולהשאיל את הפריט הזה:
+              </Typography>
+              
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {['1', '2', '3'].map((year) => (
+                  <FormControlLabel
+                    key={year}
+                    control={
+                      <Checkbox
+                        checked={permissionsDialog.allowedYears.includes(year)}
+                        onChange={(e) => handlePermissionChange(year, e.target.checked)}
+                        color="primary"
+                      />
+                    }
+                    label={`שנה ${year}`}
+                    sx={{ 
+                      '& .MuiFormControlLabel-label': { 
+                        fontSize: '1rem',
+                        fontWeight: 500
+                      }
+                    }}
+                  />
+                ))}
+              </Box>
+              
+              <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary' }}>
+                הערה: פריט שלא זמין לאף שנה לא יוצג לסטודנטים
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ 
+          borderTop: '1px solid #eaeaea',
+          pt: 2,
+          pb: 2,
+          px: 3
+        }}>
+          <Button 
+            onClick={handleClosePermissions} 
+            color="inherit"
+            sx={{ borderRadius: '8px', px: 3 }}
+          >
+            ביטול
+          </Button>
+          <Button 
+            onClick={handleUpdatePermissions} 
+            color="primary" 
+            variant="contained"
+            disabled={permissionsDialog.allowedYears.length === 0}
+            sx={{ 
+              borderRadius: '8px', 
+              px: 3,
+              fontWeight: 'bold',
+              boxShadow: 1
+            }}
+          >
+            עדכן הרשאות
+          </Button>
+        </DialogActions>
+      </Dialog>
       
       {/* הודעות מערכת */}
       <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleCloseSnackbar}>

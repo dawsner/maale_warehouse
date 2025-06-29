@@ -27,7 +27,8 @@ def main():
         conn = get_direct_db_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         cursor.execute("SELECT COUNT(*) FROM items")
-        item_count = cursor.fetchone()[0]
+        result = cursor.fetchone()
+        item_count = result[0] if result else 0
         print(f"DEBUG: Items count in database: {item_count}", file=sys.stderr)
         
         if item_count > 0:

@@ -205,6 +205,20 @@ app.put('/api/inventory/:id/availability', async (req, res) => {
   }
 });
 
+// עדכון הרשאות פריט לפי שנות לימוד
+app.post('/api/inventory/update-permissions', async (req, res) => {
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/update_item_permissions.py'),
+      [],
+      req.body
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: 'שגיאה בעדכון הרשאות פריט: ' + error.message });
+  }
+});
+
 // ניהול השאלות
 app.get('/api/loans', async (req, res) => {
   try {
