@@ -509,13 +509,18 @@ function Inventory() {
                       </IconButton>
                       <Button 
                         onClick={() => handleOpenPermissions(item)} 
-                        color="secondary" 
-                        size="small" 
-                        variant="outlined"
+                        color="warning" 
+                        size="medium" 
+                        variant="contained"
                         startIcon={<SecurityIcon />}
-                        sx={{ mx: 0.5, minWidth: '80px' }}
+                        sx={{ 
+                          mx: 0.5, 
+                          minWidth: '100px',
+                          fontSize: '0.85rem',
+                          fontWeight: 'bold'
+                        }}
                       >
-                        הרשאות
+                        הרשאות שנים
                       </Button>
                       <IconButton onClick={() => handleDeleteItem(item.id)} color="error" size="small" sx={{ mx: 0.5 }}>
                         <DeleteIcon />
