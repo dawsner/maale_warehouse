@@ -306,11 +306,16 @@ export const authAPI = {
         localStorage.setItem('token', response.data.token);
         // החזרת פרטי המשתמש מתוך תשובת השרת
         return {
-          id: response.data.id,
-          username: response.data.username,
-          role: response.data.role,
-          email: response.data.email,
-          full_name: response.data.full_name
+          success: true,
+          user: {
+            id: response.data.id,
+            username: response.data.username,
+            role: response.data.role,
+            email: response.data.email,
+            full_name: response.data.full_name,
+            study_year: response.data.study_year,
+            branch: response.data.branch
+          }
         };
       }
       return null;
