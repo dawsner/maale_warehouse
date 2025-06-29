@@ -14,8 +14,6 @@ import {
   LinearProgress,
   Alert,
   Grid,
-  Card,
-  CardContent,
   Button,
   InputAdornment,
   Chip
@@ -42,6 +40,7 @@ function AvailableItems() {
     try {
       setLoading(true);
       const response = await inventoryAPI.getAll();
+      console.log('Inventory data received:', response.data?.length, 'items');
       setItems(response.data);
       setError('');
     } catch (err) {
@@ -59,7 +58,17 @@ function AvailableItems() {
   // קבלת כל הקטגוריות הייחודיות מהפריטים
   const categories = ['all', ...new Set((items || []).map(item => item.category))];
 
-  // סינון פריטים לפי חיפוש וקטגוריה
+  // המרת שנת לימוד למספר
+  const studyYearToNumber = (studyYear) => {
+    switch (studyYear) {
+      case 'first': return '1';
+      case 'second': return '2';
+      case 'third': return '3';
+      default: return null;
+    }
+  };
+
+  // סינון פריטים לפי חיפוש, קטגוריה והרשאות שנת לימוד
   const filteredItems = (items || []).filter(item => {
     const matchesSearch = 
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -67,8 +76,30 @@ function AvailableItems() {
     
     const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
     
-    return matchesSearch && matchesCategory && item.is_available && item.quantity > 0;
+    // בדיקת הרשאות שנת לימוד
+    let hasPermission = true;
+    if (user && user.study_year && item.allowed_years) {
+      const userYearNumber = studyYearToNumber(user.study_year);
+      if (userYearNumber) {
+        // בדיקה אם שנת הלימוד של המשתמש מופיעה ב-allowed_years
+        const allowedYearsList = item.allowed_years.split(',').map(y => y.trim());
+        hasPermission = allowedYearsList.includes(userYearNumber);
+        
+        // דיבאג לבדיקה
+        if (!hasPermission) {
+          console.log(`User year: ${userYearNumber}, Item allowed years: ${allowedYearsList}, Permission: ${hasPermission}`);
+        }
+      }
+    }
+    
+    return matchesSearch && matchesCategory && item.is_available && item.quantity > 0 && hasPermission;
   });
+
+  // דיבאג נוסף
+  console.log(`User: ${user?.username}, Study Year: ${user?.study_year}, Filtered Items: ${filteredItems.length}`);
+  if (filteredItems.length === 0 && items.length > 0) {
+    console.log('No items after filtering. User year:', user?.study_year, 'Items count:', items.length);
+  }
 
   const categoryFilterHandler = (category) => {
     setCategoryFilter(category);
