@@ -250,6 +250,7 @@ function Inventory() {
 
   // פתיחת דיאלוג הרשאות
   const handleOpenPermissions = (item) => {
+    console.log('Opening permissions dialog for item:', item);
     const allowedYearsArray = item.allowed_years ? item.allowed_years.split(',').map(y => y.trim()) : ['1', '2', '3'];
     setPermissionsDialog({
       open: true,
@@ -506,9 +507,16 @@ function Inventory() {
                       <IconButton onClick={() => handleOpenDialog(item)} color="primary" size="small" sx={{ mx: 0.5 }}>
                         <EditIcon />
                       </IconButton>
-                      <IconButton onClick={() => handleOpenPermissions(item)} color="secondary" size="small" sx={{ mx: 0.5 }}>
-                        <SecurityIcon />
-                      </IconButton>
+                      <Button 
+                        onClick={() => handleOpenPermissions(item)} 
+                        color="secondary" 
+                        size="small" 
+                        variant="outlined"
+                        startIcon={<SecurityIcon />}
+                        sx={{ mx: 0.5, minWidth: '80px' }}
+                      >
+                        הרשאות
+                      </Button>
                       <IconButton onClick={() => handleDeleteItem(item.id)} color="error" size="small" sx={{ mx: 0.5 }}>
                         <DeleteIcon />
                       </IconButton>
