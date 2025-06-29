@@ -79,7 +79,7 @@ function AvailableItems() {
 
   // סינון פריטים לפי חיפוש, קטגוריה והרשאות שנת לימוד
   const filteredItems = (items || []).filter(item => {
-    const matchesSearch = 
+    const matchesSearch = !searchQuery ||
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.category.toLowerCase().includes(searchQuery.toLowerCase());
     
