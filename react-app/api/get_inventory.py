@@ -35,14 +35,15 @@ def main():
             for row in cursor.fetchall():
                 print(f"DEBUG: Sample item - ID: {row['id']}, Name: {row['name']}", file=sys.stderr)
         
-            # שליפת כל פריטי המלאי עם כל העמודות
+            # שליפת כל פריטי המלאי עם כל העמודות כולל הרשאות
             cursor.execute('''
                 SELECT id, name, category, quantity, available, notes, 
                        COALESCE(is_available, TRUE) as is_available,
                        category_original, order_notes, ordered, checked_out, 
                        checked, checkout_notes, returned, return_notes, 
                        price_per_unit, total_price, unnnamed_11, 
-                       director, producer, photographer
+                       director, producer, photographer,
+                       COALESCE(allowed_years, '1,2,3') as allowed_years
                 FROM items 
                 ORDER BY category, name
             ''')
@@ -99,6 +100,7 @@ def main():
                     'director': item['director'] or '',
                     'producer': item['producer'] or '',
                     'photographer': item['photographer'] if item['photographer'] is not None else '',
+                    'allowed_years': item['allowed_years'] or "1,2,3",
                     'available': available_from_db
                 }
                 items_json.append(item_dict)
