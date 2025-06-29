@@ -53,10 +53,10 @@ function AvailableItems() {
   };
 
   // קבלת כל הקטגוריות הייחודיות מהפריטים
-  const categories = ['all', ...new Set(items.map(item => item.category))];
+  const categories = ['all', ...new Set((items || []).map(item => item.category))];
 
   // סינון פריטים לפי חיפוש וקטגוריה
-  const filteredItems = items.filter(item => {
+  const filteredItems = (items || []).filter(item => {
     const matchesSearch = 
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.category.toLowerCase().includes(searchQuery.toLowerCase());
