@@ -77,6 +77,15 @@ function AvailableItems() {
     }
   };
 
+  // דיבאג התחלתי
+  console.log('Starting filter process:', {
+    itemsLength: items?.length || 0,
+    userExists: !!user,
+    userStudyYear: user?.study_year,
+    searchQuery,
+    categoryFilter
+  });
+
   // סינון פריטים לפי חיפוש, קטגוריה והרשאות שנת לימוד
   const filteredItems = (items || []).filter(item => {
     const matchesSearch = !searchQuery ||
