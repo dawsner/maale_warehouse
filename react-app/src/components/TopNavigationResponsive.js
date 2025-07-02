@@ -139,7 +139,8 @@ function TopNavigationResponsive({ user, onLogout }) {
     { text: 'הזמנות', icon: <EventNoteIcon />, path: '/reservations' },
     { text: 'סטטיסטיקות', icon: <BarChartIcon />, path: '/statistics' },
     { text: 'ייבוא/ייצוא', icon: <UploadFileIcon />, path: '/import-excel' },
-    { text: 'ניהול תחזוקה', icon: <BuildIcon />, path: '/maintenance' }
+    { text: 'ניהול תחזוקה', icon: <BuildIcon />, path: '/maintenance' },
+    { text: 'ניהול מערכי הזמנות', icon: <ExtensionIcon />, path: '/template-management' }
   ];
 
   // רשימת פריטי תפריט לסטודנטים
@@ -171,7 +172,6 @@ function TopNavigationResponsive({ user, onLogout }) {
               {/* Desktop Navigation */}
               {!isMobile && (
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  {console.log('User object:', user, 'Role:', user.role)}
                   {(user.role === 'admin' || user.role === 'warehouse_staff') && (
                     <>
                       <Button 
@@ -222,6 +222,13 @@ function TopNavigationResponsive({ user, onLogout }) {
                         startIcon={<BuildIcon />}
                       >
                         ניהול תחזוקה
+                      </Button>
+                      <Button
+                        color="inherit"
+                        onClick={() => navigate('/template-management')}
+                        startIcon={<ExtensionIcon />}
+                      >
+                        ניהול מערכי הזמנות
                       </Button>
                       
                       <Button 
@@ -286,7 +293,6 @@ function TopNavigationResponsive({ user, onLogout }) {
                       </Menu>
                     </>
                   )}
-                  {console.log('Checking student role:', user.role === 'student')}
                   {user.role === 'student' && (
                     <>
                       <Button 

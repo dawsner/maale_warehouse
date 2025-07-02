@@ -113,6 +113,9 @@ The system uses PostgreSQL with the following key tables:
 - June 29, 2025. Completed comprehensive responsive design implementation across entire application
 - June 29, 2025. Successfully updated all references from "אשף הוינטג'" to "אשף ההזמנות" (Order Wizard) throughout the system
 - June 29, 2025. Confirmed API functionality: system successfully serves 257 equipment items to frontend
+- July 2, 2025. Added template management system for order wizard - admins can now configure equipment combinations
+- July 2, 2025. Fixed navigation routing to ensure admin/warehouse staff see proper management interface
+- July 2, 2025. Added "ניהול מערכי הזמנות" button to main admin navigation menu
 
 ## User Preferences
 
