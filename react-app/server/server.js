@@ -824,6 +824,22 @@ app.get('/api/maintenance_data', async (req, res) => {
   }
 });
 
+// מסלול לניהול מערכי הזמנות
+app.post('/api/templates', async (req, res) => {
+  try {
+    console.log("Templates management request:", req.body);
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/manage_templates.py'),
+      req.body
+    );
+    console.log("Templates API result:", typeof result);
+    res.json(result);
+  } catch (error) {
+    console.error('Error managing templates:', error);
+    res.status(500).json({ message: 'Error managing templates: ' + error.message });
+  }
+});
+
 // הגש את הקבצים הסטטיים האפליקציה אחרי שכל הנתיבים האחרים כבר הוגדרו
 app.use(express.static(path.join(__dirname, '../build')));
 

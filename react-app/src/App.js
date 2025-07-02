@@ -32,6 +32,7 @@ import VintageOrderWizard from './pages/student/VintageOrderWizard';
 import Profile from './pages/student/Profile';
 import AdvancedReports from './pages/admin/AdvancedReports';
 import UserManagement from './pages/admin/UserManagement';
+import TemplateManagement from './pages/admin/TemplateManagement';
 import NotFound from './pages/NotFound';
 
 // Maintenance Pages
@@ -190,6 +191,9 @@ function App() {
             } />
             <Route path="/user-management" element={
               <AdminRoute><UserManagement /></AdminRoute>
+            } />
+            <Route path="/template-management" element={
+              <AdminRoute><TemplateManagement /></AdminRoute>
             } />
             
             {/* דפי ניהול תחזוקה */}

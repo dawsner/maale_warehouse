@@ -43,6 +43,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import MenuIcon from '@mui/icons-material/Menu';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
+import ExtensionIcon from '@mui/icons-material/Extension';
 
 import AlertsCenter from './AlertsCenter';
 import { alertsAPI } from '../api/api';
@@ -458,6 +459,12 @@ function TopNavigationResponsive({ user, onLogout }) {
                       <PeopleIcon />
                     </ListItemIcon>
                     <ListItemText primary="ניהול משתמשים" />
+                  </ListItem>
+                  <ListItem button sx={{ pl: 4 }} onClick={() => navigateAndClose('/template-management')}>
+                    <ListItemIcon sx={{ color: '#1E2875' }}>
+                      <ExtensionIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="ניהול מערכי הזמנות" />
                   </ListItem>
                   <ListItem button sx={{ pl: 4 }} onClick={() => navigateAndClose('/advanced-analytics')}>
                     <ListItemIcon sx={{ color: '#1E2875' }}>
