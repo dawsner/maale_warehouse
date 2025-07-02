@@ -840,6 +840,21 @@ app.post('/api/templates', async (req, res) => {
   }
 });
 
+// מסלול לקבלת מערכי הזמנות עבור האשף
+app.get('/api/order_templates', async (req, res) => {
+  try {
+    console.log("Getting order templates for wizard");
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/get_templates.py')
+    );
+    console.log("Order templates result:", typeof result);
+    res.json(result);
+  } catch (error) {
+    console.error('Error getting order templates:', error);
+    res.status(500).json({ message: 'Error getting order templates: ' + error.message });
+  }
+});
+
 // הגש את הקבצים הסטטיים האפליקציה אחרי שכל הנתיבים האחרים כבר הוגדרו
 app.use(express.static(path.join(__dirname, '../build')));
 
