@@ -234,7 +234,7 @@ function App() {
             <Route path="/" element={
               user ? (
                 (user.role === 'admin' || user.role === 'warehouse_staff') ? 
-                <Navigate to="/inventory" /> : 
+                <Navigate to="/dashboard" /> : 
                 <Navigate to="/available-items" />
               ) : (
                 <Navigate to="/login" />
