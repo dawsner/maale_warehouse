@@ -283,6 +283,18 @@ app.get('/api/loans/:id', async (req, res) => {
   }
 });
 
+// קבלת רשימת הסטודנטים
+app.get('/api/students', async (req, res) => {
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/get_students.py')
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: 'שגיאה בקבלת נתוני סטודנטים: ' + error.message });
+  }
+});
+
 // ניהול הזמנות
 app.get('/api/reservations', async (req, res) => {
   try {

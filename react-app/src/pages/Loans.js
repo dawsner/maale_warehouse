@@ -18,25 +18,26 @@ import {
   DialogContent,
   DialogTitle,
   Grid,
+  MenuItem,
   Alert,
   Snackbar,
   LinearProgress,
   Tab,
   Tabs,
   InputAdornment,
-  Chip,
-  MenuItem
+  Chip
 } from '@mui/material';
 // Temporarily removed date picker due to compatibility issues
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import AssignmentReturnIcon from '@mui/icons-material/AssignmentReturn';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { loansAPI, inventoryAPI } from '../api/api';
+import { loansAPI, inventoryAPI, studentsAPI } from '../api/api';
 
 function Loans() {
   const [loans, setLoans] = useState([]);
   const [inventory, setInventory] = useState([]);
+  const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,8 +48,9 @@ function Loans() {
   const [currentLoan, setCurrentLoan] = useState(null);
   const [newLoan, setNewLoan] = useState({
     selectedItems: [], // משנה לרשימה של פריטים נבחרים
+    studentId: '', // מזהה הסטודנט במערכת
     studentName: '',
-    studentId: '',
+    studentIdNumber: '', // תעודת הזהות של הסטודנט
     dueDate: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000), // שבוע מהיום
     notes: '',
     director: '',
@@ -64,6 +66,7 @@ function Loans() {
   useEffect(() => {
     fetchLoans();
     fetchInventory();
+    fetchStudents();
   }, []);
 
   // הסרנו את החישוב של מחיר כי הציוד מושאל בחינם
@@ -92,6 +95,17 @@ function Loans() {
       setInventory(response || []);
     } catch (err) {
       console.error('Error fetching inventory:', err);
+    }
+  };
+
+  const fetchStudents = async () => {
+    try {
+      console.log('Fetching students...');
+      const response = await studentsAPI.getStudents();
+      console.log('Students response:', response);
+      setStudents(response || []);
+    } catch (err) {
+      console.error('Error fetching students:', err);
     }
   };
 
@@ -141,6 +155,22 @@ function Loans() {
       ...newLoan,
       [name]: value
     });
+  };
+
+  // פונקציה לעדכון נתוני סטודנט כאשר נבחר סטודנט
+  const handleStudentSelect = (e) => {
+    const studentId = e.target.value;
+    const selectedStudent = students.find(student => student.id === studentId);
+    
+    if (selectedStudent) {
+      setNewLoan({
+        ...newLoan,
+        studentId: selectedStudent.id,
+        studentName: selectedStudent.full_name || selectedStudent.username,
+        // עדכון אוטומטי של תעודת הזהות מתוך שם המשתמש אם זה מספר ת.ז.
+        studentIdNumber: selectedStudent.username.match(/^\d+$/) ? selectedStudent.username : ''
+      });
+    }
   };
 
   // פונקציה להוספת פריט חדש לרשימה
@@ -217,7 +247,7 @@ function Loans() {
         const loanData = {
           item_id: selectedItem.itemId,
           student_name: newLoan.studentName,
-          student_id: newLoan.studentId,
+          student_id: newLoan.studentIdNumber || newLoan.studentId,
           quantity: selectedItem.quantity,
           due_date: newLoan.dueDate instanceof Date ? newLoan.dueDate.toISOString() : newLoan.dueDate,
           loan_notes: newLoan.notes,
@@ -239,8 +269,9 @@ function Loans() {
       setOpenDialog(false);
       setNewLoan({
         selectedItems: [],
-        studentName: '',
         studentId: '',
+        studentName: '',
+        studentIdNumber: '',
         dueDate: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000),
         notes: '',
         director: '',
@@ -587,28 +618,37 @@ function Loans() {
                     
                     <Grid item xs={12} md={6}>
                       <TextField
-                        label="שם הסטודנט *"
-                        name="studentName"
-                        fullWidth
-                        required
-                        value={newLoan.studentName}
-                        onChange={handleNewLoanChange}
-                        sx={{ direction: 'rtl' }}
-                        error={!newLoan.studentName}
-                        helperText={!newLoan.studentName ? "חובה למלא שם סטודנט" : ""}
-                      />
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <TextField
-                        label="ת.ז סטודנט *"
+                        select
+                        label="בחר סטודנט *"
                         name="studentId"
                         fullWidth
                         required
                         value={newLoan.studentId}
-                        onChange={handleNewLoanChange}
+                        onChange={handleStudentSelect}
                         sx={{ direction: 'rtl' }}
                         error={!newLoan.studentId}
-                        helperText={!newLoan.studentId ? "חובה למלא ת.ז" : ""}
+                        helperText={!newLoan.studentId ? "חובה לבחור סטודנט" : ""}
+                      >
+                        <MenuItem value="">בחר סטודנט...</MenuItem>
+                        {students.map((student) => (
+                          <MenuItem key={student.id} value={student.id}>
+                            {student.display_name || `${student.full_name || student.username} (${student.username})`}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        label="ת.ז סטודנט *"
+                        name="studentIdNumber"
+                        fullWidth
+                        required
+                        value={newLoan.studentIdNumber || ''}
+                        onChange={handleNewLoanChange}
+                        sx={{ direction: 'rtl' }}
+                        error={!newLoan.studentIdNumber}
+                        helperText={!newLoan.studentIdNumber ? "חובה למלא תעודת זהות" : "תתעדכן אוטומטית עם בחירת הסטודנט"}
+                        disabled={!newLoan.studentId}
                       />
                     </Grid>
                     

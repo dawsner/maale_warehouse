@@ -293,6 +293,20 @@ export const reservationsAPI = {
   }
 };
 
+// API לניהול סטודנטים
+export const studentsAPI = {
+  // קבלת כל הסטודנטים
+  getStudents: async () => {
+    try {
+      const response = await axiosInstance.get('/api/students');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      throw error;
+    }
+  },
+};
+
 // API לאותנטיקציה
 export const authAPI = {
   // התחברות
