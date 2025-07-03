@@ -31,7 +31,8 @@ args = "cd react-app && npm run dev"
 waitForPort = 5000
 
 [deployment]
-run = ["sh", "-c", "cd react-app && npm install && npm run build && NODE_ENV=production PORT=5000 node server/server.js"]
+run = ["sh", "-c", "cd react-app && node server/server.js"]
+build = ["sh", "-c", "cd react-app && npm install && npm run build"]
 
 [[ports]]
 localPort = 3000
