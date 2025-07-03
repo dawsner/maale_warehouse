@@ -1,1 +1,1 @@
-web: cd react-app && npm install --production && PORT=$PORT NODE_ENV=production node server/server.js
+web: cd react-app && npm install && npm run build && PORT=$PORT NODE_ENV=production node server/server.js
