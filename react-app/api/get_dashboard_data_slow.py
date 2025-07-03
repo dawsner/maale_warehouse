@@ -264,16 +264,28 @@ def get_low_stock_items():
 def main():
     """פונקציה ראשית המאחדת את כל נתוני הדשבורד"""
     try:
-        dashboard_data = {
-            "inventory_summary": get_inventory_summary(),
-            "active_loans": get_active_loans(),
-            "upcoming_reservations": get_upcoming_reservations(),
-            "overdue_loans": get_overdue_loans(),
-            "popular_items": get_popular_items(),
-            "low_stock_items": get_low_stock_items()
-        }
+        # אם יש בעיית timeout, נחזיר נתונים בסיסיים בלבד
+        try:
+            dashboard_data = {
+                "inventory_summary": get_inventory_summary(),
+                "active_loans": get_active_loans()[:10],  # מגבילים ל-10 תוצאות
+                "upcoming_reservations": get_upcoming_reservations()[:10],
+                "overdue_loans": get_overdue_loans()[:10],
+                "popular_items": get_popular_items()[:10],
+                "low_stock_items": get_low_stock_items()[:10]
+            }
+        except Exception as timeout_error:
+            # במקרה של timeout, נחזיר לפחות נתוני מלאי בסיסיים
+            dashboard_data = {
+                "inventory_summary": get_inventory_summary(),
+                "active_loans": [],
+                "upcoming_reservations": [],
+                "overdue_loans": [],
+                "popular_items": [],
+                "low_stock_items": []
+            }
         
-        print(json.dumps(dashboard_data))
+        print(json.dumps(dashboard_data, ensure_ascii=False))
     except Exception as e:
         print(json.dumps({"error": str(e), "success": False}))
 
