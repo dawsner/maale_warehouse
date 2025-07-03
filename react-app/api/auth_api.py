@@ -70,61 +70,8 @@ class User:
 
 def login_api(username, password):
     """
-    פונקציית אימות עבור API - מותאמת לעבוד בדיפלוי
-    תומכת בסיסמאות פשוטות למשתמשים הקיימים
+    פונקציית אימות עבור API - מסתמכת על בסיס הנתונים בלבד
     """
-    
-    # משתמש מנהל
-    if username == 'admin' and password in ['admin123', '123456']:
-        return User(
-            id=4,
-            username='admin',
-            role='admin',
-            email='admin@example.com',
-            full_name='מנהל המערכת',
-            branch='main',
-            status='active'
-        )
-    
-    # משתמש איש מחסן
-    if username == 'shachar' and password == '123456':
-        return User(
-            id=2,
-            username='shachar',
-            role='warehouse',
-            email='shachar@example.com',
-            full_name='שחר',
-            branch='main',
-            status='active'
-        )
-    
-    # משתמש סטודנט
-    if username == 'dawn' and password == '123456':
-        return User(
-            id=1,
-            username='dawn',
-            role='student',
-            email='dawn@student.example.com',
-            full_name='דון סטודנט',
-            study_year='first',
-            branch='main',
-            status='active'
-        )
-    
-    # סטודנט נוסף
-    if username == 'student1' and password == '123456':
-        return User(
-            id=6,
-            username='student1',
-            role='student',
-            email='student1@student.example.com',
-            full_name='סטודנט ראשון',
-            study_year='first',
-            branch='main',
-            status='active'
-        )
-    
-    # אם לא נמצא משתמש בטבלה הקבועה, ננסה לחפש בבסיס הנתונים
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cur:
@@ -135,33 +82,63 @@ def login_api(username, password):
                 """, (username,))
                 user = cur.fetchone()
                 
-                if user and user[8] != 'blocked':  # בדיקה שהמשתמש לא חסום
-                    # אם הסיסמה ריקה או מתאימה לסיסמאות ברירת מחדל
-                    if not user[2] or user[2] == '' or password in ['123456', 'admin123']:
-                        user_obj = User(
-                            id=user[0],
-                            username=user[1],
-                            role=user[3],
-                            email=user[4],
-                            full_name=user[5],
-                            study_year=user[6],
-                            branch=user[7],
-                            status=user[8],
-                            created_at=user[9],
-                            last_login=user[10]
-                        )
-                        
-                        # עדכון תאריך ההתחברות האחרונה
-                        cur.execute("""
-                            UPDATE users SET last_login = CURRENT_TIMESTAMP
-                            WHERE id = %s
-                        """, (user_obj.id,))
-                        conn.commit()
-                        
-                        return user_obj
+                if not user:
+                    print(f"DEBUG: User {username} not found in database")
+                    return None
+                
+                # בדיקה שהמשתמש לא חסום
+                user_status = user[8] if user[8] else 'active'
+                if user_status == 'blocked':
+                    print(f"DEBUG: User {username} is blocked")
+                    return None
+                
+                # בדיקת סיסמה - מקבל סיסמאות פשוטות לדיפלוי
+                stored_password = user[2] if user[2] else ''
+                user_role = user[3]
+                
+                password_valid = False
+                
+                # אם המשתמש admin - מקבל admin123 או 123456
+                if user_role == 'admin' and password in ['admin123', '123456']:
+                    password_valid = True
+                # עבור כל המשתמשים האחרים - מקבל 123456
+                elif password == '123456':
+                    password_valid = True
+                # אם יש סיסמה מוצפנת בבסיס הנתונים - נבדוק אותה
+                elif stored_password and stored_password.strip() != '':
+                    password_valid = (password == stored_password)
+                
+                if not password_valid:
+                    print(f"DEBUG: Invalid password for user {username} (role: {user_role})")
+                    return None
+                
+                user_obj = User(
+                    id=user[0],
+                    username=user[1],
+                    role=user[3],
+                    email=user[4],
+                    full_name=user[5],
+                    study_year=user[6],
+                    branch=user[7] if user[7] else 'main',
+                    status=user_status,
+                    created_at=user[9],
+                    last_login=user[10]
+                )
+                
+                # עדכון תאריך ההתחברות האחרונה
+                cur.execute("""
+                    UPDATE users SET last_login = CURRENT_TIMESTAMP
+                    WHERE id = %s
+                """, (user_obj.id,))
+                conn.commit()
+                
+                # print(f"DEBUG: User {username} logged in successfully with role {user_role}")
+                return user_obj
                         
     except Exception as e:
-        print(f"Error during database login: {e}")
+        print(f"ERROR: Database login failed: {e}")
+        import traceback
+        traceback.print_exc()
     
     return None
 
@@ -182,7 +159,10 @@ def register_api(username, password, role, email, full_name, study_year=None, br
                     RETURNING id
                 """, (username, '', role, email, full_name, study_year, branch))
                 
-                user_id = cur.fetchone()[0]
+                result = cur.fetchone()
+                if not result:
+                    return None
+                user_id = result[0]
                 conn.commit()
                 
                 return User(

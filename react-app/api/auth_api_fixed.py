@@ -182,7 +182,10 @@ def register_api(username, password, role, email, full_name, study_year=None, br
                     RETURNING id
                 """, (username, '', role, email, full_name, study_year, branch))
                 
-                user_id = cur.fetchone()[0]
+                result = cur.fetchone()
+                if not result:
+                    return None
+                user_id = result[0]
                 conn.commit()
                 
                 return User(
