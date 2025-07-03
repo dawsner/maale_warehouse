@@ -1,0 +1,1 @@
+web: cd react-app && npm run build && NODE_ENV=production node server/server.js

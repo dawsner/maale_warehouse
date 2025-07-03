@@ -25,6 +25,8 @@
     "build": "react-scripts build",
     "server": "node server/server.js",
     "dev": "concurrently \"npm run server\" \"npm run start\"",
+    "production": "NODE_ENV=production node server/server.js",
+    "deploy": "npm run build && NODE_ENV=production node server/server.js",
     "eject": "react-scripts eject"
   },
   "proxy": "http://localhost:5100",
