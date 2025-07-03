@@ -145,14 +145,15 @@ def create_loan(item_id, student_name, student_id, quantity, due_date, user_id=N
                         loan_notes, checkout_notes, return_notes,
                         director, producer, photographer,
                         price_per_unit, total_price
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id""",
                     (item_id, student_name, student_id, quantity, due_date, user_id,
                      loan_notes, checkout_notes, return_notes,
                      director, producer, photographer,
                      price_per_unit, total_price)
                 )
+                loan_id = cur.fetchone()[0]
                 conn.commit()
-                return True
+                return loan_id
     return False
 
 def return_loan(loan_id, return_notes=None):

@@ -12,6 +12,18 @@ import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import pytz
+from decimal import Decimal
+
+class DateTimeEncoder(json.JSONEncoder):
+    """מחלקה להמרת אובייקטי תאריך ו-Decimal ל-JSON"""
+    def default(self, o):
+        if isinstance(o, datetime.datetime):
+            return o.isoformat()
+        elif isinstance(o, datetime.date):
+            return o.isoformat()
+        elif isinstance(o, Decimal):
+            return float(o)
+        return super().default(o)
 
 # מודול תחזוקה - נגדיר את הפונקציות ישירות כאן
 def get_upcoming_maintenance_schedules(days_threshold=30):
@@ -244,10 +256,10 @@ def main():
             maintenance_days_threshold = 30
         
         alerts = get_all_alerts(days_threshold, stock_threshold, maintenance_days_threshold)
-        print(json.dumps(alerts))
+        print(json.dumps(alerts, cls=DateTimeEncoder, ensure_ascii=False))
     
     except Exception as e:
-        print(json.dumps({"error": str(e)}))
+        print(json.dumps({"error": str(e)}, ensure_ascii=False))
 
 if __name__ == "__main__":
     main()
