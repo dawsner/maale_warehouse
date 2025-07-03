@@ -7,12 +7,14 @@
 import sys
 import os
 import json
+import psycopg2
 
-# הוספת הנתיב של הפרויקט
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(project_root)
-
-from database import get_db_connection
+def get_db_connection():
+    """יוצר חיבור למסד הנתונים"""
+    database_url = os.environ.get('DATABASE_URL')
+    if not database_url:
+        raise Exception("DATABASE_URL environment variable not set")
+    return psycopg2.connect(database_url)
 
 def update_item_permissions(item_id, allowed_years):
     """מעדכן את רשימת השנים המורשות לפריט"""
