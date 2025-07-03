@@ -3,8 +3,58 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from database import get_db_connection
 import streamlit as st
 from functools import wraps
+import hashlib
+import hmac
+import base64
 
 login_manager = LoginManager()
+
+def verify_scrypt_password(password_hash, password):
+    """
+    בדיקת סיסמה בפורמט scrypt
+    פורמט: scrypt:32768:8:1$salt$hash
+    """
+    try:
+        if not password_hash.startswith('scrypt:'):
+            return False
+        
+        # פירוק המבנה: scrypt:32768:8:1$salt$hash
+        parts = password_hash.split('$')
+        if len(parts) != 3:
+            return False
+        
+        method_params = parts[0]  # scrypt:32768:8:1
+        salt = parts[1]
+        stored_hash = parts[2]
+        
+        # חילוץ פרמטרים
+        params = method_params.split(':')
+        if len(params) != 4 or params[0] != 'scrypt':
+            return False
+        
+        N = int(params[1])  # 32768
+        r = int(params[2])  # 8
+        p = int(params[3])  # 1
+        
+        # חישוב hash של הסיסמה שהוזנה
+        # נוסיף padding אם נחוץ
+        salt_padding = '=' * (4 - len(salt) % 4) % 4
+        salt_bytes = base64.b64decode(salt + salt_padding)
+        
+        computed_hash = hashlib.scrypt(
+            password.encode('utf-8'),
+            salt=salt_bytes,
+            n=N,
+            r=r,
+            p=p,
+            dklen=64
+        )
+        computed_hash_b64 = base64.b64encode(computed_hash).decode('ascii').rstrip('=')
+        
+        # השוואה
+        return hmac.compare_digest(stored_hash, computed_hash_b64)
+    except Exception:
+        return False
 
 class User(UserMixin):
     def __init__(self, id, username, role, email, full_name):
@@ -39,15 +89,24 @@ def login(username, password):
         with conn.cursor() as cur:
             cur.execute("SELECT * FROM users WHERE username = %s", (username,))
             user = cur.fetchone()
-            if user and check_password_hash(user[2], password):
-                st.session_state.user = User(
-                    id=user[0],
-                    username=user[1],
-                    role=user[3],
-                    email=user[4],
-                    full_name=user[5]
-                )
-                return True
+            if user and user[2]:  # וודא שיש סיסמה
+                password_hash = user[2]
+                # בדיקה אם זה scrypt או bcrypt
+                if password_hash.startswith('scrypt:'):
+                    password_valid = verify_scrypt_password(password_hash, password)
+                else:
+                    # bcrypt או פורמט werkzeug רגיל
+                    password_valid = check_password_hash(password_hash, password)
+                
+                if password_valid:
+                    st.session_state.user = User(
+                        id=user[0],
+                        username=user[1],
+                        role=user[3],
+                        email=user[4],
+                        full_name=user[5]
+                    )
+                    return True
     return False
 
 def logout():

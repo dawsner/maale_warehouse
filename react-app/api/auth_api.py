@@ -32,24 +32,28 @@ def verify_scrypt_password(password_hash, password):
             N = int(scrypt_params[1])
             r = int(scrypt_params[2])
             p = int(scrypt_params[3])
-            salt = parts[1].encode('utf-8')
+            salt = parts[1]
             stored_hash = parts[2]
             
-            # נוסף חישוב ה-hash עם הפרמטרים שנשלפו
+            # פענוח ה-salt מ-base64
+            salt_padding = '=' * (4 - len(salt) % 4) % 4
+            salt_bytes = base64.b64decode(salt + salt_padding)
+            
+            # חישוב ה-hash עם הפרמטרים שנשלפו
             derived_key = hashlib.scrypt(
                 password.encode('utf-8'),
-                salt=salt,
+                salt=salt_bytes,
                 n=N,
                 r=r,
                 p=p,
                 dklen=64
             )
             
-            # המרת ההצפנה לייצוג hex
-            derived_key_hex = derived_key.hex()
+            # המרת ההצפנה ל-base64 (כמו המוחזק במסד הנתונים)
+            derived_key_b64 = base64.b64encode(derived_key).decode('ascii').rstrip('=')
             
             # השוואה עם ההצפנה המקורית
-            return hmac.compare_digest(derived_key_hex, stored_hash)
+            return hmac.compare_digest(derived_key_b64, stored_hash)
         
         # בדיקה עם werkzeug עבור פורמטים אחרים
         return check_password_hash(password_hash, password)
@@ -270,8 +274,13 @@ def login_api(username, password):
                                 
                             return user_obj
                             
-                        # בדיקת סיסמה רגילה
-                        if check_password_hash(user[2], password):
+                        # בדיקת סיסמה - תמיכה ב-scrypt ו-bcrypt
+                        if user[2].startswith('scrypt:'):
+                            password_valid = verify_scrypt_password(user[2], password)
+                        else:
+                            password_valid = check_password_hash(user[2], password)
+                            
+                        if password_valid:
                             user_obj = User(
                                 id=user[0],
                                 username=user[1],
