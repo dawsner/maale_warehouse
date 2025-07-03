@@ -1,6 +1,5 @@
 #!/bin/bash
-# סקריפט הפעלה עבור פריסה ב-Replit
+# Cinema Equipment Management System - Production Start Script
 cd react-app
-export PORT=5000
-export HOST=0.0.0.0
-npm run dev
+npm install --production
+NODE_ENV=production PORT=${PORT:-5000} HOST=0.0.0.0 node server/server.js
