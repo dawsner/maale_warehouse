@@ -347,11 +347,33 @@ export const authAPI = {
     }
   },
 
-  // קבלת פרטי משתמש נוכחי
+  // קבלת פרטי משתמש נוכחי מה-token
   getCurrentUser: async () => {
     try {
-      const response = await axiosInstance.get('/api/auth/me');
-      return response.data;
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No token found');
+      }
+      
+      // פענוח Token ללא שרת
+      const decoded = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Math.floor(Date.now() / 1000);
+      
+      // בדיקת תקפות
+      if (decoded.exp <= currentTime) {
+        throw new Error('Token expired');
+      }
+      
+      // החזרת נתוני המשתמש מה-token
+      return {
+        id: decoded.id,
+        username: decoded.username,
+        role: decoded.role,
+        email: decoded.email,
+        full_name: decoded.full_name,
+        study_year: decoded.study_year,
+        branch: decoded.branch
+      };
     } catch (error) {
       console.error('Get current user error:', error);
       throw error;
