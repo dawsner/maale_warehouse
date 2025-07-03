@@ -117,6 +117,7 @@ The system uses PostgreSQL with the following key tables:
 - July 2, 2025. Fixed navigation routing to ensure admin/warehouse staff see proper management interface  
 - July 2, 2025. Added "ניהול מערכי הזמנות" button to main admin navigation menu
 - July 3, 2025. Fixed critical dashboard timeout issue by optimizing database queries - reduced response time from 30+ seconds to under 3 seconds
+- July 3, 2025. Fixed authentication system to support both scrypt and bcrypt password formats - resolved post-deployment login errors
 
 ## User Preferences
 
