@@ -50,7 +50,6 @@ function Loans() {
     selectedItems: [], // משנה לרשימה של פריטים נבחרים
     studentId: '', // מזהה הסטודנט במערכת
     studentName: '',
-    studentIdNumber: '', // תעודת הזהות של הסטודנט
     dueDate: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000), // שבוע מהיום
     notes: '',
     director: '',
@@ -160,15 +159,13 @@ function Loans() {
   // פונקציה לעדכון נתוני סטודנט כאשר נבחר סטודנט
   const handleStudentSelect = (e) => {
     const studentId = e.target.value;
-    const selectedStudent = students.find(student => student.id === studentId);
+    const selectedStudent = students.find(student => student.id === parseInt(studentId));
     
     if (selectedStudent) {
       setNewLoan({
         ...newLoan,
         studentId: selectedStudent.id,
-        studentName: selectedStudent.full_name || selectedStudent.username,
-        // עדכון אוטומטי של תעודת הזהות מתוך שם המשתמש אם זה מספר ת.ז.
-        studentIdNumber: selectedStudent.username.match(/^\d+$/) ? selectedStudent.username : ''
+        studentName: selectedStudent.full_name || selectedStudent.username
       });
     }
   };
@@ -247,7 +244,7 @@ function Loans() {
         const loanData = {
           item_id: selectedItem.itemId,
           student_name: newLoan.studentName,
-          student_id: newLoan.studentIdNumber || newLoan.studentId,
+          student_id: newLoan.studentName, // משתמש בשם הסטודנט במקום ת.ז.
           quantity: selectedItem.quantity,
           due_date: newLoan.dueDate instanceof Date ? newLoan.dueDate.toISOString() : newLoan.dueDate,
           loan_notes: newLoan.notes,
@@ -271,7 +268,6 @@ function Loans() {
         selectedItems: [],
         studentId: '',
         studentName: '',
-        studentIdNumber: '',
         dueDate: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000),
         notes: '',
         director: '',
@@ -616,7 +612,7 @@ function Loans() {
                   
                   <Grid container spacing={2}>
                     
-                    <Grid item xs={12} md={6}>
+                    <Grid item xs={12}>
                       <TextField
                         select
                         label="בחר סטודנט *"
@@ -636,20 +632,6 @@ function Loans() {
                           </MenuItem>
                         ))}
                       </TextField>
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <TextField
-                        label="ת.ז סטודנט *"
-                        name="studentIdNumber"
-                        fullWidth
-                        required
-                        value={newLoan.studentIdNumber || ''}
-                        onChange={handleNewLoanChange}
-                        sx={{ direction: 'rtl' }}
-                        error={!newLoan.studentIdNumber}
-                        helperText={!newLoan.studentIdNumber ? "חובה למלא תעודת זהות" : "תתעדכן אוטומטית עם בחירת הסטודנט"}
-                        disabled={!newLoan.studentId}
-                      />
                     </Grid>
                     
                     <Grid item xs={12} md={6}>
@@ -795,7 +777,7 @@ function Loans() {
             onClick={handleCreateLoan} 
             color="primary" 
             variant="contained"
-            disabled={!newLoan.itemId || !newLoan.studentName || !newLoan.studentId || newLoan.quantity < 1 || !newLoan.dueDate}
+            disabled={!newLoan.studentId || newLoan.selectedItems.length === 0 || !newLoan.dueDate || newLoan.selectedItems.some(item => !item.itemId || item.quantity < 1)}
             sx={{ borderRadius: '8px', px: 3 }}
             startIcon={<AddIcon />}
           >
