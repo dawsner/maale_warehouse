@@ -1,9 +1,10 @@
 import axios from 'axios';
 
 // קונפיגורציה בסיסית לבקשות Axios
-// מכיוון שהוספנו הגדרת proxy בקובץ package.json, ניתן להשתמש בנתיבים יחסיים
-// ובקשות בפורמט /api/* יועברו אוטומטית לשרת Express
-const API_URL = '';  // נתיב יחסי - נסמוך על הגדרת ה-proxy
+// זיהוי אוטומטי של הסביבה - פיתוח או דיפלוי
+const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? ''  // פיתוח - נתיב יחסי עם proxy
+  : '';  // דיפלוי - אותו דומיין
 const axiosInstance = axios.create({
   baseURL: API_URL,
   headers: {
