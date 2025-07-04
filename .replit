@@ -15,6 +15,10 @@ author = "agent"
 task = "workflow.run"
 args = "Full App"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "React App"
+
 [[workflows.workflow]]
 name = "Full App"
 author = "agent"
@@ -23,11 +27,17 @@ author = "agent"
 agentRequireRestartOnSave = false
 
 [[workflows.workflow.tasks]]
-task = "packager.installForAll"
+task = "shell.exec"
+args = "cd react-app && npm run build && PORT=5000 NODE_ENV=production node server/server.js"
+waitForPort = 5000
+
+[[workflows.workflow]]
+name = "React App"
+author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd react-app && npm run dev"
+args = "cd react-app && PORT=5000 npm start"
 waitForPort = 5000
 
 [deployment]
@@ -37,6 +47,10 @@ build = ["sh", "-c", "cd react-app && npm install && npm run build"]
 [[ports]]
 localPort = 3000
 externalPort = 3000
+
+[[ports]]
+localPort = 3001
+externalPort = 3003
 
 [[ports]]
 localPort = 5000
