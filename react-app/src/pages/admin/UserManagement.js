@@ -210,13 +210,43 @@ function UserManagement() {
   // יצירת משתמש חדש
   const handleCreateUser = async () => {
     try {
-      // כאן צריך להיות קריאה ל-API ליצירת משתמש חדש
-      // במקרה שלנו נשתמש ב-authAPI.register
+      // בדיקת תקינות נתונים
+      if (!newUserData.username || !newUserData.password || !newUserData.email || !newUserData.full_name) {
+        setError('יש למלא את כל השדות הנדרשים');
+        return;
+      }
+
+      // קריאה ל-API ליצירת משתמש חדש
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newUserData)
+      });
+
+      const result = await response.json();
       
-      setNewUserDialogOpen(false);
-      
-      // רענון רשימת המשתמשים
-      fetchAllData();
+      if (result.success) {
+        // איפוס הטופס
+        setNewUserData({
+          username: '',
+          password: '',
+          role: 'student',
+          email: '',
+          full_name: '',
+          study_year: 'first',
+          branch: 'main'
+        });
+        
+        setNewUserDialogOpen(false);
+        setError(null);
+        
+        // רענון רשימת המשתמשים
+        fetchAllData();
+      } else {
+        setError(result.message || 'אירעה שגיאה ביצירת המשתמש');
+      }
     } catch (err) {
       console.error('Error creating new user:', err);
       setError('אירעה שגיאה ביצירת משתמש חדש');
