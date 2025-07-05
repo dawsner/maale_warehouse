@@ -130,6 +130,7 @@ The system uses PostgreSQL with the following key tables:
 - July 5, 2025. Fixed user registration system - admin can now create new users through the interface and they appear immediately in the user management list
 - July 5, 2025. DEPLOYMENT READY: Fixed GCE autoscale deployment configuration - server now listens on 0.0.0.0 with dynamic PORT for external access, all APIs tested and working
 - July 5, 2025. FINAL DEPLOYMENT FIX: Added comprehensive health check endpoint with database verification, improved error handling, and graceful shutdown for GCE autoscale
+- July 5, 2025. Fixed JWT dependency issues in authentication system - removed PyJWT dependency to prevent deployment I/O errors, simplified auth without tokens
 
 ## User Preferences
 
