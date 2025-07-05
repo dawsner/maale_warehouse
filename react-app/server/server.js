@@ -900,23 +900,31 @@ app.get('/api/order_templates', async (req, res) => {
   }
 });
 
-// הגש את הקבצים הסטטיים - נסה build קודם, אחר כך public
+// הגש את הקבצים הסטטיים
 const buildPath = path.join(__dirname, '../build');
 const publicPath = path.join(__dirname, '../public');
+const srcPath = path.join(__dirname, '../src');
 
-if (fs.existsSync(buildPath)) {
-  app.use(express.static(buildPath));
+// Serve source files for development
+app.use('/src', express.static(srcPath));
+
+// Only serve static files, don't serve index.html automatically
+if (fs.existsSync(buildPath) && fs.existsSync(path.join(buildPath, 'index.html'))) {
+  app.use(express.static(buildPath, { index: false }));
 } else {
-  app.use(express.static(publicPath));
+  app.use(express.static(publicPath, { index: false }));
 }
 
 // אם אף אחד מהנתיבים לא טיפל בבקשה, החזר את הדף הראשי של האפליקציה
 app.get('*', (req, res) => {
   const buildIndexPath = path.join(__dirname, '../build/index.html');
+  const simpleIndexPath = path.join(__dirname, '../public/simple.html');
   const publicIndexPath = path.join(__dirname, '../public/index.html');
   
   if (fs.existsSync(buildIndexPath)) {
     res.sendFile(buildIndexPath);
+  } else if (fs.existsSync(simpleIndexPath)) {
+    res.sendFile(simpleIndexPath);
   } else if (fs.existsSync(publicIndexPath)) {
     res.sendFile(publicIndexPath);
   } else {

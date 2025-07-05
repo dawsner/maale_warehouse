@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ניהול ציוד קולנוע</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: #f5f5f5;
+        direction: rtl;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background: white;
+        padding: 40px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      }
+      .form-group {
+        margin-bottom: 20px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+      input, select {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 16px;
+        direction: rtl;
+      }
+      button {
+        background: #1976d2;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        margin: 10px 5px;
+      }
+      button:hover {
+        background: #1565c0;
+      }
+      .success {
+        background: #d4edda;
+        color: #155724;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 10px 0;
+      }
+      .error {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>מערכת ניהול ציוד קולנוע</h1>
+      
+      <!-- Login Form -->
+      <div id="loginForm">
+        <h2>התחברות</h2>
+        <div class="form-group">
+          <label>שם משתמש:</label>
+          <input type="text" id="loginUsername" placeholder="הזן שם משתמש">
+        </div>
+        <div class="form-group">
+          <label>סיסמה:</label>
+          <input type="password" id="loginPassword" placeholder="הזן סיסמה">
+        </div>
+        <button onclick="login()">התחבר</button>
+      </div>
+
+      <!-- Admin Panel -->
+      <div id="adminPanel" style="display: none;">
+        <h2>פאנל ניהול</h2>
+        <p id="welcomeMessage"></p>
+        
+        <h3>יצירת משתמש חדש</h3>
+        <div class="form-group">
+          <label>שם משתמש:</label>
+          <input type="text" id="newUsername" placeholder="שם משתמש">
+        </div>
+        <div class="form-group">
+          <label>סיסמה:</label>
+          <input type="password" id="newPassword" placeholder="סיסמה">
+        </div>
+        <div class="form-group">
+          <label>תפקיד:</label>
+          <select id="newRole">
+            <option value="student">סטודנט</option>
+            <option value="warehouse">מחסנאי</option>
+            <option value="admin">מנהל</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>אימייל:</label>
+          <input type="email" id="newEmail" placeholder="user@example.com">
+        </div>
+        <div class="form-group">
+          <label>שם מלא:</label>
+          <input type="text" id="newFullName" placeholder="שם מלא">
+        </div>
+        <button onclick="createUser()">צור משתמש</button>
+        <button onclick="logout()">התנתק</button>
+      </div>
+
+      <div id="message"></div>
+    </div>
+
+    <script>
+      let currentUser = null;
+
+      async function login() {
+        const username = document.getElementById('loginUsername').value;
+        const password = document.getElementById('loginPassword').value;
+        
+        if (!username || !password) {
+          showMessage('נא למלא שם משתמש וסיסמה', 'error');
+          return;
+        }
+
+        try {
+          const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, password })
+          });
+
+          const result = await response.json();
+          
+          if (result.success) {
+            currentUser = result;
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
+            document.getElementById('welcomeMessage').textContent = `שלום ${result.full_name} (${result.role})`;
+            showMessage('התחברות הצליחה!', 'success');
+          } else {
+            showMessage(result.message || 'שגיאה בהתחברות', 'error');
+          }
+        } catch (error) {
+          showMessage('שגיאה בחיבור לשרת', 'error');
+        }
+      }
+
+      async function createUser() {
+        const username = document.getElementById('newUsername').value;
+        const password = document.getElementById('newPassword').value;
+        const role = document.getElementById('newRole').value;
+        const email = document.getElementById('newEmail').value;
+        const fullName = document.getElementById('newFullName').value;
+
+        if (!username || !password || !email || !fullName) {
+          showMessage('נא למלא את כל השדות', 'error');
+          return;
+        }
+
+        try {
+          const response = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              username,
+              password,
+              role,
+              email,
+              full_name: fullName
+            })
+          });
+
+          const result = await response.json();
+          
+          if (result.success) {
+            showMessage(`משתמש נוצר בהצלחה! ID: ${result.id}`, 'success');
+            // Clear form
+            document.getElementById('newUsername').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('newEmail').value = '';
+            document.getElementById('newFullName').value = '';
+          } else {
+            showMessage(result.message || 'שגיאה ביצירת משתמש', 'error');
+          }
+        } catch (error) {
+          showMessage('שגיאה בחיבור לשרת', 'error');
+        }
+      }
+
+      function logout() {
+        currentUser = null;
+        document.getElementById('loginForm').style.display = 'block';
+        document.getElementById('adminPanel').style.display = 'none';
+        document.getElementById('loginUsername').value = '';
+        document.getElementById('loginPassword').value = '';
+        showMessage('התנתקת בהצלחה', 'success');
+      }
+
+      function showMessage(text, type) {
+        const messageDiv = document.getElementById('message');
+        messageDiv.textContent = text;
+        messageDiv.className = type;
+        setTimeout(() => {
+          messageDiv.textContent = '';
+          messageDiv.className = '';
+        }, 5000);
+      }
+    </script>
+  </body>
+</html>
