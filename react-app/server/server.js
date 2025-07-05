@@ -14,6 +14,7 @@ const os = require('os');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const HOST = process.env.HOST || '0.0.0.0';
 
 // Middlewares
 app.use(cors({
@@ -924,13 +925,14 @@ app.get('*', (req, res) => {
 console.log('Environment Variables:');
 console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
 console.log(`PORT: ${PORT}`);
+console.log(`HOST: ${HOST}`);
 console.log(`PYTHON_CMD: ${process.env.PYTHON_CMD || 'python3'}`);
 console.log(`DATABASE_URL: ${process.env.DATABASE_URL ? 'SET' : 'NOT SET'}`);
 
-const server = app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, HOST, () => {
   console.log(`Cinema Equipment Management Server successfully started!`);
-  console.log(`Server listening on 0.0.0.0:${PORT}`);
-  console.log(`Server ready to accept connections`);
+  console.log(`Server listening on ${HOST}:${PORT}`);
+  console.log(`Server ready to accept connections from external sources`);
 });
 
 server.on('error', (error) => {
