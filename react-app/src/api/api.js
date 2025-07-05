@@ -344,21 +344,22 @@ export const authAPI = {
   register: async (userData) => {
     try {
       const response = await axiosInstance.post('/api/auth/register', userData);
-      if (response.data && response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        // החזרת פרטי המשתמש מתוך תשובת השרת
-        return {
-          id: response.data.id,
-          username: response.data.username,
-          role: response.data.role,
-          email: response.data.email,
-          full_name: response.data.full_name
-        };
+      
+      // החזרת התשובה המלאה מהשרת
+      if (response.data) {
+        if (response.data.success && response.data.token) {
+          localStorage.setItem('token', response.data.token);
+        }
+        return response.data;
       }
-      return null;
+      
+      return { success: false, message: 'לא התקבלה תשובה מהשרת' };
     } catch (error) {
       console.error('Registration error:', error);
-      throw error;
+      if (error.response && error.response.data) {
+        return error.response.data;
+      }
+      return { success: false, message: 'שגיאה בהתחברות לשרת' };
     }
   },
 

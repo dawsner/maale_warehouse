@@ -41,7 +41,7 @@ import {
   Refresh as RefreshIcon
 } from '@mui/icons-material';
 
-import { userManagementAPI } from '../../api/api';
+import { userManagementAPI, authAPI } from '../../api/api';
 import { useAuth } from '../../contexts/AuthContext';
 
 // קומפוננטה לניהול משתמשים
@@ -217,15 +217,7 @@ function UserManagement() {
       }
 
       // קריאה ל-API ליצירת משתמש חדש
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newUserData)
-      });
-
-      const result = await response.json();
+      const result = await authAPI.register(newUserData);
       
       if (result.success) {
         // איפוס הטופס
