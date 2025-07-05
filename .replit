@@ -13,24 +13,11 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "React App"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
 args = "API Server"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
 args = "Production App"
-
-[[workflows.workflow]]
-name = "React App"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd react-app && PORT=5000 npm start"
-waitForPort = 5000
 
 [[workflows.workflow]]
 name = "API Server"
@@ -47,7 +34,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd react-app && npm run build && PORT=${PORT:-5000} NODE_ENV=production node server/server.js"
+args = "cd react-app && PYTHON_CMD=python3 PORT=5000 NODE_ENV=production node server/server.js"
 waitForPort = 5000
 
 [deployment]

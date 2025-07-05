@@ -920,6 +920,20 @@ app.get('*', (req, res) => {
   }
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Cinema Equipment Management Server running on 0.0.0.0:${PORT}`);
+// הדפסת משתני סביבה חשובים
+console.log('Environment Variables:');
+console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
+console.log(`PORT: ${PORT}`);
+console.log(`PYTHON_CMD: ${process.env.PYTHON_CMD || 'python3'}`);
+console.log(`DATABASE_URL: ${process.env.DATABASE_URL ? 'SET' : 'NOT SET'}`);
+
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Cinema Equipment Management Server successfully started!`);
+  console.log(`Server listening on 0.0.0.0:${PORT}`);
+  console.log(`Server ready to accept connections`);
+});
+
+server.on('error', (error) => {
+  console.error('Server startup error:', error);
+  process.exit(1);
 });

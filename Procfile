@@ -1,1 +1,1 @@
-web: cd react-app && npm install && npm run build && PYTHON_CMD=python3 PORT=$PORT NODE_ENV=production node server/server.js
+web: cd react-app && npm install --only=production && PYTHON_CMD=python3 PORT=$PORT NODE_ENV=production node server/server.js
