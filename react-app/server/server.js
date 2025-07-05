@@ -42,8 +42,12 @@ function runPythonScript(scriptPath, args = [], inputData = null) {
       return reject(new Error(`Script not found: ${scriptPath}`));
     }
 
-    console.log(`Running Python script: ${scriptPath}`);
-    const pythonProcess = spawn('python3', [scriptPath, ...args]);
+    // מחפש את Python הזמין במערכת
+    const pythonCmd = process.env.PYTHON_CMD || 'python3';
+    console.log(`Running Python script: ${scriptPath} with ${pythonCmd}`);
+    const pythonProcess = spawn(pythonCmd, [scriptPath, ...args], {
+      env: { ...process.env, PYTHONPATH: process.cwd() }
+    });
     let dataString = '';
     let errorString = '';
 
