@@ -97,6 +97,34 @@ function runPythonScript(scriptPath, args = [], inputData = null) {
 // נתיבי API
 
 // אימות והרשאות
+// Health check endpoint for GCE deployment
+app.get('/health', async (req, res) => {
+  try {
+    // Test database connection
+    const dbTest = await runPythonScript(
+      path.join(__dirname, '../api/get_inventory.py'),
+      []
+    );
+    
+    res.status(200).json({ 
+      status: 'healthy', 
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      database: 'connected and tested',
+      inventory_count: Array.isArray(dbTest) ? dbTest.length : 0
+    });
+  } catch (error) {
+    console.error('Health check failed:', error.message);
+    res.status(503).json({ 
+      status: 'unhealthy', 
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      database: 'connection failed',
+      error: error.message
+    });
+  }
+});
+
 app.post('/api/auth/login', async (req, res) => {
   try {
     const result = await runPythonScript(
@@ -929,13 +957,32 @@ console.log(`HOST: ${HOST}`);
 console.log(`PYTHON_CMD: ${process.env.PYTHON_CMD || 'python3'}`);
 console.log(`DATABASE_URL: ${process.env.DATABASE_URL ? 'SET' : 'NOT SET'}`);
 
-const server = app.listen(PORT, HOST, () => {
+// Start server with explicit error handling for GCE deployment
+const server = app.listen(PORT, '0.0.0.0', (err) => {
+  if (err) {
+    console.error('Failed to start server:', err);
+    process.exit(1);
+  }
   console.log(`Cinema Equipment Management Server successfully started!`);
-  console.log(`Server listening on ${HOST}:${PORT}`);
+  console.log(`Server listening on 0.0.0.0:${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`Server ready to accept connections from external sources`);
+  console.log(`Health check endpoint available at: http://0.0.0.0:${PORT}/health`);
 });
 
 server.on('error', (error) => {
   console.error('Server startup error:', error);
+  if (error.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use`);
+  }
   process.exit(1);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
 });
