@@ -108,6 +108,15 @@ The system uses PostgreSQL with the following key tables:
 - Excel import capability for initial data loading
 - Migration-friendly schema design
 
+## Authentication Credentials
+### Admin Login
+- Username: admin
+- Password: admin
+
+### Test User Login
+- Username: test  
+- Password: 123456
+
 ## Changelog
 - June 29, 2025. Initial setup
 - June 29, 2025. Completed comprehensive responsive design implementation across entire application
@@ -119,6 +128,7 @@ The system uses PostgreSQL with the following key tables:
 - July 3, 2025. Fixed critical dashboard timeout issue by optimizing database queries - reduced response time from 30+ seconds to under 3 seconds
 - July 3, 2025. Fixed authentication system to support both scrypt and bcrypt password formats - resolved post-deployment login errors
 - July 3, 2025. Fixed deployment configuration to use React production build with Node.js server on port 5000
+- July 6, 2025. Fixed post-deployment authentication issues - completed login.py and verify_token.py with full support for bcrypt, scrypt, and plain text passwords
 
 ## User Preferences
 
