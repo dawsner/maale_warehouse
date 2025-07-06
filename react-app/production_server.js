@@ -62,9 +62,30 @@ app.all('/api/*', (req, res) => {
   });
 });
 
+// Route for dashboard/main app
+app.get('/dashboard', (req, res) => {
+  // Check if build exists, if not, serve development version
+  const buildIndex = path.join(__dirname, 'build', 'index.html');
+  const mainIndex = path.join(__dirname, 'index.html');
+  
+  if (require('fs').existsSync(buildIndex)) {
+    res.sendFile(buildIndex);
+  } else {
+    res.sendFile(mainIndex);
+  }
+});
+
 // Serve React app for all non-API routes
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  // Check if build exists, if not, serve development version
+  const buildIndex = path.join(__dirname, 'build', 'index.html');
+  const mainIndex = path.join(__dirname, 'index.html');
+  
+  if (require('fs').existsSync(buildIndex)) {
+    res.sendFile(buildIndex);
+  } else {
+    res.sendFile(mainIndex);
+  }
 });
 
 app.listen(PORT, '0.0.0.0', () => {

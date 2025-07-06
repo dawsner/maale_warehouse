@@ -70,10 +70,22 @@ app.use('/api', (req, res, next) => {
   });
 });
 
-// Catch all handler: send back React's index.html file
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'react-app/build', 'index.html'));
-});
+// Development mode - serve React dev files
+if (process.env.NODE_ENV !== 'production') {
+  // Serve React development files
+  app.use('/static', express.static(path.join(__dirname, 'react-app/build/static')));
+  app.use('/', express.static(path.join(__dirname, 'react-app/public')));
+  
+  // For development, redirect to React dev server
+  app.get('*', (req, res) => {
+    res.redirect('http://localhost:3000' + req.path);
+  });
+} else {
+  // Production mode - serve built React files
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'react-app/build', 'index.html'));
+  });
+}
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Cinema Equipment Management Server running on http://0.0.0.0:${PORT}`);
