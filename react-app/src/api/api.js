@@ -312,24 +312,16 @@ export const authAPI = {
   // התחברות
   login: async (username, password) => {
     try {
-      console.log('Sending login request to:', `${API_URL}/api/auth/login`);
-      const response = await axiosInstance.post('/api/auth/login', { username, password });
+      console.log('Sending login request to:', `${API_URL}/api/login`);
+      const response = await axiosInstance.post('/api/login', { username, password });
       console.log('Login response:', response.data);
       
-      if (response.data && response.data.success && response.data.token) {
-        localStorage.setItem('token', response.data.token);
+      if (response.data && response.data.success && response.data.user) {
+        localStorage.setItem('token', response.data.user.token);
         // החזרת פרטי המשתמש מתוך תשובת השרת
         return {
           success: true,
-          user: {
-            id: response.data.id,
-            username: response.data.username,
-            role: response.data.role,
-            email: response.data.email,
-            full_name: response.data.full_name,
-            study_year: response.data.study_year,
-            branch: response.data.branch
-          }
+          user: response.data.user
         };
       }
       return null;
@@ -370,7 +362,7 @@ export const authAPI = {
       }
       
       // אימות הטוקן עם השרת
-      const response = await axiosInstance.post('/api/auth/verify-token', { token });
+      const response = await axiosInstance.post('/api/verify-token', { user_id: token });
       
       if (response.data && response.data.success) {
         return response.data.user;

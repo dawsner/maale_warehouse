@@ -59,36 +59,18 @@ function App() {
     const token = localStorage.getItem('token');
     if (token) {
       console.log('Token found in localStorage, trying to authenticate...');
-      // בדיקת תקפות הטוקן
-      try {
-        const decoded = JSON.parse(atob(token.split('.')[1]));
-        const currentTime = Math.floor(Date.now() / 1000);
-        
-        // אם הטוקן פג תוקף
-        if (decoded.exp <= currentTime) {
-          console.log('Token expired, redirecting to login');
+      // ננסה לקבל פרטי משתמש עם הטוקן הפשוט
+      authAPI.getCurrentUser()
+        .then(userData => {
+          console.log('Current user data received:', userData);
+          setUser(userData);
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.error('Error getting current user:', err);
           localStorage.removeItem('token');
           setLoading(false);
-          return;
-        }
-        
-        // אם הטוקן תקף, ננסה לקבל פרטי משתמש
-        authAPI.getCurrentUser()
-          .then(userData => {
-            console.log('Current user data received:', userData);
-            setUser(userData);
-            setLoading(false);
-          })
-          .catch((err) => {
-            console.error('Error getting current user:', err);
-            localStorage.removeItem('token');
-            setLoading(false);
-          });
-      } catch (error) {
-        console.error('Error decoding token:', error);
-        localStorage.removeItem('token');
-        setLoading(false);
-      }
+        });
     } else {
       console.log('No token found, user not logged in');
       setLoading(false);
