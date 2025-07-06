@@ -18,7 +18,11 @@ args = "Excel Analysis"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Full App"
+args = "Production Server"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Deploy Server"
 
 [[workflows.workflow]]
 name = "Excel Analysis"
@@ -35,18 +39,6 @@ task = "shell.exec"
 args = "python3 analyze_excel.py"
 
 [[workflows.workflow]]
-name = "Full App"
-author = "agent"
-
-[workflows.workflow.metadata]
-agentRequireRestartOnSave = false
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd react-app && npm run dev"
-waitForPort = 5000
-
-[[workflows.workflow]]
 name = "Dev Server"
 author = 36826097
 mode = "sequential"
@@ -54,6 +46,24 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "cd react-app && npm run dev"
+
+[[workflows.workflow]]
+name = "Production Server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node server.js"
+waitForPort = 5000
+
+[[workflows.workflow]]
+name = "Deploy Server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node server.js"
+waitForPort = 5000
 
 [deployment]
 run = ["sh", "-c", "bash deploy.sh"]
