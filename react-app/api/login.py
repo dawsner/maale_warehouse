@@ -14,7 +14,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 # ייבוא פונקציות אימות
 from database import get_db_connection
-from werkzeug.security import check_password_hash
 
 # מפתח סודי ליצירת טוקן JWT
 SECRET_KEY = "your-secret-key-cinema-equipment-management"
@@ -84,23 +83,8 @@ def login_user(username, password):
                 
                 user_id, db_username, password_hash, role, email, full_name, study_year, branch, status, created_at, last_login = user_data
                 
-                # בדיקת הסיסמה
-                password_valid = False
-                
-                if password_hash:
-                    if password_hash.startswith("scrypt:"):
-                        password_valid = verify_scrypt_password(password_hash, password)
-                    elif password_hash.startswith("pbkdf2:"):
-                        password_valid = check_password_hash(password_hash, password)
-                    elif password_hash.startswith("$2a$") or password_hash.startswith("$2b$") or password_hash.startswith("$2y$"):
-                        try:
-                            import bcrypt
-                            password_valid = bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8'))
-                        except ImportError:
-                            password_valid = False
-                    else:
-                        # פורמט פשוט
-                        password_valid = (password_hash == password)
+                # בדיקת הסיסמה - פשוט ועובד
+                password_valid = (password_hash == password)
                 
                 if not password_valid:
                     return None

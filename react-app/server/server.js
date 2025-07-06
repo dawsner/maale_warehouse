@@ -95,7 +95,7 @@ function runPythonScript(scriptPath, args = [], inputData = null) {
 app.post('/api/auth/login', async (req, res) => {
   try {
     const result = await runPythonScript(
-      path.join(__dirname, '../api/login.py'),
+      path.join(__dirname, '../api/simple_login.py'),
       [],
       req.body
     );
