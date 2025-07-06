@@ -13,5 +13,5 @@ npm install
 
 echo "Starting production server on port $PORT..."
 
-# הפעלת השרת המאוחד שמטפל בכל
-node production_server.js
+# הפעלת השרת הפשוט והיעיל
+node simple_server.js
