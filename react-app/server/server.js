@@ -13,7 +13,7 @@ const multer = require('multer');
 const os = require('os');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.NODE_ENV === 'production' ? process.env.PORT || 5000 : 5100;
 
 // Middlewares
 app.use(cors({
@@ -881,14 +881,14 @@ app.get('/api/order_templates', async (req, res) => {
   }
 });
 
-// הגש את הקבצים הסטטיים האפליקציה אחרי שכל הנתיבים האחרים כבר הוגדרו
-app.use(express.static(path.join(__dirname, '../build')));
-
-// אם אף אחד מהנתיבים לא טיפל בבקשה, החזר את הדף הראשי של האפליקציה
-app.get('*', (req, res) => {
-  // אחרת, החזר את הדף הראשי
-  res.sendFile(path.join(__dirname, '../build/index.html'));
-});
+// רק עבור דיפלוי פרודקשן - אחרת React Dev Server מטפל בזה
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../build')));
+  
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../build/index.html'));
+  });
+}
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
