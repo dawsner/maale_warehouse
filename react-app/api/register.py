@@ -6,7 +6,8 @@
 import sys
 import json
 import os
-from datetime import datetime
+import jwt
+from datetime import datetime, timedelta
 
 # הוספת תיקיית הפרויקט הראשית לנתיב החיפוש
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -14,6 +15,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 # ייבוא פונקציות אימות מהמודול החדש המותאם ל-API
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 from auth_api import register_api
+
+# מפתח סודי ליצירת טוקן JWT - חייב להיות זהה למפתח בקובץ login.py
+SECRET_KEY = "your-secret-key-cinema-equipment-management"
 JWT_EXPIRATION = 24  # תוקף הטוקן בשעות
 
 def main():
@@ -42,9 +46,23 @@ def main():
             full_name=full_name
         )
         
-        # אם ההרשמה הצליחה
+        # אם ההרשמה הצליחה, יצירת טוקן JWT
         if user:
-            # החזרת תשובה חיובית עם פרטי המשתמש
+            # התוצאה מכילה את אובייקט המשתמש
+            # מידע שיוכנס לטוקן
+            payload = {
+                'id': user.id,
+                'username': user.username,
+                'role': user.role,
+                'email': user.email,
+                'full_name': user.full_name,
+                'exp': datetime.utcnow() + timedelta(hours=JWT_EXPIRATION)
+            }
+            
+            # יצירת הטוקן
+            token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
+            
+            # החזרת תשובה חיובית עם פרטי המשתמש והטוקן
             response = {
                 'success': True,
                 'id': str(user.id),  # המרה ל-string למניעת שגיאת LSP
@@ -52,6 +70,7 @@ def main():
                 'role': user.role,
                 'email': user.email,
                 'full_name': user.full_name,
+                'token': token,
                 'message': 'הרשמה הצליחה'
             }
         else:

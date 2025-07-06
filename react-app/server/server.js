@@ -97,34 +97,6 @@ function runPythonScript(scriptPath, args = [], inputData = null) {
 // נתיבי API
 
 // אימות והרשאות
-// Health check endpoint for GCE deployment
-app.get('/health', async (req, res) => {
-  try {
-    // Test database connection
-    const dbTest = await runPythonScript(
-      path.join(__dirname, '../api/get_inventory.py'),
-      []
-    );
-    
-    res.status(200).json({ 
-      status: 'healthy', 
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development',
-      database: 'connected and tested',
-      inventory_count: Array.isArray(dbTest) ? dbTest.length : 0
-    });
-  } catch (error) {
-    console.error('Health check failed:', error.message);
-    res.status(503).json({ 
-      status: 'unhealthy', 
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development',
-      database: 'connection failed',
-      error: error.message
-    });
-  }
-});
-
 app.post('/api/auth/login', async (req, res) => {
   try {
     const result = await runPythonScript(
@@ -900,31 +872,22 @@ app.get('/api/order_templates', async (req, res) => {
   }
 });
 
-// הגש את הקבצים הסטטיים
+// הגש את הקבצים הסטטיים - נסה build קודם, אחר כך public
 const buildPath = path.join(__dirname, '../build');
 const publicPath = path.join(__dirname, '../public');
-const srcPath = path.join(__dirname, '../src');
 
-// Serve source files for development
-app.use('/src', express.static(srcPath));
-
-// Only serve static files, don't serve index.html automatically
-if (fs.existsSync(buildPath) && fs.existsSync(path.join(buildPath, 'index.html'))) {
-  app.use(express.static(buildPath, { index: false }));
+if (fs.existsSync(buildPath)) {
+  app.use(express.static(buildPath));
 } else {
-  app.use(express.static(publicPath, { index: false }));
+  app.use(express.static(publicPath));
 }
 
 // אם אף אחד מהנתיבים לא טיפל בבקשה, החזר את הדף הראשי של האפליקציה
 app.get('*', (req, res) => {
-  const simpleIndexPath = path.join(__dirname, '../public/simple.html');
   const buildIndexPath = path.join(__dirname, '../build/index.html');
   const publicIndexPath = path.join(__dirname, '../public/index.html');
   
-  // נעדיף תמיד את simple.html כי זה עובד
-  if (fs.existsSync(simpleIndexPath)) {
-    res.sendFile(simpleIndexPath);
-  } else if (fs.existsSync(buildIndexPath)) {
+  if (fs.existsSync(buildIndexPath)) {
     res.sendFile(buildIndexPath);
   } else if (fs.existsSync(publicIndexPath)) {
     res.sendFile(publicIndexPath);
@@ -966,39 +929,13 @@ console.log(`HOST: ${HOST}`);
 console.log(`PYTHON_CMD: ${process.env.PYTHON_CMD || 'python3'}`);
 console.log(`DATABASE_URL: ${process.env.DATABASE_URL ? 'SET' : 'NOT SET'}`);
 
-// בדיקת משתני סביבה חיוניים לדיפלוי
-if (!process.env.DATABASE_URL) {
-  console.error('CRITICAL ERROR: DATABASE_URL environment variable is not set!');
-  console.error('Cannot start server without database connection.');
-  process.exit(1);
-}
-
-// Start server with explicit error handling for GCE deployment
-const server = app.listen(PORT, '0.0.0.0', (err) => {
-  if (err) {
-    console.error('Failed to start server:', err);
-    process.exit(1);
-  }
+const server = app.listen(PORT, HOST, () => {
   console.log(`Cinema Equipment Management Server successfully started!`);
-  console.log(`Server listening on 0.0.0.0:${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Server listening on ${HOST}:${PORT}`);
   console.log(`Server ready to accept connections from external sources`);
-  console.log(`Health check endpoint available at: http://0.0.0.0:${PORT}/health`);
 });
 
 server.on('error', (error) => {
   console.error('Server startup error:', error);
-  if (error.code === 'EADDRINUSE') {
-    console.error(`Port ${PORT} is already in use`);
-  }
   process.exit(1);
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
-  server.close(() => {
-    console.log('Server closed');
-    process.exit(0);
-  });
 });

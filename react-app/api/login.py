@@ -6,7 +6,8 @@
 import sys
 import json
 import os
-from datetime import datetime
+import jwt
+from datetime import datetime, timedelta
 
 # הוספת תיקיית הפרויקט הראשית לנתיב החיפוש
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -15,7 +16,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 from auth_api import login_api
 
-# הסרת התלות ב-JWT לפישוט הדיפלוי
+# מפתח סודי ליצירת טוקן JWT
+SECRET_KEY = "your-secret-key-cinema-equipment-management"  # במערכת אמיתית יש לשמור זאת בקובץ .env
+JWT_EXPIRATION = 24  # תוקף הטוקן בשעות
 
 def main():
     """פונקציה ראשית שמטפלת בתהליך ההתחברות"""
@@ -34,9 +37,24 @@ def main():
         # ניסיון להתחבר עם הפונקציה החדשה המותאמת ל-API
         user = login_api(username, password)
         
-        # אם ההתחברות הצליחה
+        # אם ההתחברות הצליחה, יצירת טוקן JWT
         if user:
-            # החזרת תשובה חיובית עם פרטי המשתמש
+            # מידע שיוכנס לטוקן
+            payload = {
+                'id': user.id,
+                'username': user.username,
+                'role': user.role,
+                'email': user.email,
+                'full_name': user.full_name,
+                'study_year': user.study_year,
+                'branch': user.branch,
+                'exp': datetime.utcnow() + timedelta(hours=JWT_EXPIRATION)
+            }
+            
+            # יצירת הטוקן
+            token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
+            
+            # החזרת תשובה חיובית עם פרטי המשתמש והטוקן
             response = {
                 'success': True,
                 'id': user.id,
@@ -46,6 +64,7 @@ def main():
                 'full_name': user.full_name,
                 'study_year': user.study_year,
                 'branch': user.branch,
+                'token': token,
                 'message': 'התחברות הצליחה'
             }
         else:
