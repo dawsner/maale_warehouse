@@ -50,7 +50,7 @@ args = "cd react-app && npm run dev"
 waitForPort = 5000
 
 [deployment]
-run = ["sh", "-c", "streamlit run main.py --server.port=5000 --server.enableXsrfProtection=false"]
+run = ["sh", "-c", "bash deploy.sh"]
 deploymentTarget = "cloudrun"
 
 [[ports]]
