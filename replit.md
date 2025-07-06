@@ -113,6 +113,10 @@ The system uses PostgreSQL with the following key tables:
 - Username: admin
 - Password: admin
 
+### Other Admin Users
+- Username: bennyit (IT Admin)
+- Username: mahsan (Warehouse Admin)
+
 ### Test User Login
 - Username: test  
 - Password: 123456
