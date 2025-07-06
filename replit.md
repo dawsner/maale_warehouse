@@ -134,6 +134,7 @@ The system uses PostgreSQL with the following key tables:
 - July 3, 2025. Fixed deployment configuration to use React production build with Node.js server on port 5000
 - July 6, 2025. Fixed post-deployment authentication issues - completed login.py and verify_token.py with full support for bcrypt, scrypt, and plain text passwords
 - July 6, 2025. Implemented universal dashboard routing - all users (admin, warehouse staff, students) now redirect to dashboard after login instead of role-specific pages
+- July 6, 2025. Fixed critical development server error - server was incorrectly looking for production build files. Added conditional production-only static file serving, preventing ENOENT errors in development mode
 
 ## User Preferences
 
