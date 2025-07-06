@@ -53,6 +53,7 @@ function UserManagement() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
   
   // דיאלוגים
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -210,16 +211,46 @@ function UserManagement() {
   // יצירת משתמש חדש
   const handleCreateUser = async () => {
     try {
-      // כאן צריך להיות קריאה ל-API ליצירת משתמש חדש
-      // במקרה שלנו נשתמש ב-authAPI.register
+      // בדיקת שדות חובה
+      if (!newUserData.username || !newUserData.password || !newUserData.email || !newUserData.full_name) {
+        setError('נא למלא את כל השדות הנדרשים');
+        return;
+      }
       
-      setNewUserDialogOpen(false);
+      // קריאה לAPI ליצירת משתמש חדש
+      const response = await userManagementAPI.createUser({
+        username: newUserData.username,
+        password: newUserData.password,
+        role: newUserData.role,
+        email: newUserData.email,
+        full_name: newUserData.full_name,
+        study_year: newUserData.study_year,
+        branch: newUserData.branch
+      });
       
-      // רענון רשימת המשתמשים
-      fetchAllData();
+      if (response.success) {
+        setNewUserDialogOpen(false);
+        setSuccess('משתמש חדש נוצר בהצלחה');
+        
+        // איפוס הטופס
+        setNewUserData({
+          username: '',
+          password: '',
+          role: 'student',
+          email: '',
+          full_name: '',
+          study_year: 'first',
+          branch: 'main'
+        });
+        
+        // רענון רשימת המשתמשים
+        fetchAllData();
+      } else {
+        setError(response.message || 'אירעה שגיאה ביצירת משתמש חדש');
+      }
     } catch (err) {
       console.error('Error creating new user:', err);
-      setError('אירעה שגיאה ביצירת משתמש חדש');
+      setError('אירעה שגיאה ביצירת משתמש חדש: ' + err.message);
     }
   };
   

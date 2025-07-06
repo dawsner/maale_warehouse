@@ -695,6 +695,17 @@ export const userManagementAPI = {
     }
   },
   
+  // יצירת משתמש חדש
+  createUser: async (userData) => {
+    try {
+      const response = await axiosInstance.post('/api/auth/register', userData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
+    }
+  },
+  
   // קבלת הגבלות גישה לפריטים עבור משתמש מסוים
   getUserRestrictions: async (userId) => {
     try {
