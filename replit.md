@@ -133,6 +133,7 @@ The system uses PostgreSQL with the following key tables:
 - July 5, 2025. Fixed JWT dependency issues in authentication system - removed PyJWT dependency to prevent deployment I/O errors, simplified auth without tokens
 - July 5, 2025. Created simple HTML interface for user management - replaced complex React build with functional HTML/JS page for deployment compatibility
 - July 5, 2025. Fixed authentication JSON parsing errors - removed DEBUG prints that corrupted API responses, login now works properly in deployment
+- July 6, 2025. Fixed server routing to prioritize simple.html login page - users now see login form instead of user creation screen
 
 ## User Preferences
 

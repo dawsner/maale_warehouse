@@ -917,14 +917,15 @@ if (fs.existsSync(buildPath) && fs.existsSync(path.join(buildPath, 'index.html')
 
 // אם אף אחד מהנתיבים לא טיפל בבקשה, החזר את הדף הראשי של האפליקציה
 app.get('*', (req, res) => {
-  const buildIndexPath = path.join(__dirname, '../build/index.html');
   const simpleIndexPath = path.join(__dirname, '../public/simple.html');
+  const buildIndexPath = path.join(__dirname, '../build/index.html');
   const publicIndexPath = path.join(__dirname, '../public/index.html');
   
-  if (fs.existsSync(buildIndexPath)) {
-    res.sendFile(buildIndexPath);
-  } else if (fs.existsSync(simpleIndexPath)) {
+  // נעדיף תמיד את simple.html כי זה עובד
+  if (fs.existsSync(simpleIndexPath)) {
     res.sendFile(simpleIndexPath);
+  } else if (fs.existsSync(buildIndexPath)) {
+    res.sendFile(buildIndexPath);
   } else if (fs.existsSync(publicIndexPath)) {
     res.sendFile(publicIndexPath);
   } else {
