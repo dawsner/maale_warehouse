@@ -101,7 +101,8 @@ app.post('/api/auth/login', async (req, res) => {
     );
     res.json(result);
   } catch (error) {
-    res.status(401).json({ message: 'שם משתמש או סיסמה שגויים' });
+    console.error('Login error:', error.message);
+    res.status(401).json({ message: 'שם משתמש או סיסמה שגויים - ' + error.message });
   }
 });
 
