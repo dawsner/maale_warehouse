@@ -13,7 +13,7 @@ const multer = require('multer');
 const os = require('os');
 
 const app = express();
-const PORT = process.env.PORT || 5100;
+const PORT = process.env.PORT || 5200;
 const HOST = process.env.HOST || '0.0.0.0';
 
 // Middlewares
