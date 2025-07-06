@@ -13,7 +13,7 @@ const multer = require('multer');
 const os = require('os');
 
 const app = express();
-const PORT = process.env.PORT || 80;
+const PORT = process.env.PORT || 5000;
 const HOST = process.env.HOST || '0.0.0.0';
 
 // Middlewares
@@ -909,13 +909,31 @@ app.get('/api/order_templates', async (req, res) => {
   }
 });
 
-// רק עבור דיפלוי פרודקשן - אחרת React Dev Server מטפל בזה
+// הגשת React - בפיתוח נשתמש ב-proxy ובפרודקשן בקבצים הסטטיים
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../build')));
   
   app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../build/index.html'));
   });
+} else {
+  // בפיתוח - הפנה בקשות שאינן API ל-React Dev Server
+  const { createProxyMiddleware } = require('http-proxy-middleware');
+  
+  app.use('/', createProxyMiddleware({
+    target: 'http://localhost:3000',
+    changeOrigin: true,
+    pathRewrite: {
+      '^/api': '/api', // שמור נתיבי API כפי שהם
+    },
+    router: (req) => {
+      // אם זה נתיב API, אל תעביר ל-proxy
+      if (req.path.startsWith('/api')) {
+        return false;
+      }
+      return 'http://localhost:3000';
+    }
+  }));
 }
 
 app.listen(PORT, HOST, () => {
