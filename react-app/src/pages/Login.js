@@ -23,7 +23,7 @@ function Login({ onLogin }) {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
   const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin123');
+  const [password, setPassword] = useState('admin');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);

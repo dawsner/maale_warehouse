@@ -98,11 +98,8 @@ function App() {
   const handleLogin = (userData) => {
     console.log('Login successful, user data:', userData);
     setUser(userData);
-    if (userData.role === 'admin' || userData.role === 'warehouse_staff') {
-      navigate('/inventory');
-    } else {
-      navigate('/available-items');
-    }
+    // כל המשתמשים מנותבים לדשבורד אחרי התחברות
+    navigate('/dashboard');
   };
 
   const handleLogout = () => {
@@ -161,10 +158,12 @@ function App() {
             <Route path="/login" element={<Login onLogin={handleLogin} />} />
             <Route path="/register" element={<Register onLogin={handleLogin} />} />
             
-            {/* דפים למנהלים בלבד */}
+            {/* דשבורד לכל המשתמשים */}
             <Route path="/dashboard" element={
-              <AdminRoute><Dashboard /></AdminRoute>
+              <ProtectedRoute><Dashboard /></ProtectedRoute>
             } />
+            
+            {/* דפים למנהלים בלבד */}
             <Route path="/inventory" element={
               <AdminRoute><InventoryEnhanced /></AdminRoute>
             } />

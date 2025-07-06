@@ -133,6 +133,7 @@ The system uses PostgreSQL with the following key tables:
 - July 3, 2025. Fixed authentication system to support both scrypt and bcrypt password formats - resolved post-deployment login errors
 - July 3, 2025. Fixed deployment configuration to use React production build with Node.js server on port 5000
 - July 6, 2025. Fixed post-deployment authentication issues - completed login.py and verify_token.py with full support for bcrypt, scrypt, and plain text passwords
+- July 6, 2025. Implemented universal dashboard routing - all users (admin, warehouse staff, students) now redirect to dashboard after login instead of role-specific pages
 
 ## User Preferences
 
