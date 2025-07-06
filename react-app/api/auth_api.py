@@ -83,13 +83,11 @@ def login_api(username, password):
                 user = cur.fetchone()
                 
                 if not user:
-                    print(f"DEBUG: User {username} not found in database")
                     return None
                 
                 # בדיקה שהמשתמש לא חסום
                 user_status = user[8] if user[8] else 'active'
                 if user_status == 'blocked':
-                    print(f"DEBUG: User {username} is blocked")
                     return None
                 
                 # בדיקת סיסמה - מקבל סיסמאות פשוטות לדיפלוי
@@ -109,7 +107,6 @@ def login_api(username, password):
                     password_valid = (password == stored_password)
                 
                 if not password_valid:
-                    print(f"DEBUG: Invalid password for user {username} (role: {user_role})")
                     return None
                 
                 user_obj = User(
