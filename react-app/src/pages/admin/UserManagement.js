@@ -41,7 +41,7 @@ import {
   Refresh as RefreshIcon
 } from '@mui/icons-material';
 
-import { userManagementAPI, authAPI } from '../../api/api';
+import { userManagementAPI } from '../../api/api';
 import { useAuth } from '../../contexts/AuthContext';
 
 // קומפוננטה לניהול משתמשים
@@ -210,35 +210,13 @@ function UserManagement() {
   // יצירת משתמש חדש
   const handleCreateUser = async () => {
     try {
-      // בדיקת תקינות נתונים
-      if (!newUserData.username || !newUserData.password || !newUserData.email || !newUserData.full_name) {
-        setError('יש למלא את כל השדות הנדרשים');
-        return;
-      }
-
-      // קריאה ל-API ליצירת משתמש חדש
-      const result = await authAPI.register(newUserData);
+      // כאן צריך להיות קריאה ל-API ליצירת משתמש חדש
+      // במקרה שלנו נשתמש ב-authAPI.register
       
-      if (result.success) {
-        // איפוס הטופס
-        setNewUserData({
-          username: '',
-          password: '',
-          role: 'student',
-          email: '',
-          full_name: '',
-          study_year: 'first',
-          branch: 'main'
-        });
-        
-        setNewUserDialogOpen(false);
-        setError(null);
-        
-        // רענון רשימת המשתמשים
-        fetchAllData();
-      } else {
-        setError(result.message || 'אירעה שגיאה ביצירת המשתמש');
-      }
+      setNewUserDialogOpen(false);
+      
+      // רענון רשימת המשתמשים
+      fetchAllData();
     } catch (err) {
       console.error('Error creating new user:', err);
       setError('אירעה שגיאה ביצירת משתמש חדש');

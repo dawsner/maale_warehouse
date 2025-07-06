@@ -38,7 +38,7 @@ def main():
             raise ValueError("שם משתמש, סיסמה, תפקיד, כתובת דוא״ל ושם מלא הם שדות חובה")
         
         # ניסיון ליצור משתמש חדש עם הפונקציה החדשה המותאמת ל-API
-        user = register_api(
+        success, result = register_api(
             username=username,
             password=password,
             role=role,
@@ -47,8 +47,8 @@ def main():
         )
         
         # אם ההרשמה הצליחה, יצירת טוקן JWT
-        if user:
-            # התוצאה מכילה את אובייקט המשתמש
+        if success:
+            user = result  # התוצאה מכילה את אובייקט המשתמש
             # מידע שיוכנס לטוקן
             payload = {
                 'id': user.id,
@@ -77,7 +77,7 @@ def main():
             # במקרה של כישלון ביצירת המשתמש
             response = {
                 'success': False,
-                'message': 'המשתמש כבר קיים או שחלה שגיאה ביצירת המשתמש'
+                'message': result  # התוצאה מכילה את הודעת השגיאה
             }
         
         # החזרת התוצאה כ-JSON

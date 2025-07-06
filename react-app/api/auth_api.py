@@ -1,12 +1,66 @@
 """
 מודול אימות משתמשים עבור ה-API.
-גרסה מותאמת עם תמיכה בסיסמאות פשוטות לדיפלוי.
+גרסה מותאמת של auth.py ללא התלות ב-Streamlit.
 """
 
 import sys
 import os
+import hashlib
+import base64
+import hmac
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from werkzeug.security import check_password_hash, generate_password_hash
 from database import get_db_connection
+
+def verify_scrypt_password(password_hash, password):
+    """
+    בדיקת סיסמה בפורמט scrypt
+    פורמט: scrypt:32768:8:1$salt$hash
+    """
+    try:
+        # מתאים לפורמט scrypt
+        if password_hash.startswith("scrypt:"):
+            # פיצול למרכיבים של ההצפנה
+            parts = password_hash.split("$")
+            if len(parts) != 3:
+                return False
+                
+            scrypt_params = parts[0].split(":")
+            if len(scrypt_params) != 4:
+                return False
+                
+            N = int(scrypt_params[1])
+            r = int(scrypt_params[2])
+            p = int(scrypt_params[3])
+            salt = parts[1]
+            stored_hash = parts[2]
+            
+            # פענוח ה-salt מ-base64
+            salt_padding = '=' * (4 - len(salt) % 4) % 4
+            salt_bytes = base64.b64decode(salt + salt_padding)
+            
+            # חישוב ה-hash עם הפרמטרים שנשלפו
+            derived_key = hashlib.scrypt(
+                password.encode('utf-8'),
+                salt=salt_bytes,
+                n=N,
+                r=r,
+                p=p,
+                dklen=64
+            )
+            
+            # המרת ההצפנה ל-base64 (כמו המוחזק במסד הנתונים)
+            derived_key_b64 = base64.b64encode(derived_key).decode('ascii').rstrip('=')
+            
+            # השוואה עם ההצפנה המקורית
+            return hmac.compare_digest(derived_key_b64, stored_hash)
+        
+        # בדיקה עם werkzeug עבור פורמטים אחרים
+        return check_password_hash(password_hash, password)
+        
+    except Exception as e:
+        print(f"Error verifying password: {e}")
+        return False
 
 class User:
     def __init__(self, id, username, role, email, full_name, study_year=None, branch=None, status="active", created_at=None, last_login=None):
@@ -23,30 +77,27 @@ class User:
 
     @staticmethod
     def get(user_id):
-        try:
-            with get_db_connection() as conn:
-                with conn.cursor() as cur:
-                    cur.execute("""
-                        SELECT id, username, password, role, email, full_name, 
-                               study_year, branch, status, created_at, last_login 
-                        FROM users WHERE id = %s
-                    """, (user_id,))
-                    user = cur.fetchone()
-                    if user:
-                        return User(
-                            id=user[0],
-                            username=user[1],
-                            role=user[3],
-                            email=user[4],
-                            full_name=user[5],
-                            study_year=user[6],
-                            branch=user[7],
-                            status=user[8],
-                            created_at=user[9],
-                            last_login=user[10]
-                        )
-        except Exception as e:
-            print(f"Error getting user {user_id}: {e}")
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT id, username, password, role, email, full_name, 
+                           study_year, branch, status, created_at, last_login 
+                    FROM users WHERE id = %s
+                """, (user_id,))
+                user = cur.fetchone()
+                if user:
+                    return User(
+                        id=user[0],
+                        username=user[1],
+                        role=user[3],
+                        email=user[4],
+                        full_name=user[5],
+                        study_year=user[6],
+                        branch=user[7],
+                        status=user[8],
+                        created_at=user[9],
+                        last_login=user[10]
+                    )
         return None
         
     def to_dict(self):
@@ -67,14 +118,123 @@ class User:
     def is_active(self):
         """בדיקה האם המשתמש פעיל"""
         return self.status == 'active'
+        
+    def can_access_category(self, category):
+        """בדיקה האם למשתמש יש גישה לקטגוריה מסוימת"""
+        # מנהלים ואנשי מחסן תמיד יכולים לגשת לכל הקטגוריות
+        if self.role in ['admin', 'warehouse_staff']:
+            return True
+            
+        # אם המשתמש לא פעיל, אין לו גישה לשום קטגוריה
+        if not self.is_active():
+            return False
+            
+        # לסטודנטים נבדוק לפי שנת הלימודים שלהם
+        if self.role == 'student' and self.study_year:
+            with get_db_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT COUNT(*) FROM category_permissions 
+                        WHERE study_year = %s AND category = %s
+                    """, (self.study_year, category))
+                    count = cur.fetchone()[0]
+                    return count > 0
+                    
+        return False
+        
+    def can_access_item(self, item_id):
+        """בדיקה האם למשתמש יש גישה לפריט מסוים"""
+        # בדיקה אם המשתמש לא פעיל
+        if not self.is_active():
+            return False
+            
+        # מנהלים ואנשי מחסן תמיד יכולים לגשת לכל הפריטים
+        if self.role in ['admin', 'warehouse_staff']:
+            return True
+            
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                # בדיקה אם יש הגבלה ספציפית למשתמש עבור פריט זה
+                cur.execute("""
+                    SELECT COUNT(*) FROM user_item_restrictions 
+                    WHERE user_id = %s AND item_id = %s
+                """, (self.id, item_id))
+                has_restriction = cur.fetchone()[0] > 0
+                
+                if has_restriction:
+                    return False
+                    
+                # בדיקה לפי קטגוריה אם למשתמש יש גישה
+                if self.role == 'student' and self.study_year:
+                    cur.execute("""
+                        SELECT category FROM items WHERE id = %s
+                    """, (item_id,))
+                    result = cur.fetchone()
+                    
+                    if result:
+                        category = result[0]
+                        return self.can_access_category(category)
+                        
+        return False
 
 def login_api(username, password):
-    """
-    פונקציית אימות עבור API - מסתמכת על בסיס הנתונים בלבד
-    """
+    # בדיקה מהירה למטרות פיתוח
+    # הערה: בסביבת ייצור אמיתית, יש להשתמש בהצפנה אמיתית ולא בסיסמאות בטקסט פשוט
+    if username == 'shachar' and password == '123456':
+        # ניצור משתמש קבוע עם הרשאות מנהל מחסן
+        return User(
+            id=1,
+            username='shachar',
+            role='warehouse_staff',
+            email='shachar@example.com',
+            full_name='שחר ישראלי',
+            branch='main',
+            status='active'
+        )
+    
+    if username == 'dawn' and password == '123456':
+        # משתמש סטודנט לדוגמה
+        return User(
+            id=2,
+            username='dawn',
+            role='student',
+            email='dawn@student.example.com',
+            full_name='דון סטודנט',
+            study_year='first',
+            branch='main',
+            status='active'
+        )
+    
+    if username == 'student1' and password == '123456':
+        # סטודנט שנה א' לדוגמה
+        return User(
+            id=4,
+            username='student1',
+            role='student',
+            email='student1@student.example.com',
+            full_name='סטודנט ראשון',
+            study_year='first',
+            branch='main',
+            status='active'
+        )
+    
+    if username == 'admin' and (password == '123456' or password == 'admin123'):
+        # משתמש אדמין לדוגמה
+        return User(
+            id=3,
+            username='admin',
+            role='admin',
+            email='admin@example.com',
+            full_name='מנהל המערכת',
+            branch='main',
+            status='active'
+        )
+    
+    # ניסיון אימות בבסיס הנתונים
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cur:
+                # עדכון השאילתא כדי להחזיר את כל השדות החדשים
                 cur.execute("""
                     SELECT id, username, password, role, email, full_name, 
                            study_year, branch, status, created_at, last_login 
@@ -82,90 +242,137 @@ def login_api(username, password):
                 """, (username,))
                 user = cur.fetchone()
                 
-                if not user:
-                    print(f"DEBUG: User {username} not found in database")
-                    return None
-                
-                # בדיקה שהמשתמש לא חסום
-                user_status = user[8] if user[8] else 'active'
-                if user_status == 'blocked':
-                    print(f"DEBUG: User {username} is blocked")
-                    return None
-                
-                # בדיקת סיסמה - מקבל סיסמאות פשוטות לדיפלוי
-                stored_password = user[2] if user[2] else ''
-                user_role = user[3]
-                
-                password_valid = False
-                
-                # אם המשתמש admin - מקבל admin123 או 123456
-                if user_role == 'admin' and password in ['admin123', '123456']:
-                    password_valid = True
-                # עבור כל המשתמשים האחרים - מקבל 123456
-                elif password == '123456':
-                    password_valid = True
-                # אם יש סיסמה מוצפנת בבסיס הנתונים - נבדוק אותה
-                elif stored_password and stored_password.strip() != '':
-                    password_valid = (password == stored_password)
-                
-                if not password_valid:
-                    print(f"DEBUG: Invalid password for user {username} (role: {user_role})")
-                    return None
-                
-                user_obj = User(
-                    id=user[0],
-                    username=user[1],
-                    role=user[3],
-                    email=user[4],
-                    full_name=user[5],
-                    study_year=user[6],
-                    branch=user[7] if user[7] else 'main',
-                    status=user_status,
-                    created_at=user[9],
-                    last_login=user[10]
-                )
-                
-                # עדכון תאריך ההתחברות האחרונה
-                cur.execute("""
-                    UPDATE users SET last_login = CURRENT_TIMESTAMP
-                    WHERE id = %s
-                """, (user_obj.id,))
-                conn.commit()
-                
-                # print(f"DEBUG: User {username} logged in successfully with role {user_role}")
-                return user_obj
+                if user:
+                    # בדיקה אם המשתמש חסום
+                    if user[8] == 'blocked':
+                        print(f"User {username} is blocked")
+                        return None
                         
+                    try:
+                        # אם אין סיסמה או שיש שגיאת תבנית - נאפשר כניסה עם סיסמאות ברירת מחדל במצב פיתוח
+                        if not user[2]:  # אם הסיסמה ריקה
+                            user_obj = User(
+                                id=user[0],
+                                username=user[1],
+                                role=user[3],
+                                email=user[4],
+                                full_name=user[5],
+                                study_year=user[6],
+                                branch=user[7],
+                                status=user[8],
+                                created_at=user[9],
+                                last_login=user[10]
+                            ) if password == '123456' or password == 'admin123' else None
+                            
+                            # עדכון תאריך ההתחברות האחרונה
+                            if user_obj:
+                                cur.execute("""
+                                    UPDATE users SET last_login = CURRENT_TIMESTAMP
+                                    WHERE id = %s
+                                """, (user_obj.id,))
+                                conn.commit()
+                                
+                            return user_obj
+                            
+                        # בדיקת סיסמה - תמיכה ב-scrypt ו-bcrypt
+                        if user[2].startswith('scrypt:'):
+                            password_valid = verify_scrypt_password(user[2], password)
+                        else:
+                            password_valid = check_password_hash(user[2], password)
+                            
+                        if password_valid:
+                            user_obj = User(
+                                id=user[0],
+                                username=user[1],
+                                role=user[3],
+                                email=user[4],
+                                full_name=user[5],
+                                study_year=user[6],
+                                branch=user[7],
+                                status=user[8],
+                                created_at=user[9],
+                                last_login=user[10]
+                            )
+                            
+                            # עדכון תאריך ההתחברות האחרונה
+                            cur.execute("""
+                                UPDATE users SET last_login = CURRENT_TIMESTAMP
+                                WHERE id = %s
+                            """, (user_obj.id,))
+                            conn.commit()
+                            
+                            return user_obj
+                    except Exception as e:
+                        print(f"Error checking password: {e}")
+                        # במקרה של שגיאה בבדיקת הסיסמה - נאפשר כניסה עם סיסמאות ברירת מחדל במצב פיתוח
+                        if password == '123456' or password == 'admin123':
+                            user_obj = User(
+                                id=user[0],
+                                username=user[1],
+                                role=user[3],
+                                email=user[4],
+                                full_name=user[5],
+                                study_year=user[6],
+                                branch=user[7],
+                                status=user[8],
+                                created_at=user[9],
+                                last_login=user[10]
+                            )
+                            
+                            # עדכון תאריך ההתחברות האחרונה
+                            cur.execute("""
+                                UPDATE users SET last_login = CURRENT_TIMESTAMP
+                                WHERE id = %s
+                            """, (user_obj.id,))
+                            conn.commit()
+                            
+                            return user_obj
     except Exception as e:
-        print(f"ERROR: Database login failed: {e}")
-        import traceback
-        traceback.print_exc()
-    
-    return None
+        print(f"Database error: {e}")
+        
+    # בדיקה אחרונה - לאפשר כניסה חלופית במצב פיתוח
+    if username == 'admin' and password == 'admin123':
+        return User(
+            id=999,
+            username='admin',
+            role='admin',
+            email='admin@example.com',
+            full_name='מנהל המערכת - גישה חירום',
+            branch='main',
+            status='active'
+        )
+                    
+    return None  # אם האימות נכשל
 
 def register_api(username, password, role, email, full_name, study_year=None, branch='main'):
-    """רישום משתמש חדש"""
-    try:
-        with get_db_connection() as conn:
-            with conn.cursor() as cur:
-                # בדיקה אם המשתמש כבר קיים
+    hashed_password = generate_password_hash(password)
+    
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            try:
+                # בדיקה האם המשתמש כבר קיים
                 cur.execute("SELECT id FROM users WHERE username = %s", (username,))
                 if cur.fetchone():
-                    return None  # המשתמש כבר קיים
+                    return False, "שם המשתמש כבר קיים במערכת"
                 
-                # הוספת המשתמש החדש
-                cur.execute("""
-                    INSERT INTO users (username, password, role, email, full_name, study_year, branch, status, created_at)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, 'active', CURRENT_TIMESTAMP)
-                    RETURNING id
-                """, (username, '', role, email, full_name, study_year, branch))
+                # קביעת ערכי ברירת מחדל לסטודנטים
+                if role == 'student' and not study_year:
+                    study_year = 'first'  # ברירת מחדל - שנה ראשונה
                 
-                result = cur.fetchone()
-                if not result:
-                    return None
-                user_id = result[0]
+                # הוספת המשתמש החדש עם השדות הנוספים
+                cur.execute(
+                    """INSERT INTO users 
+                       (username, password, role, email, full_name, study_year, branch, status)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s) 
+                       RETURNING id""",
+                    (username, hashed_password, role, email, full_name, study_year, branch, 'active')
+                )
+                
+                user_id = cur.fetchone()[0]
                 conn.commit()
                 
-                return User(
+                # החזרת אובייקט User החדש
+                return True, User(
                     id=user_id,
                     username=username,
                     role=role,
@@ -175,11 +382,9 @@ def register_api(username, password, role, email, full_name, study_year=None, br
                     branch=branch,
                     status='active'
                 )
-                
-    except Exception as e:
-        print(f"Error during registration: {e}")
-    
-    return None
+            except Exception as e:
+                conn.rollback()
+                return False, f"שגיאה ביצירת משתמש: {str(e)}"
 
 def verify_token_api(user_id):
     """אימות קיום המשתמש לפי מזהה"""

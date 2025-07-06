@@ -13,8 +13,7 @@ const multer = require('multer');
 const os = require('os');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
-const HOST = process.env.HOST || '0.0.0.0';
+const PORT = process.env.NODE_ENV === 'production' ? process.env.PORT || 5000 : 5100;
 
 // Middlewares
 app.use(cors({
@@ -43,12 +42,8 @@ function runPythonScript(scriptPath, args = [], inputData = null) {
       return reject(new Error(`Script not found: ${scriptPath}`));
     }
 
-    // מחפש את Python הזמין במערכת
-    const pythonCmd = process.env.PYTHON_CMD || 'python3';
-    console.log(`Running Python script: ${scriptPath} with ${pythonCmd}`);
-    const pythonProcess = spawn(pythonCmd, [scriptPath, ...args], {
-      env: { ...process.env, PYTHONPATH: process.cwd() }
-    });
+    console.log(`Running Python script: ${scriptPath}`);
+    const pythonProcess = spawn('python3', [scriptPath, ...args]);
     let dataString = '';
     let errorString = '';
 
@@ -872,70 +867,15 @@ app.get('/api/order_templates', async (req, res) => {
   }
 });
 
-// הגש את הקבצים הסטטיים - נסה build קודם, אחר כך public
-const buildPath = path.join(__dirname, '../build');
-const publicPath = path.join(__dirname, '../public');
-
-if (fs.existsSync(buildPath)) {
-  app.use(express.static(buildPath));
-} else {
-  app.use(express.static(publicPath));
-}
+// הגש את הקבצים הסטטיים האפליקציה אחרי שכל הנתיבים האחרים כבר הוגדרו
+app.use(express.static(path.join(__dirname, '../build')));
 
 // אם אף אחד מהנתיבים לא טיפל בבקשה, החזר את הדף הראשי של האפליקציה
 app.get('*', (req, res) => {
-  const buildIndexPath = path.join(__dirname, '../build/index.html');
-  const publicIndexPath = path.join(__dirname, '../public/index.html');
-  
-  if (fs.existsSync(buildIndexPath)) {
-    res.sendFile(buildIndexPath);
-  } else if (fs.existsSync(publicIndexPath)) {
-    res.sendFile(publicIndexPath);
-  } else {
-    // אם אין קובץ index, החזר הודעת שגיאה פשוטה
-    res.status(200).send(`
-      <!DOCTYPE html>
-      <html dir="rtl" lang="he">
-      <head>
-        <meta charset="utf-8">
-        <title>מערכת ניהול ציוד קולנוע</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-      </head>
-      <body>
-        <div style="text-align: center; padding: 50px; font-family: Arial;">
-          <h1>מערכת ניהול ציוד קולנוע</h1>
-          <p>השרת פועל בהצלחה!</p>
-          <p>בדיפלוי - המערכת מתחילה להיטען...</p>
-          <script>
-            // ניסוי לטעון את האפליקציה
-            setTimeout(() => {
-              if (window.location.pathname === '/') {
-                window.location.reload();
-              }
-            }, 3000);
-          </script>
-        </div>
-      </body>
-      </html>
-    `);
-  }
+  // אחרת, החזר את הדף הראשי
+  res.sendFile(path.join(__dirname, '../build/index.html'));
 });
 
-// הדפסת משתני סביבה חשובים
-console.log('Environment Variables:');
-console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
-console.log(`PORT: ${PORT}`);
-console.log(`HOST: ${HOST}`);
-console.log(`PYTHON_CMD: ${process.env.PYTHON_CMD || 'python3'}`);
-console.log(`DATABASE_URL: ${process.env.DATABASE_URL ? 'SET' : 'NOT SET'}`);
-
-const server = app.listen(PORT, HOST, () => {
-  console.log(`Cinema Equipment Management Server successfully started!`);
-  console.log(`Server listening on ${HOST}:${PORT}`);
-  console.log(`Server ready to accept connections from external sources`);
-});
-
-server.on('error', (error) => {
-  console.error('Server startup error:', error);
-  process.exit(1);
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
