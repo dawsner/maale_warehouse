@@ -1,1 +1,1 @@
-web: cd react-app && npm install --only=production && npm run build && PYTHON_CMD=python3 NODE_ENV=production HOST=0.0.0.0 node server/server.js
+web: cd react-app && npm install --only=production && PYTHON_CMD=python3 NODE_ENV=production HOST=0.0.0.0 node server/server.js
