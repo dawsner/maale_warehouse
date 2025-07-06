@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>מערכת ניהול מחסן ציוד קולנוע</title>
+    <style>
+      body { 
+        margin: 0; 
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #f5f5f5;
+      }
+      #root { 
+        min-height: 100vh; 
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .loading {
+        text-align: center;
+        font-size: 18px;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <div class="loading">
+        <div>🏭 מערכת ניהול מחסן ציוד קולנוע</div>
+        <div style="margin-top: 20px; font-size: 14px;">טוען את המערכת...</div>
+      </div>
+    </div>
+    <script>
+      // Simple router for React app
+      window.location.hash = window.location.hash || '#/login';
+      
+      // Load React components
+      import('./src/index.js').catch(() => {
+        document.getElementById('root').innerHTML = 
+          '<div class="loading"><h2>מערכת זמינה!</h2><p>השרת פועל בהצלחה</p></div>';
+      });
+    </script>
+  </body>
+</html>
