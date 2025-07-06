@@ -119,6 +119,19 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
+app.post('/api/auth/verify-token', async (req, res) => {
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/verify_token.py'),
+      [],
+      req.body
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(401).json({ message: 'שגיאה באימות טוקן: ' + error.message });
+  }
+});
+
 app.get('/api/auth/me', async (req, res) => {
   // טוקן נשלח בכותרת Authorization
   const authHeader = req.headers.authorization;

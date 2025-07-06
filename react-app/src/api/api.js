@@ -369,25 +369,14 @@ export const authAPI = {
         throw new Error('No token found');
       }
       
-      // פענוח Token ללא שרת
-      const decoded = JSON.parse(atob(token.split('.')[1]));
-      const currentTime = Math.floor(Date.now() / 1000);
+      // אימות הטוקן עם השרת
+      const response = await axiosInstance.post('/api/auth/verify-token', { token });
       
-      // בדיקת תקפות
-      if (decoded.exp <= currentTime) {
-        throw new Error('Token expired');
+      if (response.data && response.data.success) {
+        return response.data.user;
+      } else {
+        throw new Error(response.data.message || 'Token verification failed');
       }
-      
-      // החזרת נתוני המשתמש מה-token
-      return {
-        id: decoded.id,
-        username: decoded.username,
-        role: decoded.role,
-        email: decoded.email,
-        full_name: decoded.full_name,
-        study_year: decoded.study_year,
-        branch: decoded.branch
-      };
     } catch (error) {
       console.error('Get current user error:', error);
       throw error;
