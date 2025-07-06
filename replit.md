@@ -134,6 +134,7 @@ The system uses PostgreSQL with the following key tables:
 - July 5, 2025. Created simple HTML interface for user management - replaced complex React build with functional HTML/JS page for deployment compatibility
 - July 5, 2025. Fixed authentication JSON parsing errors - removed DEBUG prints that corrupted API responses, login now works properly in deployment
 - July 6, 2025. Fixed server routing to prioritize simple.html login page - users now see login form instead of user creation screen
+- July 6, 2025. Fixed deployment configuration - moved server dependencies to production, added engines specification, simplified Procfile for cloud deployment
 
 ## User Preferences
 

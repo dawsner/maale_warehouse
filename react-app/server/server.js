@@ -966,6 +966,13 @@ console.log(`HOST: ${HOST}`);
 console.log(`PYTHON_CMD: ${process.env.PYTHON_CMD || 'python3'}`);
 console.log(`DATABASE_URL: ${process.env.DATABASE_URL ? 'SET' : 'NOT SET'}`);
 
+// בדיקת משתני סביבה חיוניים לדיפלוי
+if (!process.env.DATABASE_URL) {
+  console.error('CRITICAL ERROR: DATABASE_URL environment variable is not set!');
+  console.error('Cannot start server without database connection.');
+  process.exit(1);
+}
+
 // Start server with explicit error handling for GCE deployment
 const server = app.listen(PORT, '0.0.0.0', (err) => {
   if (err) {
