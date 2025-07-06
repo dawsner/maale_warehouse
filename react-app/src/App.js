@@ -59,18 +59,25 @@ function App() {
     const token = localStorage.getItem('token');
     if (token) {
       console.log('Token found in localStorage, trying to authenticate...');
-      // ננסה לקבל פרטי משתמש עם הטוקן הפשוט
-      authAPI.getCurrentUser()
-        .then(userData => {
-          console.log('Current user data received:', userData);
-          setUser(userData);
-          setLoading(false);
-        })
-        .catch((err) => {
-          console.error('Error getting current user:', err);
-          localStorage.removeItem('token');
-          setLoading(false);
-        });
+      // בדיקת תקפות הטוקן
+      try {
+        // ננסה לקבל פרטי משתמש עם הטוקן הפשוט
+        authAPI.getCurrentUser()
+          .then(userData => {
+            console.log('Current user data received:', userData);
+            setUser(userData);
+            setLoading(false);
+          })
+          .catch((err) => {
+            console.error('Error getting current user:', err);
+            localStorage.removeItem('token');
+            setLoading(false);
+          });
+      } catch (error) {
+        console.error('Error with token:', error);
+        localStorage.removeItem('token');
+        setLoading(false);
+      }
     } else {
       console.log('No token found, user not logged in');
       setLoading(false);
@@ -123,16 +130,16 @@ function App() {
     <CacheProvider value={cacheRtl}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <TopNavigationResponsive user={user} onLogout={handleLogout} />
+        {user && <TopNavigationResponsive user={user} onLogout={handleLogout} />}
         <Container 
           maxWidth={false} 
           sx={{ 
-            mt: { xs: 1, sm: 2, md: 3 }, 
+            mt: user ? { xs: 1, sm: 2, md: 3 } : 0, 
             mb: 4, 
             px: { xs: 1, sm: 2, md: 3, lg: 4 }, 
             maxWidth: '98%', 
             mx: 'auto',
-            minHeight: 'calc(100vh - 64px)' // גובה מלא פחות הנוויגציה
+            minHeight: user ? 'calc(100vh - 64px)' : '100vh' // גובה מלא פחות הנוויגציה רק אם יש משתמש
           }}
         >
           <Routes>
