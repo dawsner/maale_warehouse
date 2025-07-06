@@ -1,1 +1,1 @@
-web: cd react-app && npm run dev
+web: cd react-app && npm install && npm run dev
