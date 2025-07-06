@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מערכת ניהול ציוד קולנוע</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            direction: rtl;
+        }
+        
+        .login-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        .logo {
+            margin-bottom: 2rem;
+        }
+        
+        .logo h1 {
+            color: #333;
+            margin-bottom: 0.5rem;
+            font-size: 1.8rem;
+        }
+        
+        .logo p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: right;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: bold;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e1e1;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-login:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .error-message {
+            color: #e74c3c;
+            margin-top: 1rem;
+            padding: 10px;
+            background: #ffeaea;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .success-message {
+            color: #27ae60;
+            margin-top: 1rem;
+            padding: 10px;
+            background: #eafaf1;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .dashboard {
+            display: none;
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 1200px;
+        }
+        
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 1rem;
+        }
+        
+        .dashboard-title {
+            color: #333;
+            font-size: 2rem;
+        }
+        
+        .user-info {
+            color: #666;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        .btn-logout {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container" id="loginForm">
+        <div class="logo">
+            <h1>🎬 מערכת ניהול ציוד קולנוע</h1>
+            <p>כניסה למערכת</p>
+        </div>
+        
+        <form id="loginFormElement">
+            <div class="form-group">
+                <label for="username">שם משתמש:</label>
+                <input type="text" id="username" name="username" required value="admin">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">סיסמה:</label>
+                <input type="password" id="password" name="password" required value="admin">
+            </div>
+            
+            <button type="submit" class="btn-login" id="loginBtn">כניסה למערכת</button>
+        </form>
+        
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+    </div>
+    
+    <div class="dashboard" id="dashboard">
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">לוח בקרה</h1>
+            <div class="user-info">
+                <span id="userWelcome">שלום, </span>
+                <button class="btn-logout" onclick="logout()">יציאה</button>
+            </div>
+        </div>
+        
+        <div class="stats-grid" id="statsGrid">
+            <!-- Stats will be loaded here -->
+        </div>
+        
+        <div id="dashboardContent">
+            <p>טוען נתוני מערכת...</p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '';
+        
+        // Login form handling
+        document.getElementById('loginFormElement').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('loginBtn');
+            const errorMsg = document.getElementById('errorMessage');
+            const successMsg = document.getElementById('successMessage');
+            
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'מתחבר...';
+            errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.user) {
+                    localStorage.setItem('token', data.user.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    
+                    successMsg.textContent = 'התחברות בוצעה בהצלחה!';
+                    successMsg.style.display = 'block';
+                    
+                    setTimeout(() => {
+                        showDashboard(data.user);
+                    }, 1000);
+                } else {
+                    errorMsg.textContent = data.message || 'שגיאה בהתחברות';
+                    errorMsg.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                errorMsg.textContent = 'שגיאה בחיבור לשרת';
+                errorMsg.style.display = 'block';
+            }
+            
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'כניסה למערכת';
+        });
+        
+        // Show dashboard
+        function showDashboard(user) {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            document.getElementById('userWelcome').textContent = `שלום, ${user.full_name}`;
+            
+            loadDashboardData();
+        }
+        
+        // Load dashboard data
+        async function loadDashboardData() {
+            try {
+                const response = await fetch('/api/get_dashboard_data', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data) {
+                    displayStats(data);
+                }
+            } catch (error) {
+                console.error('Dashboard data error:', error);
+                document.getElementById('dashboardContent').innerHTML = 
+                    '<p style="color: red;">שגיאה בטעינת נתונים</p>';
+            }
+        }
+        
+        // Display statistics
+        function displayStats(data) {
+            const statsGrid = document.getElementById('statsGrid');
+            
+            const stats = [
+                { number: data.total_items || 0, label: 'סה"כ פריטים במלאי' },
+                { number: data.active_loans || 0, label: 'השאלות פעילות' },
+                { number: data.overdue_loans || 0, label: 'השאלות באיחור' },
+                { number: data.low_stock_items || 0, label: 'פריטים חסרים' }
+            ];
+            
+            statsGrid.innerHTML = stats.map(stat => `
+                <div class="stat-card">
+                    <div class="stat-number">${stat.number}</div>
+                    <div class="stat-label">${stat.label}</div>
+                </div>
+            `).join('');
+            
+            document.getElementById('dashboardContent').innerHTML = `
+                <h3>מצב המערכת</h3>
+                <p>המערכת פועלת תקין. סה"כ ${data.total_items || 0} פריטים במלאי.</p>
+                <p>ממשק מלא זמין ב-React על פורט 3000</p>
+            `;
+        }
+        
+        // Logout function
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('username').value = 'admin';
+            document.getElementById('password').value = 'admin';
+        }
+        
+        // Check if user is already logged in
+        window.addEventListener('load', () => {
+            const token = localStorage.getItem('token');
+            const user = localStorage.getItem('user');
+            
+            if (token && user) {
+                try {
+                    const userData = JSON.parse(user);
+                    showDashboard(userData);
+                } catch (error) {
+                    console.error('Invalid user data');
+                    logout();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

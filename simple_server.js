@@ -7,7 +7,8 @@ const port = process.env.PORT || 5000;
 
 // Middleware
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'react-app/public')));
+// Serve static files
+app.use(express.static(path.join(__dirname, 'public')));
 
 // CORS
 app.use((req, res, next) => {

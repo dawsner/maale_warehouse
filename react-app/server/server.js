@@ -13,7 +13,7 @@ const multer = require('multer');
 const os = require('os');
 
 const app = express();
-const PORT = process.env.PORT || 5200;
+const PORT = process.env.PORT || 80;
 const HOST = process.env.HOST || '0.0.0.0';
 
 // Middlewares
@@ -93,10 +93,24 @@ function runPythonScript(scriptPath, args = [], inputData = null) {
 // נתיבי API
 
 // אימות והרשאות
+app.post('/api/login', async (req, res) => {
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/login.py'),
+      [],
+      req.body
+    );
+    res.json(result);
+  } catch (error) {
+    console.error('Login error:', error.message);
+    res.status(401).json({ message: 'שם משתמש או סיסמה שגויים - ' + error.message });
+  }
+});
+
 app.post('/api/auth/login', async (req, res) => {
   try {
     const result = await runPythonScript(
-      path.join(__dirname, '../api/simple_login.py'),
+      path.join(__dirname, '../api/login.py'),
       [],
       req.body
     );
@@ -117,6 +131,19 @@ app.post('/api/auth/register', async (req, res) => {
     res.json(result);
   } catch (error) {
     res.status(400).json({ message: 'שגיאה בהרשמה: ' + error.message });
+  }
+});
+
+app.post('/api/verify-token', async (req, res) => {
+  try {
+    const result = await runPythonScript(
+      path.join(__dirname, '../api/verify_token.py'),
+      [],
+      req.body
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(401).json({ message: 'שגיאה באימות טוקן: ' + error.message });
   }
 });
 
