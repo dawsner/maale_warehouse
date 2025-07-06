@@ -11,10 +11,7 @@ export HOST=0.0.0.0
 echo "Installing dependencies..."
 npm install
 
-# התקנת Dependencies נוספות  
-cd react-app && npm install
-
 echo "Starting production server on port $PORT..."
 
-# הפעלת המערכת הקיימת שעובדת
-cd react-app && npm run dev
+# הפעלת השרת המאוחד שמטפל בכל
+node production_server.js

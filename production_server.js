@@ -141,108 +141,71 @@ apiRoutes.forEach(route => {
     });
 });
 
-// Check if build directory exists, if not use development approach
-const buildPath = path.join(__dirname, 'react-app/build');
-const publicPath = path.join(__dirname, 'react-app/public');
+// Start React development server and serve through this server
 
-if (fs.existsSync(buildPath)) {
-    // Production mode - serve build files
-    console.log('Production mode: serving build files');
-    app.use(express.static(buildPath));
-    
-    app.get('*', (req, res) => {
-        res.sendFile(path.join(buildPath, 'index.html'));
-    });
-} else {
-    // Development mode - serve public files and proxy React dev server
-    console.log('Development mode: serving public files');
-    app.use(express.static(publicPath));
-    
-    app.get('*', (req, res) => {
-        // Send a simple HTML that will load the React app
-        res.send(`
-            <!DOCTYPE html>
-            <html lang="he" dir="rtl">
-            <head>
-                <meta charset="utf-8" />
-                <meta name="viewport" content="width=device-width, initial-scale=1" />
-                <title>מערכת ניהול ציוד קולנוע</title>
-                <style>
-                    body {
-                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                        margin: 0;
-                        padding: 20px;
-                        background: #f5f5f5;
-                        text-align: center;
-                        direction: rtl;
-                    }
-                    .container {
-                        max-width: 600px;
-                        margin: 50px auto;
-                        background: white;
-                        padding: 40px;
-                        border-radius: 8px;
-                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                    }
-                    .loading {
-                        font-size: 18px;
-                        color: #666;
-                        margin-bottom: 20px;
-                    }
-                    .logo {
-                        font-size: 24px;
-                        font-weight: bold;
-                        color: #1976d2;
-                        margin-bottom: 30px;
-                    }
-                    .spinner {
-                        border: 4px solid #f3f3f3;
-                        border-top: 4px solid #1976d2;
-                        border-radius: 50%;
-                        width: 50px;
-                        height: 50px;
-                        animation: spin 1s linear infinite;
-                        margin: 20px auto;
-                    }
-                    @keyframes spin {
-                        0% { transform: rotate(0deg); }
-                        100% { transform: rotate(360deg); }
-                    }
-                    .system-info {
-                        background: #e3f2fd;
-                        padding: 20px;
-                        border-radius: 4px;
-                        margin-top: 30px;
-                        font-size: 14px;
-                        color: #1565c0;
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="logo">🎬 מערכת ניהול ציוד קולנוע</div>
-                    <div class="loading">המערכת נטענת...</div>
-                    <div class="spinner"></div>
-                    <div class="system-info">
-                        <strong>המערכת המלאה פועלת!</strong><br>
-                        • 257 פריטי ציוד זמינים<br>
-                        • דשבורד מלא עם סטטיסטיקות<br>
-                        • מערכת השאלות והזמנות<br>
-                        • ממשק בעברית עם תמיכה RTL<br><br>
-                        <strong>התחברות:</strong> admin/admin
-                    </div>
-                </div>
-                <script>
-                    // Redirect to React app (for development mode this should work)
-                    setTimeout(() => {
-                        window.location.href = '/';
-                    }, 3000);
-                </script>
-            </body>
-            </html>
-        `);
-    });
-}
+// Start React dev server on port 3001 (different from main server)
+const reactProcess = spawn('npm', ['run', 'start'], {
+    cwd: path.join(__dirname, 'react-app'),
+    env: { 
+        ...process.env, 
+        PORT: '3001',
+        BROWSER: 'none',
+        HOST: '0.0.0.0'
+    },
+    stdio: 'pipe'
+});
+
+// Proxy React requests to internal port 3000
+const { createProxyMiddleware } = require('http-proxy-middleware');
+
+// Proxy frontend requests to React dev server
+const reactProxy = createProxyMiddleware({
+    target: 'http://localhost:3001',
+    changeOrigin: true,
+    ws: true, // enable websockets
+    timeout: 60000,
+    proxyTimeout: 60000,
+    onError: (err, req, res) => {
+        console.log('Proxy error:', err);
+        res.status(500).send('React app not ready yet, please wait...');
+    }
+});
+
+// Serve static files first, then proxy to React
+app.use('/static', reactProxy);
+app.use('/manifest.json', reactProxy);
+app.use('/favicon.ico', reactProxy);
+
+// Catch all other requests and proxy to React
+app.get('*', (req, res, next) => {
+    // Skip API requests
+    if (req.path.startsWith('/api/')) {
+        return next();
+    }
+    // Proxy to React dev server
+    reactProxy(req, res, next);
+});
+
+// Cleanup on exit
+process.on('exit', () => {
+    if (reactProcess) {
+        reactProcess.kill();
+    }
+});
+
+process.on('SIGTERM', () => {
+    if (reactProcess) {
+        reactProcess.kill();
+    }
+    process.exit(0);
+});
+
+process.on('SIGINT', () => {
+    if (reactProcess) {
+        reactProcess.kill();
+    }
+    process.exit(0);
+});
 
 app.listen(port, '0.0.0.0', () => {
     console.log(`🚀 Cinema Equipment Management System running on http://0.0.0.0:${port}`);
