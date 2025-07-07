@@ -1,1 +1,1 @@
-web: bash deploy.sh
+web: cd react-app && node server/server.js

@@ -25,6 +25,15 @@ app.use(cors({
 }));
 app.use(bodyParser.json());
 
+// Health check endpoint for deployment platforms
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    service: 'Cinema Equipment Management API'
+  });
+});
+
 /**
  * פונקציה כללית להפעלת סקריפט פייתון
  * @param {string} scriptPath - נתיב לסקריפט
