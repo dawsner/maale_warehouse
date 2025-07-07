@@ -47,6 +47,9 @@ def get_upcoming_maintenance_schedules(days_threshold=30):
         schedules = []
         for schedule in cursor.fetchall():
             next_due = schedule['next_due']
+            # וידוא שסוג הנתונים זהה
+            if isinstance(next_due, datetime.datetime):
+                next_due = next_due.date()
             days_until_due = (next_due - today).days
             
             # קביעת רמת חומרה
@@ -102,6 +105,9 @@ def get_overdue_loans(days_threshold=1):
         for loan in cursor.fetchall():
             # חישוב מספר הימים באיחור
             due_date = loan['due_date']
+            # וידוא שסוג הנתונים זהה
+            if isinstance(due_date, datetime.datetime):
+                due_date = due_date.date()
             days_overdue = (today - due_date).days
             
             # קביעת רמת חומרה
@@ -127,6 +133,9 @@ def get_overdue_loans(days_threshold=1):
         for loan in cursor.fetchall():
             # חישוב מספר הימים שנותרו
             due_date = loan['due_date']
+            # וידוא שסוג הנתונים זהה
+            if isinstance(due_date, datetime.datetime):
+                due_date = due_date.date()
             days_remaining = (due_date - today).days
             
             # קביעת רמת חומרה (הפוך מהאיחור - ככל שנשאר פחות זמן, יותר חמור)
