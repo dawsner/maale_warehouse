@@ -130,16 +130,16 @@ function App() {
     <CacheProvider value={cacheRtl}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        {user && <TopNavigationResponsive user={user} onLogout={handleLogout} />}
+        <TopNavigationResponsive user={user} onLogout={handleLogout} />
         <Container 
           maxWidth={false} 
           sx={{ 
-            mt: user ? { xs: 1, sm: 2, md: 3 } : 0, 
+            mt: { xs: 1, sm: 2, md: 3 }, 
             mb: 4, 
             px: { xs: 1, sm: 2, md: 3, lg: 4 }, 
             maxWidth: '98%', 
             mx: 'auto',
-            minHeight: user ? 'calc(100vh - 64px)' : '100vh' // גובה מלא פחות הנוויגציה רק אם יש משתמש
+            minHeight: 'calc(100vh - 64px)' // גובה מלא פחות הנוויגציה
           }}
         >
           <Routes>

@@ -361,8 +361,8 @@ export const authAPI = {
         throw new Error('No token found');
       }
       
-      // אימות הטוקן עם השרת
-      const response = await axiosInstance.post('/api/verify-token', { user_id: token });
+      // אימות הטוקן עם השרת (הטוקן שלנו הוא מספר משתמש פשוט)
+      const response = await axiosInstance.post('/api/auth/verify-token', { user_id: token });
       
       if (response.data && response.data.success) {
         return response.data.user;
