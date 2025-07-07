@@ -18,41 +18,20 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('token');
     if (token) {
       console.log('Token found in localStorage, checking authentication...');
-      // בדיקת תקפות הטוקן
-      try {
-        const decoded = JSON.parse(atob(token.split('.')[1]));
-        const currentTime = Math.floor(Date.now() / 1000);
-        
-        // אם הטוקן פג תוקף
-        if (decoded.exp <= currentTime) {
-          console.log('Token expired');
+      // הטוקן שלנו הוא מספר פשוט ולא JWT, אז פשוט נבדוק עם השרת
+      authAPI.getCurrentUser()
+        .then(userData => {
+          console.log('User data received from API');
+          setUser(userData);
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.error('Error getting user data:', err);
           localStorage.removeItem('token');
           setUser(null);
+          setError('שגיאה בטעינת פרטי המשתמש');
           setLoading(false);
-          return;
-        }
-        
-        // אם הטוקן תקף, מנסה לקבל פרטי משתמש
-        authAPI.getCurrentUser()
-          .then(userData => {
-            console.log('User data received from API');
-            setUser(userData);
-            setLoading(false);
-          })
-          .catch((err) => {
-            console.error('Error getting user data:', err);
-            localStorage.removeItem('token');
-            setUser(null);
-            setError('שגיאה בטעינת פרטי המשתמש');
-            setLoading(false);
-          });
-      } catch (error) {
-        console.error('Error decoding token:', error);
-        localStorage.removeItem('token');
-        setUser(null);
-        setError('שגיאה בפענוח הטוקן');
-        setLoading(false);
-      }
+        });
     } else {
       console.log('No token found');
       setLoading(false);
